@@ -1,0 +1,37 @@
+service: palette-notification-service
+useDotenv: true
+
+plugins:
+  - serverless-offline
+  - serverless-deployment-bucket
+
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ap-southeast-2
+  deploymentBucket:
+    name: ${env:PALETTE_AWS_STORAGE_BUCKET_NAME}
+    serverSideEncryption: AES256
+  environment:
+    PORT: ${env:PORT}
+    NODE_ENV: ${env:NODE_ENV}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:PALETTE_AWS_NODEJS_CONNECTION_REUSE_ENABLED}
+    MAILER_HOST: ${env:MAILER_HOST}
+    MAILER_PORT: ${env:MAILER_PORT}
+    MAILER_AUTH_USER: ${env:MAILER_AUTH_USER}
+    MAILER_AUTH_PASSWORD: ${env:MAILER_AUTH_PASSWORD}
+    TWILIO_ACCOUNT_SID: ${env:TWILIO_ACCOUNT_SID}
+    TWILIO_AUTH_TOKEN: ${env:TWILIO_AUTH_TOKEN}
+    TWILIO_PHONE_NUMBER: ${env:TWILIO_PHONE_NUMBER}
+  iamManagedPolicies:
+  - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
+
+
+
+functions:
+  main:
+    handler: dist/lambda.handler
+    events:
+      - sqs:
+          arn : ${env:PALETTE_AWS_SQS_ARN}

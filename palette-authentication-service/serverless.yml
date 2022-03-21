@@ -1,0 +1,78 @@
+service: palette-auth-service
+useDotenv: true
+
+plugins:
+  - serverless-offline
+  - serverless-deployment-bucket
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ap-southeast-2
+  apiGateway:
+    minimumCompressionSize: 1024
+    restApiId: ${env:PALETTE_API_GATEWAY_ID}
+    restApiRootResourceId: ${env:PALETTE_API_GATEWAY_ROOT_ID}
+  deploymentBucket:
+    name: ${env:PALETTE_AWS_STORAGE_BUCKET_NAME}
+    serverSideEncryption: AES256
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
+  environment:
+    PALETTE_OTP_RESET_TIME: ${env:PALETTE_OTP_RESET_TIME}
+    DB_TYPE: ${env:DB_TYPE}
+    DB_HOST: ${env:DB_HOST}
+    DB_PORT: ${env:DB_PORT}
+    DB_USERNAME: ${env:DB_USERNAME}
+    DB_PASSWORD: ${env:DB_PASSWORD}
+    DB_NAME: ${env:DB_NAME}
+    JWT_SECRET: ${env:JWT_SECRET}
+    JWT_REFRESH_SECRET: ${env:JWT_REFRESH_SECRET}
+    PORT: ${env:PORT}
+    DB_SYNC: ${env:DB_SYNC}
+    NODE_ENV: ${env:NODE_ENV}
+    SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
+    SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
+    SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
+    SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
+    SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
+    SALESFORCE_LOGIN_URL: ${env:SALESFORCE_LOGIN_URL}
+    PASSWORD_HASHING_KEY: ${env:PASSWORD_HASHING_KEY}
+    PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
+    PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
+    PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    PALETTE_AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:PALETTE_AWS_NODEJS_CONNECTION_REUSE_ENABLED}
+
+
+functions:
+  main:
+    handler: dist/lambda.handler
+    events:
+      - http:
+          method: POST
+          path: auth/validate
+          cors: true
+      - http:
+          method: POST
+          path: auth/login
+          cors: true
+      - http:
+          method: PATCH
+          path: auth/password/reset
+          cors: true
+      - http:
+          method: POST
+          path: auth/password/forgot
+          cors: true
+      - http:
+          method: POST
+          path: auth/password/forgot/validate
+          cors: true
+      - http:
+          method: POST
+          path: users/register/pre
+          cors: true
+      - http:
+          method: POST
+          path: users/profile/add/picture
+          cors: true

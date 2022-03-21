@@ -1,0 +1,8 @@
+node_modules
+.aws
+.serverless
+dist
+*-lock.json
+*.lock
+package-lock.json
+.npmrc

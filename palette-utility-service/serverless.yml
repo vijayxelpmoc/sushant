@@ -1,0 +1,57 @@
+service: palette-utility-service
+useDotenv: true
+variablesResolutionMode: 20210326
+
+plugins:
+  - serverless-offline
+  - serverless-deployment-bucket
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ap-southeast-2
+  apiGateway:
+    minimumCompressionSize: 1024
+    restApiId: ${env:PALETTE_API_GATEWAY_ID}
+    restApiRootResourceId: ${env:PALETTE_API_GATEWAY_ROOT_ID}
+  deploymentBucket:
+    name: ${env:PALETTE_AWS_STORAGE_BUCKET_NAME}
+    serverSideEncryption: AES256
+  environment:
+    JWT_SECRET: ${env:JWT_SECRET}
+    JWT_REFRESH_SECRET: ${env:JWT_REFRESH_SECRET}
+    PORT: ${env:PORT}
+    NODE_ENV: ${env:NODE_ENV}
+    SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
+    SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
+    SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
+    SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
+    SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
+    SALESFORCE_LOGIN_URL: ${env:SALESFORCE_LOGIN_URL}
+    PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
+    PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
+    PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    PALETTE_AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:PALETTE_AWS_NODEJS_CONNECTION_REUSE_ENABLED}
+    UTILITY_NOTIFICATION_RECIPIENTS: ${env:UTILITY_NOTIFICATION_RECIPIENTS}
+  lambdaHashingVersion: 20201221
+
+functions:
+  util:
+    handler: dist/lambda.handler
+    events:
+      - http:
+          method: POST
+          path: v1/util/contact
+          cors: true
+      - http:
+          method: POST
+          path: v1/util/feedback
+          cors: true
+      - http:
+          method: POST
+          path: v1/util/report/issue
+          cors: true
+      - http:
+          method: GET
+          path: v1/util/guides
+          cors: true

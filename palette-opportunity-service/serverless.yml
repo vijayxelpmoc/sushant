@@ -1,0 +1,34 @@
+service: palette
+frameworkVersion: '2'
+useDotenv: true
+variablesResolutionMode: 20210326
+
+plugins:
+  - serverless-offline
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  environment:
+    PORT: ${env:PORT}
+    NODE_ENV: ${env:NODE_ENV}
+    JWT_SECRET: ${env:JWT_SECRET}
+    SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
+    SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
+    SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
+    SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
+    SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
+    SALESFORCE_LOGIN_URL: ${env:SALESFORCE_LOGIN_URL}
+    SALESFORCE_REDIRECT_URI: ${env:SALESFORCE_REDIRECT_URI}
+  lambdaHashingVersion: 20201221
+
+functions:
+  opportunity:
+    handler: dist/lambda.handler
+    events:
+      - http:
+          method: ANY
+          path: /
+      - http:
+          method: ANY
+          path: '{proxy+}'
