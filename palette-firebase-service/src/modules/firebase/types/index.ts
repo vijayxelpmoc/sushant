@@ -24,4 +24,9 @@ export interface ProcessedFirebaseRecord {
   args: Array<any>;
 }
 
+export interface PushNotificationData {
+  type: string;
+  data: string | number;
+}
+
 export * from './firebase-chat-backup.interface';
