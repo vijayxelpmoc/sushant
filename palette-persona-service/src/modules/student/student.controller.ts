@@ -6,7 +6,6 @@ import {
   Patch,
   Body,
   Param,
-  CacheInterceptor,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -22,7 +21,6 @@ import { StudentService } from './student.service';
 
 @Controller({
   path: 'student',
-  // version: '1',
 })
 export class StudentController {
   constructor(
@@ -66,7 +64,6 @@ export class StudentController {
     Role.Observer,
     Role.Faculty,
   )
-  @UseInterceptors(CacheInterceptor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
   async getStudentDetails(@Param('id') id: string) {

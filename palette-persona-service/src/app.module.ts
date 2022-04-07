@@ -5,8 +5,10 @@ import { WrapperModule } from '@gowebknot/palette-wrapper';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
+import { AdminModule } from './modules/admin/admin.module';
 import { ObserverModule } from './modules/observer/observer.module';
 import { ParentModule } from './modules/parent/parent.module';
+import { StudentModule } from './modules/student/student.module';
 
 @Module({
   imports: [
@@ -24,6 +26,7 @@ import { ParentModule } from './modules/parent/parent.module';
     AdminModule,
     ObserverModule,
     ParentModule,
+    StudentModule
   ],
   controllers: [AppController],
   providers: [AppService],

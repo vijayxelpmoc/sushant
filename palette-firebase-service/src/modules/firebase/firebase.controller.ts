@@ -4,10 +4,9 @@ import { ApiTags } from '@nestjs/swagger';
 import { FirebaseService } from './services/firebase.service';
 import { FirebaseChatBackupService } from './services/firebase-chat-backup.service';
 
-@ApiTags('auth')
+@ApiTags('firebase')
 @Controller({
-  path: 'auth',
-  version: '1',
+  path: 'firebase',
 })
 export class FirebaseController {
   constructor(

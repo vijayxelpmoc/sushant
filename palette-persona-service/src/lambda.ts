@@ -1,24 +1,17 @@
+// tslint:disable-next-line:no-var-requires
 require('module-alias/register');
 
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe, VersioningType } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import serverlessExpress from '@vendia/serverless-express';
 import { Callback, Context, Handler } from 'aws-lambda';
 
+import { preBuildApp } from './main';
 import { AppModule } from './app.module';
 
 let server: Handler;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
-  // app.enableVersioning({
-  //   type: VersioningType.URI,
-  // });
-
+  const app = await preBuildApp();
   await app.init();
-
   const expressApp = app.getHttpAdapter().getInstance();
   return serverlessExpress({ app: expressApp });
 }

@@ -38,6 +38,7 @@ export class FirebaseChatBackupService {
   }
 
   private _initFirebase() {
+    if (!this._db || !this._bucket) {
     admin.initializeApp({
       credential: admin.credential.cert({
         projectId: process.env.FIREBASE_PROJECT_ID,
@@ -49,6 +50,8 @@ export class FirebaseChatBackupService {
 
     this._db = admin.firestore();
     this._bucket = admin.storage().bucket();
+    this._logger.log("Firebase initialized");
+  }
   }
 
   private _createPdf(content: string, path: string, password: string) {
@@ -321,6 +324,7 @@ export class FirebaseChatBackupService {
   }
 
   //   This Cron Job will run everyday at 12:05 AM
+  // TODO: Setup this corn as an event in lambda, else it won't work
   @Cron('05 0 * * *')
   async runChatLogBackupCronJob() {
     await this._runChatLogBackup();

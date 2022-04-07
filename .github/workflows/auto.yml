@@ -1,0 +1,91 @@
+name: Paletet Serverless Deployment
+on:
+  push:
+    branches:
+      - dev
+
+jobs:
+  changes:
+    name: Changes
+    runs-on: ubuntu-latest
+    outputs:
+      folders: ${{ steps.filter.outputs.folders }}
+    steps:
+      - uses: actions/checkout@v2
+      - name: Check changed files
+        id: diff
+        run: |
+          if [ $GITHUB_BASE_REF ]; then
+            # Pull Request
+            git fetch origin $GITHUB_BASE_REF --depth=1
+            export DIFF=$( git diff --name-only origin/$GITHUB_BASE_REF $GITHUB_SHA )
+            echo "Diff between origin/$GITHUB_BASE_REF and $GITHUB_SHA"
+          else
+            # Push
+            git fetch origin ${{ github.event.before }} --depth=1
+            export DIFF=$( git diff --diff-filter=d --name-only ${{ github.event.before }} $GITHUB_SHA )
+            echo "Diff between ${{ github.event.before }} and $GITHUB_SHA"
+          fi
+          echo "$DIFF"
+          # Escape newlines (replace \n with %0A)
+          echo "::set-output name=diff::$( echo "$DIFF" | sed ':a;N;$!ba;s/\n/%0A/g' )"
+      - name: Set matrix for build
+        id: filter
+        run: |
+          DIFF="${{ steps.diff.outputs.diff }}"
+
+          if [ -z "$DIFF" ]; then
+            echo "::set-output name=folders::[]"
+          else
+            JSON="["
+            # Loop by lines
+            while read path; do
+              # Set $directory to substring before /
+              directory="$( echo $path | cut -d'/' -f1 -s )"
+
+            # ignore .github folder
+            if [[ "$directory" != ".github" ]]; then
+              # Add build to the matrix only if it is not already included
+              JSONline="\"$directory\","
+              if [[ "$JSON" != *"$JSONline"* ]]; then
+                JSON="$JSON$JSONline"
+              fi
+            fi
+            done <<< "$DIFF"
+
+            # Remove last "," and add closing brackets
+            if [[ $JSON == *, ]]; then
+              JSON="${JSON%?}"
+            fi
+            JSON="$JSON]"
+            echo $JSON
+
+            # Set output
+            echo "::set-output name=folders::$( echo "$JSON" )"
+          fi
+  deploy:
+    needs: changes
+    name: Deploy
+    if: ${{ needs.changes.outputs.folders != '[]' && needs.changes.outputs.folders != '' }}
+    strategy:
+      matrix:
+        # Parse JSON array containing names of all filters matching any of changed files.
+        folder: ${{ fromJSON(needs.changes.outputs.folders) }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v1
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
+      - name: deploy
+        run: npx serverless deploy
+        working-directory: ${{ matrix.folder }}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          AWS_REST_API_ROOT_ID: ${{ secrets.AWS_REST_API_ROOT_ID }}
+          AWS_REST_API_ID: ${{ secrets.AWS_REST_API_ID }}
+          AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}

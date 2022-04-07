@@ -7,12 +7,7 @@ import { Errors } from '@src/constants';
 
 @Injectable()
 export class FirebaseService {
-  private _db: admin.firestore.Firestore;
-  private _messaging: admin.messaging.Messaging;
-
   constructor(private sfService: SfService) {
-    this._db = admin.firestore();
-    this._messaging = admin.messaging();
   }
 
   /*
@@ -100,7 +95,11 @@ export class FirebaseService {
     if (!uuid) {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
     }
-    const userDoc = await this._db.collection('users').doc(uuid).get();
+
+    const _db = admin.firestore();
+    const _messaging = admin.messaging();
+
+    const userDoc = await _db.collection('users').doc(uuid).get();
     if (!userDoc.exists) {
       throw new NotFoundException(Errors.USER_NOT_FOUND);
     }
@@ -121,7 +120,7 @@ export class FirebaseService {
         };
       }
 
-      return await this._messaging.sendMulticast(message);
+      return await _messaging.sendMulticast(message);
     }
   }
 
