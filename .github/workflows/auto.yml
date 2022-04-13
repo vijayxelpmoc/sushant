@@ -84,6 +84,8 @@ jobs:
       - name: deploy
         run: |
           npm i -g serverless serverless-offline serverless-deployment-bucket
+          npm i
+          npm run build
           npx serverless deploy --stage dev
         working-directory: ${{ matrix.folder }}
         env:
