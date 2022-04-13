@@ -35,6 +35,7 @@ app.useGlobalPipes(new ValidationPipe());
 /*
  * Enable serialization globally. This is required for proper serialization of nested
  * objects in the response body. Example, removing password from the response.
+ * Class Transformer class can be used to acheive this.
  */
 app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
 
