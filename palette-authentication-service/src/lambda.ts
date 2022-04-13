@@ -5,7 +5,6 @@ import serverlessExpress from '@vendia/serverless-express';
 import { Callback, Context, Handler } from 'aws-lambda';
 
 import { preBuildApp } from './main';
-import { AppModule } from './app.module';
 
 let server: Handler;
 

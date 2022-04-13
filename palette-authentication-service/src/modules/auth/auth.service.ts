@@ -313,7 +313,7 @@ export class AuthService {
     this._notifier.send(NotificationType.EMAIL, {
       to: 'shaiqkar@gmail.com',
       subject: '[!IMP] Palette Password Reset OTP',
-      body: 'Hello this is a test email'
+      body: 'Hello this is a test email',
     });
   }
 }

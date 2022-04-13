@@ -61,6 +61,7 @@ jobs:
             echo $JSON
 
             # Set output
+            echo Services to update
             echo "::set-output name=folders::$( echo "$JSON" )"
           fi
   deploy:
