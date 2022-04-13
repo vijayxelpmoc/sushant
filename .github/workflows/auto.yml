@@ -58,10 +58,10 @@ jobs:
               JSON="${JSON%?}"
             fi
             JSON="$JSON]"
+            echo Services to update
             echo $JSON
 
             # Set output
-            echo Services to update
             echo "::set-output name=folders::$( echo "$JSON" )"
           fi
   deploy:
@@ -83,7 +83,7 @@ jobs:
           aws-region: ${{ secrets.AWS_REGION }}
       - name: deploy
         run: |
-          npm i -g serverless serverless-offline
+          npm i -g serverless serverless-offline serverless-deployment-bucket
           npx serverless deploy --stage dev
         working-directory: ${{ matrix.folder }}
         env:
