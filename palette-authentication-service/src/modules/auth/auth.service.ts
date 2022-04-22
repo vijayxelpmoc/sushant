@@ -9,12 +9,12 @@ import Cryptr from 'cryptr';
 import { v4 as uuid } from 'uuid';
 
 import {
-  SfService,
-  SFField,
   Notifier,
   NotificationType,
   EmailTemplates,
 } from '@gowebknot/palette-wrapper';
+
+import { SfService, SFField } from '@gowebknot/palette-salesforce-service';
 
 import { Errors, Responses } from '@src/constants';
 import { User } from '@src/modules/users/types';
@@ -242,8 +242,10 @@ export class AuthService {
     const { email, otp } = authForgotPasswordValidateOtpDto;
 
     const userOtpMgr = await OtpManager.findOne({
-      email,
-      for: OtpChecks.FORGOT_PASSWORD,
+      where: {
+        email,
+        for: OtpChecks.FORGOT_PASSWORD,
+      }
     });
     if (!userOtpMgr) {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
@@ -290,9 +292,11 @@ export class AuthService {
     }
 
     const userOtpMgr = await OtpManager.findOne({
-      email,
-      for: OtpChecks.FORGOT_PASSWORD,
-      senderValidationId,
+      where: {
+        email,
+        for: OtpChecks.FORGOT_PASSWORD,
+        senderValidationId
+      },
     });
     if (!userOtpMgr) {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);

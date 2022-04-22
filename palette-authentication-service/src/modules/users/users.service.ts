@@ -4,7 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import Cryptr from 'cryptr';
-import { SfService } from '@gowebknot/palette-wrapper';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import { Errors, Responses } from '@src/constants';
 import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
