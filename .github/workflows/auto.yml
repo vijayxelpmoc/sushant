@@ -58,6 +58,7 @@ jobs:
               JSON="${JSON%?}"
             fi
             JSON="$JSON]"
+            echo Services to update
             echo $JSON
 
             # Set output
@@ -66,7 +67,7 @@ jobs:
   deploy:
     needs: changes
     name: Deploy
-    if: ${{ needs.changes.outputs.folders != '[]' && needs.changes.outputs.folders != '' }}
+    if: ${{ needs.changes.outputs.folders != '[]' && needs.changes.outputs.folders != '' && needs.changes.outputs.folders != '[""]' }}
     strategy:
       matrix:
         # Parse JSON array containing names of all filters matching any of changed files.
@@ -74,6 +75,11 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
+      - uses: actions/setup-node@v1
+        with:
+          node-version: 12
+          registry-url: https://npm.pkg.github.com/
+          scope: '@gowebknot'
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
@@ -81,7 +87,12 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
       - name: deploy
-        run: npx serverless deploy
+        run: |
+          echo "//npm.pkg.github.com/:_authToken=${{secrets.PAT}}" > .npmrc
+          npm i -g serverless serverless-offline serverless-deployment-bucket
+          npm i
+          npm run build
+          npx serverless deploy --stage dev
         working-directory: ${{ matrix.folder }}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}

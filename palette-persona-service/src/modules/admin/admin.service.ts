@@ -1,5 +1,7 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
-import { Notifier, SfService } from '@gowebknot/palette-wrapper';
+import { Notifier } from '@gowebknot/palette-wrapper';
+import { SfService } from '@gowebknot/palette-salesforce-service';
+
 
 @Injectable()
 export class AdminService {

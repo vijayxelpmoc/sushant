@@ -18,6 +18,7 @@ provider:
     serverSideEncryption: AES256
   iamManagedPolicies:
     - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
+    - 'arn:aws:iam::aws:policy/AWSLambda_FullAccess'
   environment:
     PALETTE_OTP_RESET_TIME: ${env:PALETTE_OTP_RESET_TIME}
     DB_TYPE: ${env:DB_TYPE}
@@ -40,6 +41,8 @@ provider:
     PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
     PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
     PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    PALETTE_RUNNER_ACCESS_KEY: ${env:PALETTE_RUNNER_ACCESS_KEY}
+    PALETTE_RUNNER_SECRET_KEY: ${env:PALETTE_RUNNER_SECRET_KEY}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
 
 

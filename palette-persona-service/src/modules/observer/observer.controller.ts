@@ -12,7 +12,8 @@ import {
   ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CachingService, hasRoles, JwtAuthGuard, RolesGuard, Role } from '@gowebknot/palette-wrapper';
+import { hasRoles, JwtAuthGuard, RolesGuard, Role } from '@gowebknot/palette-wrapper';
+import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { UpdateSfObserverDto } from './dtos';
 import { ObserverService } from './observer.service';
 

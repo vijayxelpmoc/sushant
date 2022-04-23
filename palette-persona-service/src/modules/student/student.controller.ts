@@ -13,11 +13,11 @@ import {
   RolesGuard,
   hasRoles,
   Role,
-  CachingService,
 } from '@gowebknot/palette-wrapper';
 
 import { StudentUpdateProfileDto } from './dto';
 import { StudentService } from './student.service';
+import { CachingService } from '@gowebknot/palette-salesforce-service';
 
 @Controller({
   path: 'student',

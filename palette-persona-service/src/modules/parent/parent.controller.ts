@@ -13,6 +13,7 @@ import {
   RolesGuard,
   Role,
 } from '@gowebknot/palette-wrapper';
+import { CachingService } from '@gowebknot/palette-salesforce-service';
 
 import { ParentService } from './parent.service';
 

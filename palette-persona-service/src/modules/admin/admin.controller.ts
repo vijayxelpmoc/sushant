@@ -1,5 +1,5 @@
 import {Controller} from '@nestjs/common';
-import {CachingService} from '@gowebknot/palette-wrapper';
+import { CachingService } from '@gowebknot/palette-salesforce-service';
 
 import {AdminService} from './admin.service'; 
 

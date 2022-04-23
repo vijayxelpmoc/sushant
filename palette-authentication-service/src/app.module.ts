@@ -1,17 +1,14 @@
-import { CacheModule, Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import Joi from 'joi';
-
+import { SfModule } from '@gowebknot/palette-salesforce-service';
 import { WrapperModule } from '@gowebknot/palette-wrapper';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
-// import { SfModule } from '@gowebknot/palette-salesforce-service/lib/sf.module';
-// import { SfmodelsModule } from '@gowebknot/palette-salesforce-service/lib/sfmodels/sfmodels.module';
-// import { SfcredentialsModule } from '@gowebknot/palette-salesforce-service/lib/sfcredentials/sfcredentials.module';
-// import { SffieldsModule } from '@gowebknot/palette-salesforce-service/lib/sffields/sffields.module';
 
 // sls start offline
 @Module({
@@ -26,35 +23,25 @@ import { UsersModule } from './modules/users/users.module';
       }),
       envFilePath: '.env',
     }),
-    TypeOrmModule.forRoot({
-      type: 'mysql',
-      host: 'localhost',
-      port: 3306,
-      username: 'root',
-      password: 'Admin@123',
-      database: 'palettedb',
-      autoLoadEntities: true,
-      synchronize: true,
-      // keepConnectionAlive: true,
+    SfModule.forRoot(),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASS'),
+        database: configService.get<string>('DB_NAME'),
+        synchronize: configService.get<boolean>('DB_SYNC'),
+        autoLoadEntities: true,
+        logging: configService.get<string>('NODE_ENV') === 'development',
+      }),
     }),
-    CacheModule.register({ ttl: 120, max: 30 }),
     WrapperModule,
     UsersModule,
     AuthModule,
-    // TypeOrmModule.forRoot({
-    //   type: process.env.DB_TYPE as any,
-    //   host: process.env.DB_HOST,
-    //   port: Number(process.env.DB_PORT),
-    //   username: process.env.DB_USERNAME,
-    //   password: process.env.DB_PASSWORD,
-    //   database: process.env.DB_NAME,
-    //   autoLoadEntities: true,
-    //   synchronize: Boolean(process.env.DB_SYNC) || false,
-    // }),
-    // SfModule,
-    // SfcredentialsModule,
-    // SffieldsModule,
-    // SfmodelsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

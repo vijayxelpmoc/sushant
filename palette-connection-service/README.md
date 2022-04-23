@@ -1,0 +1,1 @@
+## Palette CRM Connection Manager

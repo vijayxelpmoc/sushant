@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { Errors, Responses } from '@src/constants';
-import { SfService } from '@gowebknot/palette-wrapper';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 import { UpdateSfObserverDto } from './dtos';
 import {
   MentorDetails,

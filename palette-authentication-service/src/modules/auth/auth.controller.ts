@@ -1,11 +1,4 @@
-import {
-  Body,
-  Controller,
-  Post,
-  Patch,
-  Req,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, Patch, Req, UseGuards, Query } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -44,8 +37,12 @@ export class AuthController {
   @ApiOkResponse({ description: Responses.USERS_FOUND_SUCCESS })
   @ApiNotFoundResponse({ description: Errors.USER_NOT_FOUND })
   @ApiBody({ type: AuthValidateDto })
-  async validate(@Body() authValidateDto: AuthValidateDto) {
-    return this.authService.validateUser(authValidateDto);
+  async validate(
+    @Body() authValidateDto: AuthValidateDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    console.log('instituteId', instituteId);
+    return this.authService.validateUser(authValidateDto, instituteId);
   }
 
   @Post('login')
@@ -55,8 +52,11 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: Errors.NOT_REGISTERED_ERROR })
   @ApiUnauthorizedResponse({ description: Errors.ACCOUNT_SUSPENDED })
   @ApiBody({ type: AuthLoginDto })
-  async login(@Body() authLoginDto: AuthLoginDto) {
-    return this.authService.login(authLoginDto);
+  async login(
+    @Body() authLoginDto: AuthLoginDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.authService.login(authLoginDto, instituteId);
   }
 
   @hasRoles(
@@ -76,8 +76,9 @@ export class AuthController {
   async resetPassword(
     @Body() authResetPasswordDto: AuthResetPasswordDto,
     @Req() req,
+    @Body('instituteId') instituteId: string,
   ) {
-    return this.authService.resetPassword(authResetPasswordDto, req.user.id);
+    return this.authService.resetPassword(authResetPasswordDto, req.user.id, instituteId);
   }
 
   @Post('password/forgot')
@@ -85,8 +86,11 @@ export class AuthController {
   @ApiUnauthorizedResponse({ description: Errors.EMAIL_ADDRESS_NOT_FOUND })
   @ApiUnauthorizedResponse({ description: Errors.NOT_REGISTERED_ERROR })
   @ApiBody({ type: AuthForgotPasswordDto })
-  async forgotPassword(@Body() authForgotPasswordDto: AuthForgotPasswordDto) {
-    return this.authService.forgotPassword(authForgotPasswordDto);
+  async forgotPassword(
+    @Body() authForgotPasswordDto: AuthForgotPasswordDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.authService.forgotPassword(authForgotPasswordDto, instituteId);
   }
 
   @Post('password/forgot/validate')
@@ -97,9 +101,11 @@ export class AuthController {
   @ApiBody({ type: AuthForgotPasswordValidateOtpDto })
   async forgotPasswordValidate(
     @Body() authForgotPasswordValidateOtpDto: AuthForgotPasswordValidateOtpDto,
+    @Body('instituteId') instituteId: string,
   ) {
     return this.authService.forgotPasswordValidateOtp(
-      authForgotPasswordValidateOtpDto,
+      authForgotPasswordValidateOtpDto, 
+      instituteId,
     );
   }
 
@@ -109,8 +115,9 @@ export class AuthController {
   @ApiBody({ type: AuthForgotPasswordSetNewDto })
   async forgotPasswordSet(
     @Body() authForgotPasswordSetNewDto: AuthForgotPasswordSetNewDto,
+    @Body('instituteId') instituteId: string,
   ) {
-    return this.authService.forgotPasswordSetNew(authForgotPasswordSetNewDto);
+    return this.authService.forgotPasswordSetNew(authForgotPasswordSetNewDto, instituteId);
   }
 
   @Post('send')

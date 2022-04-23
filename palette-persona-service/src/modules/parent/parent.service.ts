@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { SfService } from '@gowebknot/palette-wrapper';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import { SFContact } from '@src/types';
 import { Errors, Responses } from '@src/constants';
