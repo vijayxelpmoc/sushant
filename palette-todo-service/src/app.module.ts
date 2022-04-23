@@ -1,13 +1,11 @@
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
-import { CacheModule } from '@nestjs/common';
 import Joi from 'joi';
 import { WrapperModule } from '@gowebknot/palette-wrapper';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { TodoModule } from './modules/todo/todo.module';
-import { CachingModule } from './util/caching/caching.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { EventsModule } from './modules/events/events.module';
 
@@ -24,8 +22,6 @@ import { EventsModule } from './modules/events/events.module';
       envFilePath: ['.env'],
     }),
     WrapperModule,
-    CacheModule.register({ ttl: 5, max: 30 }),
-    CachingModule,
     TodoModule,
     ActivitiesModule,
     EventsModule,

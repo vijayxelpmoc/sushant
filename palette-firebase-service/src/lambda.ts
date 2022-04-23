@@ -1,12 +1,8 @@
 // tslint:disable-next-line:no-var-requires
 require('module-alias/register');
 
-import { NestFactory, ContextIdFactory } from '@nestjs/core';
-import {
-  ValidationPipe,
-  VersioningType,
-  INestApplicationContext,
-} from '@nestjs/common';
+import { ContextIdFactory, NestFactory } from '@nestjs/core';
+import { INestApplicationContext } from '@nestjs/common';
 import serverlessExpress from '@vendia/serverless-express';
 import { Callback, Context, Handler, SQSEvent, SQSRecord } from 'aws-lambda';
 
@@ -14,6 +10,7 @@ import {
   ProcessedFirebaseRecord,
   FirebaseSQSEvent,
 } from './modules/firebase/types';
+import { preBuildApp } from './main';
 import { RawEventExecutor } from './modules/firebase/services/firebase-sqs-processor.service';
 import { AppModule } from './app.module';
 
@@ -21,12 +18,7 @@ let server: Handler;
 let appContext: INestApplicationContext;
 
 async function bootstrap() {
-  const app = await NestFactory.create(AppModule);
-  app.useGlobalPipes(new ValidationPipe());
-  app.enableVersioning({
-    type: VersioningType.URI,
-  });
-
+  const app = await preBuildApp();
   await app.init();
 
   const expressApp = app.getHttpAdapter().getInstance();

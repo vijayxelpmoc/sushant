@@ -37,7 +37,6 @@ import { InstituteDataResponse } from './types/create-opportunity-interface';
 
 @Controller({
   path: 'opportunity',
-  // version: '1',
 })
 export class OpportunityController {
   constructor(private readonly opportunityService: OpportunityService) {}

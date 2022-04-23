@@ -6,7 +6,6 @@ import {
   Patch,
   Body,
   Param,
-  CacheInterceptor,
   UseInterceptors,
 } from '@nestjs/common';
 import {
@@ -22,7 +21,6 @@ import { StudentService } from './student.service';
 
 @Controller({
   path: 'student',
-  // version: '1',
 })
 export class StudentController {
   constructor(
@@ -41,6 +39,7 @@ export class StudentController {
     if (cachedStudent) {
       return cachedStudent;
     }
+    console.log(`in profile func`);
     const student = await this.studentService.getStudent(req.user.id);
     await this.cachingService.set(cacheKey, student);
     return student;
@@ -66,7 +65,6 @@ export class StudentController {
     Role.Observer,
     Role.Faculty,
   )
-  @UseInterceptors(CacheInterceptor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get(':id')
   async getStudentDetails(@Param('id') id: string) {

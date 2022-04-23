@@ -17,7 +17,7 @@ import { OpportunityModule } from './modules/opportunity/opportunity.module';
           .default('development'),
         PORT: Joi.number().default(3000),
       }),
-      envFilePath: ['.env', '.env.prod'],
+      envFilePath: '.env',
     }),
     WrapperModule,
     OpportunityModule,

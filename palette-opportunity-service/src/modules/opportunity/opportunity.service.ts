@@ -44,7 +44,11 @@ import { CreatedByUserOpportunity } from './types/create-opportunity-interface';
 
 @Injectable()
 export class OpportunityService {
-  constructor(private sfService: SfService, private notifier: Notifier) {}
+
+  private notifier: Notifier;
+  constructor(private sfService: SfService) {
+    this.notifier = new Notifier();
+  }
 
   async addToConsiderations(userId: string, id: string) {
     const existingOpportunities = await this.sfService.generics.activities.get(

@@ -18,7 +18,6 @@ import { ParentService } from './parent.service';
 
 @Controller({
   path: 'parent',
-  // version: '1',
 })
 export class ParentController {
   constructor(private parentService: ParentService) {}

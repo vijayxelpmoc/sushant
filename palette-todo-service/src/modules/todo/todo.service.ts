@@ -45,7 +45,10 @@ import { FilteredTasks, Task } from './types/task-interface';
 
 @Injectable()
 export class TodoService {
-  constructor(private sfService: SfService, private notifier: Notifier) {}
+  private notifier: Notifier;
+  constructor(private sfService: SfService) {
+    this.notifier = new Notifier();
+  }
 
   /**
    * create todo from a event for a parent
@@ -292,7 +295,7 @@ export class TodoService {
       },
     };
   }
-  /* 
+  /*
     update the status of the todo
   */
   async updateToDoStatus(userId: string, todoId: string, status: string) {

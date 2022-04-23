@@ -9,8 +9,6 @@ import Cryptr from 'cryptr';
 import { v4 as uuid } from 'uuid';
 
 import {
-  SfService,
-  SFField,
   Notifier,
   NotificationType,
   EmailTemplates,
@@ -28,7 +26,8 @@ import {
 } from './dto';
 import { OtpManager } from './entities/otpManager.entity';
 import { AuthForgotPasswordSetNewDto } from './dto/auth-forgot-password-set-new.dto';
-
+import { SfService } from '@gowebknot/palette-salesforce-service';
+import { SFField } from '@gowebknot/palette-salesforce-service';
 @Injectable()
 export class AuthService {
   private _cryptr: Cryptr;
@@ -315,5 +314,5 @@ export class AuthService {
       subject: '[!IMP] Palette Password Reset OTP',
       body: 'Hello this is a test email'
     });
-  }
+  } 
 }

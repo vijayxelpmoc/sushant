@@ -12,16 +12,12 @@ import {
   ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CachingService } from '@src/util/caching/caching.service';
-import { hasRoles } from '@wrapper/decorators';
-import { JwtAuthGuard, RolesGuard } from '@wrapper/guards';
-import { Role } from '@wrapper/types';
+import { CachingService, hasRoles, JwtAuthGuard, RolesGuard, Role } from '@gowebknot/palette-wrapper';
 import { UpdateSfObserverDto } from './dtos';
 import { ObserverService } from './observer.service';
 
 @Controller({
   path: 'observer',
-  version: '1',
 })
 export class ObserverController {
   constructor(
@@ -78,12 +74,12 @@ export class ObserverController {
   async getObserverDetails(@Request() req) {
     const cacheKey = `${req.user.id}-observerDetails`;
 
-    const cachedResponse = await this.cachingService.getKey(cacheKey);
+    const cachedResponse = await this.cachingService.get(cacheKey);
     if (cachedResponse) {
       return cachedResponse;
     }
     const response = await this.observerService.getObserverDetails(req.user.id);
-    await this.cachingService.setKey(cacheKey, response);
+    await this.cachingService.set(cacheKey, response);
     return response;
   }
 }

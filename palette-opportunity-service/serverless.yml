@@ -1,26 +1,36 @@
-service: palette
-frameworkVersion: '2'
+service: palette-opportunity-service
 useDotenv: true
-variablesResolutionMode: 20210326
 
 plugins:
   - serverless-offline
+  - serverless-deployment-bucket
 
 provider:
   name: aws
   runtime: nodejs12.x
+  region: ${env:PALETTE_AWS_REGION}
+  apiGateway:
+    minimumCompressionSize: 1024
+    restApiId: ${env:PALETTE_API_GATEWAY_ID}
+    restApiRootResourceId: ${env:PALETTE_API_GATEWAY_ROOT_ID}
+  deploymentBucket:
+    name: ${env:PALETTE_AWS_STORAGE_BUCKET_NAME}
+    serverSideEncryption: AES256
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
   environment:
+    JWT_SECRET: ${env:JWT_SECRET}
     PORT: ${env:PORT}
     NODE_ENV: ${env:NODE_ENV}
-    JWT_SECRET: ${env:JWT_SECRET}
     SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
     SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
     SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
     SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
     SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
-    SALESFORCE_LOGIN_URL: ${env:SALESFORCE_LOGIN_URL}
-    SALESFORCE_REDIRECT_URI: ${env:SALESFORCE_REDIRECT_URI}
-  lambdaHashingVersion: 20201221
+    PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
+    PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
+    PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
 
 functions:
   opportunity:

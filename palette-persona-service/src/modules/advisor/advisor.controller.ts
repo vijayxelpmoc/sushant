@@ -1,15 +1,15 @@
 import {Controller} from '@nestjs/common';
 import {CachingService} from '@gowebknot/palette-wrapper';
-
-import {AdminService} from './admin.service'; 
+import { AdvisorService } from './advisor.service';
 
 @Controller({
-  path: 'admin',
+  path: 'advisor',
 })
-export class AdminController {
+export class AdvisorController {
   constructor(
-    private adminService: AdminService,
+    private advisorService: AdvisorService,
     private cachingService: CachingService,
   ) {}
 
 }
+

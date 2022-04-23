@@ -36,19 +36,8 @@ export const Responses = {
   EVENT_ACCEPT: 'Event Accepted Successfully',
   TODO_CREATED: 'todo was created successfully',
   TODO_DETAILS_FETCH_SUCCESS: 'Todos details fetched successfully',
-  EVENT_RECOMMEND: 'Recommendation record created successfully',
-  EVENT_RECOMMEND_DATA: 'Event recommendation data',
-  EVENT_DECLINE: 'event recommendation declined successfully',
-  EVENT_ACCEPT: 'Event Accepted Successfully',
-  TODO_CREATED: 'todo was created successfully',
 };
 
-export const ActivityEvents = {
-  VOLUNTEER: 'Event - Volunteer',
-  SPORTS: 'Event - Sports',
-  SOCIAL: 'Event - Social',
-  ARTS: 'Event - Arts',
-};
 export const ActivityEvents = {
   VOLUNTEER: 'Event - Volunteer',
   SPORTS: 'Event - Sports',

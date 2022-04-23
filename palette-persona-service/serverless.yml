@@ -1,34 +1,39 @@
-service: palette
-frameworkVersion: '2'
+service: palette-persona-service
 useDotenv: true
-variablesResolutionMode: 20210326
 
 plugins:
   - serverless-offline
+  - serverless-deployment-bucket
 
 provider:
   name: aws
   runtime: nodejs12.x
+  region: ${env:PALETTE_AWS_REGION}
+  apiGateway:
+    minimumCompressionSize: 1024
+    restApiId: ${env:PALETTE_API_GATEWAY_ID}
+    restApiRootResourceId: ${env:PALETTE_API_GATEWAY_ROOT_ID}
+  deploymentBucket:
+    name: ${env:PALETTE_AWS_STORAGE_BUCKET_NAME}
+    serverSideEncryption: AES256
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
   environment:
-    DB_TYPE: ${env:DB_TYPE}
-    DB_HOST: ${env:DB_HOST}
-    DB_PORT: ${env:DB_PORT}
-    DB_USERNAME: ${env:DB_USERNAME}
-    DB_PASSWORD: ${env:DB_PASSWORD}
-    DB_NAME: ${env:DB_NAME}
     JWT_SECRET: ${env:JWT_SECRET}
     PORT: ${env:PORT}
-    DB_SYNC: ${env:DB_SYNC}
     NODE_ENV: ${env:NODE_ENV}
     SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
     SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
     SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
     SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
     SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
-    SALESFORCE_LOGIN_URL: ${env:SALESFORCE_LOGIN_URL}
-  lambdaHashingVersion: 20201221
+    PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
+    PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
+    PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
 
 functions:
+  # Setup the routes here or an individual function for each persona
   persona:
     handler: dist/lambda.handler
     events:
