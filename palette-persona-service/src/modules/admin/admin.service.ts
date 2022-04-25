@@ -2,27 +2,30 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { Notifier } from '@gowebknot/palette-wrapper';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { Errors, Responses } from '@src/constants';
-import { SFAdminContact, AdminInstituteName, AdminBEResponse } from '@src/types';
+import {
+  SFAdminContact,
+  AdminInstituteName,
+  AdminBEResponse,
+} from '@src/types';
 
 @Injectable()
 export class AdminService {
   private notifier: Notifier;
-  constructor(
-    private readonly sfService: SfService,
-  ) {
+  constructor(private readonly sfService: SfService) {
     // this.notifier = new Notifier();
   }
 
   async getAdmin(id: string, instituteId: string) {
-    const responseData: SFAdminContact[] = await this.sfService.generics.contacts.get(
-      'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
-      {
-        Id: id,
-      },
-      {},
-      instituteId,
-    );
-    
+    const responseData: SFAdminContact[] =
+      await this.sfService.generics.contacts.get(
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
+        {
+          Id: id,
+        },
+        {},
+        instituteId,
+      );
+
     const {
       Id,
       Name,
@@ -62,9 +65,9 @@ export class AdminService {
 
     const Institute_Id = getInstitute[0].Organization; // Real Institute Id
 
-    const institute:
-      | AdminInstituteName[]
-      | null = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', 
+    const institute: AdminInstituteName[] | null =
+      await this.sfService.models.accounts.get(
+        'Id, Account_Name, program_logo',
         {
           Id: Institute_Id,
         },
@@ -75,8 +78,7 @@ export class AdminService {
     const adminData: AdminBEResponse = {
       Id: Id,
       name: Name,
-      firebase_uuid:
-        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
+      firebase_uuid: process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,

@@ -1,5 +1,5 @@
-import { CacheModule, Module } from '@nestjs/common';
-import { ConfigModule, ConfigService } from '@nestjs/config';
+import { Module } from '@nestjs/common';
+import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
 import { WrapperModule } from '@gowebknot/palette-wrapper';
 
@@ -11,9 +11,11 @@ import { ParentModule } from './modules/parent/parent.module';
 import { StudentModule } from './modules/student/student.module';
 import { AdvisorModule } from './modules/advisor/advisor.module';
 
-import { TypeOrmModule } from '@nestjs/typeorm';
-import { SfService, CachingService, SfModule } from '@gowebknot/palette-salesforce-service';
-
+import {
+  SfService,
+  CachingService,
+  SfModule,
+} from '@gowebknot/palette-salesforce-service';
 
 @Module({
   imports: [

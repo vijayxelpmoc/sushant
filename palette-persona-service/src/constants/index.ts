@@ -3,7 +3,6 @@ export const Errors = {
   MAX_SKILLS_LIMIT: 'Number of skills exceeds the max limit',
   OBSERVER_SAVE_ERROR: '',
   OBSERVER_STUDENT_NOT_FOUND: '',
-
 };
 
 export const Responses = {
@@ -12,5 +11,4 @@ export const Responses = {
   OBSERVER_DATA: '',
   OBSERVER_SAVED: '',
   OBSERVER_DETAILS: '',
-
 };
