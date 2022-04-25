@@ -22,24 +22,18 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET}
     PORT: ${env:PORT}
     NODE_ENV: ${env:NODE_ENV}
-    SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
-    SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
-    SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
-    SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
-    SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
-    PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
     PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
     PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    PALETTE_RUNNER_ACCESS_KEY: ${env:PALETTE_RUNNER_ACCESS_KEY}
+    PALETTE_RUNNER_SECRET_KEY: ${env:PALETTE_RUNNER_SECRET_KEY}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
 
 functions:
   # Setup the routes here or an individual function for each persona
-  persona:
-    handler: dist/lambda.handler
-    events:
-      - http:
-          method: ANY
-          path: /
-      - http:
-          method: ANY
-          path: '{proxy+}'
+  student: 
+    handler: dist/lambda.handler  
+    events: 
+      - http:  
+          method: GET
+          path: student/profile
+          cors: true

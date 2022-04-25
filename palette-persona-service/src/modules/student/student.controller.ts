@@ -31,7 +31,7 @@ export class StudentController {
 
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('profile?')
+  @Get('profile')
   async getStudent(
     @Request() req,
     @Query('instituteId') instituteId: string,  
