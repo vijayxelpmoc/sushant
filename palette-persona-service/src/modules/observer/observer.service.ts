@@ -30,7 +30,7 @@ export class ObserverService {
    */
   async getObserver(
     id: string,
-    instituteId: string
+    instituteId: string,
   ): Promise<ObserverBEResponse> {
     const responseData: SFObserverContact[] =
       await this.sfService.generics.contacts.get(
@@ -42,7 +42,7 @@ export class ObserverService {
         instituteId,
       );
     console.log('responseData', responseData);
-    
+
     const {
       Id,
       Name,
@@ -115,11 +115,13 @@ export class ObserverService {
   ): Promise<ObserverInstitute[]> {
     return await Promise.all(
       institutesListRaw.map(async (c) => {
-        const name = await this.sfService.models.accounts.get('Account_Name', {
-          Id: c.Organization,
-        },
-        {},
-        instituteId,
+        const name = await this.sfService.models.accounts.get(
+          'Account_Name',
+          {
+            Id: c.Organization,
+          },
+          {},
+          instituteId,
         );
         const instituteObj = {
           institute_id: c.Id,
@@ -132,9 +134,9 @@ export class ObserverService {
   }
 
   async update(
-    id: string, 
+    id: string,
     updateSfObserverDto: UpdateSfObserverDto,
-    instituteId: string,  
+    instituteId: string,
   ) {
     const responseData: SFObserverContact[] =
       await this.sfService.generics.contacts.get(

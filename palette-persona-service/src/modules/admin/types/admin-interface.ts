@@ -43,7 +43,6 @@ export class AdminData {
   github_link: string;
   @ApiProperty()
   linkedin_link: string;
-
 }
 
 export class AdminBEResponse {

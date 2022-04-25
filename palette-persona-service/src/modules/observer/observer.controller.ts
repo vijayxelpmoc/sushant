@@ -13,7 +13,12 @@ import {
   ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { hasRoles, JwtAuthGuard, RolesGuard, Role } from '@gowebknot/palette-wrapper';
+import {
+  hasRoles,
+  JwtAuthGuard,
+  RolesGuard,
+  Role,
+} from '@gowebknot/palette-wrapper';
 import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { UpdateSfObserverDto } from './dtos';
 import { ObserverService } from './observer.service';
@@ -25,7 +30,7 @@ export class ObserverController {
   constructor(
     private observerService: ObserverService,
     private cachingService: CachingService,
-  ) { }
+  ) {}
 
   /** returns the observer profile details
    *  @param {Request} req access token and request
@@ -39,10 +44,7 @@ export class ObserverController {
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBearerAuth()
   @Get('profile?')
-  async getObserver(
-    @Request() req,
-    @Query('instituteId') instituteId: string,  
-  ) {
+  async getObserver(@Request() req, @Query('instituteId') instituteId: string) {
     return await this.observerService.getObserver(req.user.id, instituteId);
   }
 
@@ -60,11 +62,15 @@ export class ObserverController {
   @ApiBody({ type: UpdateSfObserverDto })
   @Patch('profile/update')
   update(
-    @Request() req, 
+    @Request() req,
     @Body() updateSfObserverDto: UpdateSfObserverDto,
-    @Query('instituteId') instituteId: string,  
+    @Query('instituteId') instituteId: string,
   ) {
-    return this.observerService.update(req.user.id, updateSfObserverDto, instituteId);
+    return this.observerService.update(
+      req.user.id,
+      updateSfObserverDto,
+      instituteId,
+    );
   }
 
   /**

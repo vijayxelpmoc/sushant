@@ -23,11 +23,13 @@ export class StudentService {
     return await Promise.all(
       experiences.map(async (exp) => {
         const organization = (
-          await this.sfService.models.accounts.get('Name', {
-            Id: exp.Organization,
-          },
-          {},
-          instituteId,
+          await this.sfService.models.accounts.get(
+            'Name',
+            {
+              Id: exp.Organization,
+            },
+            {},
+            instituteId,
           )
         )[0];
 
@@ -76,8 +78,7 @@ export class StudentService {
     const studentProfile = {
       id: Id,
       name,
-      firebaseUuid:
-        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
+      firebaseUuid: process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
       dob,
       gender,
       email,
@@ -120,7 +121,7 @@ export class StudentService {
 
   // Service Methods
 
-  async getStudent(id: string, instituteId: string) {    
+  async getStudent(id: string, instituteId: string) {
     const student: SFContact = (
       await this.sfService.generics.contacts.get(
         'Id, Name, prod_uuid, dev_uuid, Birthdate, Gender, Grade, Student_ID, Phone, Palette_Email, Interests, skills, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Primary_Educational_Institution, Profile_Picture, Account_Name',
@@ -137,20 +138,24 @@ export class StudentService {
 
     // Get Student institute details
     const studentInstitute = (
-      await this.sfService.models.affiliations.get('Organization', {
-        Contact: id,
-        Role: 'Student',
-      },
-      {},
-      instituteId,
+      await this.sfService.models.affiliations.get(
+        'Organization',
+        {
+          Contact: id,
+          Role: 'Student',
+        },
+        {},
+        instituteId,
       )
     )[0];
     const institute = (
-      await this.sfService.models.accounts.get('Id, Account_Name, program_logo', {
-        Id: studentInstitute.Organization,
-      },
-      {},
-      instituteId,
+      await this.sfService.models.accounts.get(
+        'Id, Account_Name, program_logo',
+        {
+          Id: studentInstitute.Organization,
+        },
+        {},
+        instituteId,
       )
     )[0];
 
@@ -165,7 +170,7 @@ export class StudentService {
         {},
         instituteId,
       );
-    
+
     const experiences = await this._mapStudentWorkExperience(
       studentWorkExperience,
       instituteId,
@@ -207,11 +212,13 @@ export class StudentService {
     } = updateProfileDto;
 
     const student = (
-      await this.sfService.generics.contacts.get('Name', {
-        Id: id,
-      },
-      {},
-      instituteId
+      await this.sfService.generics.contacts.get(
+        'Name',
+        {
+          Id: id,
+        },
+        {},
+        instituteId,
       )
     )[0];
     if (!student) {
@@ -242,7 +249,11 @@ export class StudentService {
     github && (updatedStudent['Github'] = github);
     linkedin && (updatedStudent['LinkedIn_URL'] = linkedin);
 
-    await this.sfService.generics.contacts.update(id, updatedStudent, instituteId);
+    await this.sfService.generics.contacts.update(
+      id,
+      updatedStudent,
+      instituteId,
+    );
 
     return {
       statusCode: 200,

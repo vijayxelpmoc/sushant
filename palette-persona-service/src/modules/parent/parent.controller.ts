@@ -5,7 +5,7 @@ import {
   Request,
   Patch,
   Body,
-  Query
+  Query,
 } from '@nestjs/common';
 
 import {
@@ -29,17 +29,14 @@ export class ParentController {
   @hasRoles(Role.Parent)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile?')
-  async getAdmin(
-    @Request() req,
-    @Query('instituteId') instituteId: string,  
-  ) {
+  async getAdmin(@Request() req, @Query('instituteId') instituteId: string) {
     // Cache the user profile as it's accessed multiple
     // times throughout the application
     const cacheKey = `parent_${req.user.id}`;
     const cachedParent = await this.cachingService.get(cacheKey);
     if (cachedParent) {
       return cachedParent;
-    }    
+    }
     const parent = await this.parentService.getParent(req.user.id, instituteId);
     await this.cachingService.set(cacheKey, parent);
     return parent;
