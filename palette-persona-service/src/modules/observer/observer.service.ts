@@ -28,32 +28,39 @@ export class ObserverService {
    *  @param {string} id - The id of the admin
    * @returns {Object} AdminBEResponse Interface
    */
-  async getObserver(id: string): Promise<ObserverBEResponse> {
+  async getObserver(
+    id: string,
+    instituteId: string
+  ): Promise<ObserverBEResponse> {
     const responseData: SFObserverContact[] =
       await this.sfService.generics.contacts.get(
-        'Id, Name, Phone, Palette_Email__c, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook__c, Whatsapp__c, Instagram__c, Website__c, WebsiteTitle__c, Github__c, LinkedIn_URL__c, Profile_Picture__c',
+        'Id, Name, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture',
         {
           Id: id,
         },
+        {},
+        instituteId,
       );
+    console.log('responseData', responseData);
+    
     const {
       Id,
       Name,
       Phone,
-      Palette_Email__c,
+      Palette_Email,
       MailingCity,
       MailingCountry,
       MailingState,
       MailingPostalCode,
       MailingStreet,
-      Facebook__c,
-      Whatsapp__c,
-      Instagram__c,
-      Website__c,
-      WebsiteTitle__c,
-      Github__c,
-      LinkedIn_URL__c,
-      Profile_Picture__c,
+      Facebook,
+      Whatsapp,
+      Instagram,
+      Website,
+      Website_Title,
+      Github,
+      LinkedIn_URL,
+      Profile_Picture,
     } = responseData[0];
 
     if (!responseData) {
@@ -62,34 +69,36 @@ export class ObserverService {
 
     const institutesListRaw: ObserverSFInstitutesList[] =
       await this.sfService.models.affiliations.get(
-        'Id, Name, hed__Account__c, hed__Affiliation_Type__c, hed__Contact__c, hed__EndDate__c, hed__StartDate__c, hed__Role__c, Tenure__c,  hed__Description__c, Designation__c',
+        'Id, Affiliation_Name, Organization, Affiliation_Type, Contact, End_Date, Start_Date, Role, Tenure, Description, Designation',
         {
-          hed__Contact__c: id,
+          Contact: id,
         },
+        {},
+        instituteId,
       );
 
     const institutesList: ObserverInstitute[] =
-      await this.observerInstituteMapping(institutesListRaw);
+      await this.observerInstituteMapping(institutesListRaw, instituteId);
 
     const ObserverData: ObserverBEResponse = {
       Id: Id,
       name: Name,
       phone: Phone,
-      email: Palette_Email__c,
-      profilePicture: Profile_Picture__c,
+      email: Palette_Email,
+      profilePicture: Profile_Picture,
       institutes: institutesList,
       mailingCity: MailingCity,
       mailingCountry: MailingCountry,
       mailingState: MailingState,
       mailingStreet: MailingStreet,
       mailingPostalCode: MailingPostalCode,
-      facebook_link: Facebook__c,
-      whatsapp_link: Whatsapp__c,
-      instagram_link: Instagram__c,
-      website_link: Website__c,
-      website_Title: WebsiteTitle__c,
-      github_link: Github__c,
-      linkedin_link: LinkedIn_URL__c,
+      facebook_link: Facebook,
+      whatsapp_link: Whatsapp,
+      instagram_link: Instagram,
+      website_link: Website,
+      website_Title: Website_Title,
+      github_link: Github,
+      linkedin_link: LinkedIn_URL,
     };
 
     const response: any = {
@@ -102,29 +111,39 @@ export class ObserverService {
 
   async observerInstituteMapping(
     institutesListRaw: ObserverSFInstitutesList[],
+    instituteId: string,
   ): Promise<ObserverInstitute[]> {
     return await Promise.all(
       institutesListRaw.map(async (c) => {
-        const name = await this.sfService.models.accounts.get('Name', {
-          Id: c.hed__Account__c,
-        });
+        const name = await this.sfService.models.accounts.get('Account_Name', {
+          Id: c.Organization,
+        },
+        {},
+        instituteId,
+        );
         const instituteObj = {
           institute_id: c.Id,
-          institute_name: name[0].Name,
-          designation: c.Designation__c,
+          institute_name: name[0].Account_Name,
+          designation: c.Designation,
         };
         return instituteObj;
       }),
     );
   }
 
-  async update(id: string, updateSfObserverDto: UpdateSfObserverDto) {
+  async update(
+    id: string, 
+    updateSfObserverDto: UpdateSfObserverDto,
+    instituteId: string,  
+  ) {
     const responseData: SFObserverContact[] =
       await this.sfService.generics.contacts.get(
-        'Id, Name, Phone, Palette_Email__c, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook__c, Whatsapp__c, Instagram__c, Website__c, WebsiteTitle__c, Github__c, LinkedIn_URL__c',
+        'Id, Name, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL',
         {
           Id: id,
         },
+        {},
+        instituteId,
       );
 
     const { Id } = responseData[0];
@@ -137,41 +156,41 @@ export class ObserverService {
 
     if (updateSfObserverDto.hasOwnProperty('facebook_link')) {
       const { facebook_link } = updateSfObserverDto;
-      updateObj.Facebook__c = facebook_link;
+      updateObj.Facebook = facebook_link;
     }
 
     if (updateSfObserverDto.hasOwnProperty('whatsapp_link')) {
       const { whatsapp_link } = updateSfObserverDto;
-      updateObj.Whatsapp__c = whatsapp_link;
+      updateObj.Whatsapp = whatsapp_link;
     }
 
     if (updateSfObserverDto.hasOwnProperty('instagram_link')) {
       const { instagram_link } = updateSfObserverDto;
-      updateObj.Instagram__c = instagram_link;
+      updateObj.Instagram = instagram_link;
     }
 
     if (updateSfObserverDto.hasOwnProperty('github_link')) {
       const { github_link } = updateSfObserverDto;
-      updateObj.Github__c = github_link;
+      updateObj.Github = github_link;
     }
 
     if (updateSfObserverDto.hasOwnProperty('linkedin_link')) {
       const { linkedin_link } = updateSfObserverDto;
-      updateObj.LinkedIn_URL__c = linkedin_link;
+      updateObj.LinkedIn_URL = linkedin_link;
     }
 
     if (updateSfObserverDto.hasOwnProperty('website_link')) {
       const { website_link } = updateSfObserverDto;
-      updateObj.Website__c = website_link;
+      updateObj.Website = website_link;
     }
 
     if (updateSfObserverDto.hasOwnProperty('website_Title')) {
       const { website_Title } = updateSfObserverDto;
-      updateObj.WebsiteTitle__c = website_Title;
+      updateObj.Website_Title = website_Title;
     }
 
     const updateUser: ObserverUpdateResponse =
-      await this.sfService.generics.contacts.update(Id, updateObj);
+      await this.sfService.generics.contacts.update(Id, updateObj, instituteId);
 
     if (updateUser.id && updateUser.success) {
       return { status: 200, message: Responses.OBSERVER_SAVED };

@@ -18,20 +18,24 @@ export class StudentService {
 
   private async _mapStudentWorkExperience(
     experiences: SFStudentWorkExperience[],
+    instituteId: string,
   ): Promise<Array<WorkExperience>> {
     return await Promise.all(
       experiences.map(async (exp) => {
         const organization = (
           await this.sfService.models.accounts.get('Name', {
-            Id: exp.hed__Account__c,
-          })
+            Id: exp.Organization,
+          },
+          {},
+          instituteId,
+          )
         )[0];
 
         return {
           organization,
-          role: exp.hed__Role__c,
-          startDate: exp.hed__StartDate__c,
-          endDate: exp.hed__EndDate__c,
+          role: exp.Role,
+          startDate: exp.Start_Date,
+          endDate: exp.End_Date,
         };
       }),
     );
@@ -47,42 +51,42 @@ export class StudentService {
     const {
       Id,
       Name: name,
-      prod_uuid__c,
-      dev_uuid__c,
+      prod_uuid,
+      dev_uuid,
       Birthdate: dob,
-      hed__Gender__c: gender,
-      Grade__c: course,
-      k12kit__Student_ID__c: rollNumber,
+      Gender: gender,
+      Grade: course,
+      Student_ID: rollNumber,
       Phone: phone,
-      Palette_Email__c: email,
+      Palette_Email: email,
       MailingCity: city,
       MailingCountry: country,
       MailingState: state,
       MailingPostalCode: postalCode,
       MailingStreet: street,
-      Facebook__c: facebook,
-      Whatsapp__c: whatsapp,
-      Instagram__c: instagram,
-      Website__c: url,
-      WebsiteTitle__c: title,
-      Github__c: github,
-      LinkedIn_URL__c: linkedin,
-      Profile_Picture__c: profilePicture,
+      Facebook: facebook,
+      Whatsapp: whatsapp,
+      Instagram: instagram,
+      Website: url,
+      Website_Title: title,
+      Github: github,
+      LinkedIn_URL: linkedin,
+      Profile_Picture: profilePicture,
     } = student;
     const studentProfile = {
       id: Id,
       name,
       firebaseUuid:
-        process.env.NODE_ENV === 'prod' ? prod_uuid__c : dev_uuid__c,
+        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
       dob,
       gender,
       email,
       phone,
       profilePicture,
       institute: {
-        id: institute.id,
-        logo: institute.program_logo__c,
-        name: institute.Name,
+        id: institute.Id,
+        logo: institute.program_logo,
+        name: institute.Account_Name,
         course,
         rollNumber,
       },
@@ -116,13 +120,15 @@ export class StudentService {
 
   // Service Methods
 
-  async getStudent(id: string) {
+  async getStudent(id: string, instituteId: string) {    
     const student: SFContact = (
       await this.sfService.generics.contacts.get(
-        'Id, Name, prod_uuid__c, dev_uuid__c, Birthdate, hed__Gender__c, Grade__c, k12kit__Student_ID__c, Phone, Palette_Email__c, Interests__c, skills__c, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook__c, Whatsapp__c, Instagram__c, Website__c, WebsiteTitle__c, Github__c, LinkedIn_URL__c, Primary_Educational_Institution__c, Profile_Picture__c,AccountId',
+        'Id, Name, prod_uuid, dev_uuid, Birthdate, Gender, Grade, Student_ID, Phone, Palette_Email, Interests, skills, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Primary_Educational_Institution, Profile_Picture, Account_Name',
         {
           Id: id,
         },
+        {},
+        instituteId,
       )
     )[0];
     if (!student) {
@@ -131,34 +137,44 @@ export class StudentService {
 
     // Get Student institute details
     const studentInstitute = (
-      await this.sfService.models.affiliations.get('hed__Account__c', {
-        hed__Contact__c: id,
-        hed__Role__c: 'Student',
-      })
+      await this.sfService.models.affiliations.get('Organization', {
+        Contact: id,
+        Role: 'Student',
+      },
+      {},
+      instituteId,
+      )
     )[0];
     const institute = (
-      await this.sfService.models.accounts.get('Id, Name,program_logo__c', {
-        Id: studentInstitute.hed__Account__c,
-      })
+      await this.sfService.models.accounts.get('Id, Account_Name, program_logo', {
+        Id: studentInstitute.Organization,
+      },
+      {},
+      instituteId,
+      )
     )[0];
 
     // Student Exp, Skills, Interests
     const studentWorkExperience: SFStudentWorkExperience[] =
       await this.sfService.models.affiliations.get(
-        'Id, Name, hed__Account__c, hed__Affiliation_Type__c, hed__Contact__c, hed__EndDate__c, hed__StartDate__c, hed__Role__c, Tenure__c,  hed__Description__c, Job_Type__c, Designation__c',
+        'Id, Name, Organization, Affiliation_Type, Contact, End_Date, Start_Date, Role, Tenure, Description, Job_Type, Designation',
         {
-          hed__Contact__c: id,
-          hed__Affiliation_Type__c: 'Business Organization',
+          Contact: id,
+          // Affiliation_Type: 'Educational Institution',
         },
+        {},
+        instituteId,
       );
+    
     const experiences = await this._mapStudentWorkExperience(
       studentWorkExperience,
+      instituteId,
     );
 
     const interests =
-      (student.Interests__c && student.Interests__c.split(',')) || null;
+      (student.Interests && student.Interests.split(',')) || null;
 
-    const skills = (student.skills__c && student.skills__c.split(',')) || null;
+    const skills = (student.skills && student.skills.split(',')) || null;
 
     return {
       statusCode: 200,
@@ -176,6 +192,7 @@ export class StudentService {
   async updateStudentProfile(
     id: string,
     updateProfileDto: StudentUpdateProfileDto,
+    instituteId,
   ) {
     const {
       interests,
@@ -192,7 +209,10 @@ export class StudentService {
     const student = (
       await this.sfService.generics.contacts.get('Name', {
         Id: id,
-      })
+      },
+      {},
+      instituteId
+      )
     )[0];
     if (!student) {
       throw new NotFoundException('Student not found');
@@ -204,25 +224,25 @@ export class StudentService {
       if (interests.join(',').length > 250) {
         throw new BadRequestException(Errors.MAX_INTERESTS_LIMIT);
       }
-      updatedStudent['Interests__c'] = interests.join(',');
+      updatedStudent['Interests'] = interests.join(',');
     }
 
     if (skills) {
       if (skills.join(',').length > 250) {
         throw new BadRequestException(Errors.MAX_SKILLS_LIMIT);
       }
-      updatedStudent['skills__c'] = skills.join(',');
+      updatedStudent['skills'] = skills.join(',');
     }
 
-    facebook && (updatedStudent['Facebook__c'] = facebook);
-    whatsapp && (updatedStudent['Whatsapp__c'] = whatsapp);
-    instagram && (updatedStudent['Instagram__c'] = instagram);
-    website && (updatedStudent['Website__c'] = website);
-    websiteTitle && (updatedStudent['WebsiteTitle__c'] = websiteTitle);
-    github && (updatedStudent['Github__c'] = github);
-    linkedin && (updatedStudent['LinkedIn_URL__c'] = linkedin);
+    facebook && (updatedStudent['Facebook'] = facebook);
+    whatsapp && (updatedStudent['Whatsapp'] = whatsapp);
+    instagram && (updatedStudent['Instagram'] = instagram);
+    website && (updatedStudent['Website'] = website);
+    websiteTitle && (updatedStudent['Website_Title'] = websiteTitle);
+    github && (updatedStudent['Github'] = github);
+    linkedin && (updatedStudent['LinkedIn_URL'] = linkedin);
 
-    await this.sfService.generics.contacts.update(id, updatedStudent);
+    await this.sfService.generics.contacts.update(id, updatedStudent, instituteId);
 
     return {
       statusCode: 200,
