@@ -1,0 +1,131 @@
+service: palette-connection-service
+useDotenv: true
+
+plugins:
+  - serverless-offline
+  - serverless-deployment-bucket
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  region: ${env:PALETTE_AWS_REGION}
+  apiGateway:
+    minimumCompressionSize: 1024
+    restApiId: ${env:PALETTE_API_GATEWAY_ID}
+    restApiRootResourceId: ${env:PALETTE_API_GATEWAY_ROOT_ID}
+  deploymentBucket:
+    name: ${env:PALETTE_AWS_STORAGE_BUCKET_NAME}
+    serverSideEncryption: AES256
+  environment:
+    DB_TYPE: ${env:DB_TYPE}
+    DB_HOST: ${env:DB_HOST}
+    DB_PORT: ${env:DB_PORT}
+    DB_USER: ${env:DB_USER}
+    DB_PASS: ${env:DB_PASS}
+    DB_NAME: ${env:DB_NAME}
+    PORT: ${env:PORT}
+    DB_SYNC: ${env:DB_SYNC}
+    NODE_ENV: ${env:NODE_ENV}
+    PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
+    PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
+
+functions:
+  main:
+    handler: dist/lambda.handler
+    events:
+      # Credentials
+      - http:
+          method: GET
+          path: con/manager/sfcredentials
+          cors: true
+      - http:
+          method: GET
+          path: con/manager/sfcredentials/{id}
+          request:
+            parameters:
+              paths:
+                id: true
+          cors: true
+      - http:
+          method: POST
+          path: con/manager/sfcredentials
+          cors: true
+      - http:
+          method: PATCH
+          path: con/manager/sfcredentials/{id}
+          request:
+            parameters:
+              paths:
+                id: true
+          cors: true
+      - http:
+          method: DELETE
+          path: con/manager/sfcredentials/{id}
+          request:
+            parameters:
+              paths:
+                id: true
+          cors: true
+      - http:
+          method: POST
+          path: con/manager/sfcredentials/load
+          cors: true
+      # Models
+      - http:
+          method: GET
+          path: con/manager/sfmodels
+          cors: true
+      - http:
+          method: GET
+          path: con/manager/sfmodels/{id}
+          request:
+            parameters:
+              paths:
+                id: true
+          cors: true
+      - http:
+          method: POST
+          path: con/manager/sfmodels
+          cors: true
+      - http:
+          method: PATCH
+          path: con/manager/sfmodels/{id}
+          request:
+            parameters:
+              paths:
+                id: true
+          cors: true
+      - http:
+          method: POST
+          path: con/manager/sfmodels/load
+          cors: true
+      # Fields
+      - http:
+          method: GET
+          path: con/manager/sffields
+          cors: true
+      - http:
+          method: GET
+          path: con/manager/sffields/{id}
+          request:
+            parameters:
+              paths:
+                id: true
+          cors: true
+      - http:
+          method: POST
+          path: con/manager/sffields
+          cors: true
+      - http:
+          method: PATCH
+          path: con/manager/sffields/{id}
+          request:
+            parameters:
+              paths:
+                id: true
+          cors: true
+      - http:
+          method: POST
+          path: con/manager/sffields/load
+          cors: true

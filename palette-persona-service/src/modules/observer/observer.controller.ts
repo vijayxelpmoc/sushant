@@ -5,6 +5,7 @@ import {
   Patch,
   Request,
   UseGuards,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -12,7 +13,8 @@ import {
   ApiResponse,
   ApiUnauthorizedResponse,
 } from '@nestjs/swagger';
-import { CachingService, hasRoles, JwtAuthGuard, RolesGuard, Role } from '@gowebknot/palette-wrapper';
+import { hasRoles, JwtAuthGuard, RolesGuard, Role } from '@gowebknot/palette-wrapper';
+import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { UpdateSfObserverDto } from './dtos';
 import { ObserverService } from './observer.service';
 
@@ -36,9 +38,12 @@ export class ObserverController {
   })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBearerAuth()
-  @Get('profile')
-  async getObserver(@Request() req) {
-    return await this.observerService.getObserver(req.user.id);
+  @Get('profile?')
+  async getObserver(
+    @Request() req,
+    @Query('instituteId') instituteId: string,  
+  ) {
+    return await this.observerService.getObserver(req.user.id, instituteId);
   }
 
   /** updates observer profile details
@@ -54,8 +59,12 @@ export class ObserverController {
   @ApiBearerAuth()
   @ApiBody({ type: UpdateSfObserverDto })
   @Patch('profile/update')
-  update(@Request() req, @Body() updateSfObserverDto: UpdateSfObserverDto) {
-    return this.observerService.update(req.user.id, updateSfObserverDto);
+  update(
+    @Request() req, 
+    @Body() updateSfObserverDto: UpdateSfObserverDto,
+    @Query('instituteId') instituteId: string,  
+  ) {
+    return this.observerService.update(req.user.id, updateSfObserverDto, instituteId);
   }
 
   /**
@@ -71,7 +80,10 @@ export class ObserverController {
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBearerAuth()
   @Get('institute')
-  async getObserverDetails(@Request() req) {
+  async getObserverDetails(
+    @Request() req,
+    @Query('instituteId') instituteId: string,
+  ) {
     const cacheKey = `${req.user.id}-observerDetails`;
 
     const cachedResponse = await this.cachingService.get(cacheKey);

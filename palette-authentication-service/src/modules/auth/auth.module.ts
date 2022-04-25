@@ -7,7 +7,10 @@ import { AuthController } from './auth.controller';
 import { OtpManager } from './entities/otpManager.entity';
 
 @Module({
-  imports: [JwtModule.register({}), TypeOrmModule.forFeature([OtpManager])],
+  imports: [
+    JwtModule.register({}), 
+    TypeOrmModule.forFeature([OtpManager]),
+  ],
   controllers: [AuthController],
   providers: [AuthService],
 })

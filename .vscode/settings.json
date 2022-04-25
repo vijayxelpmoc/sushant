@@ -1,5 +1,0 @@
-{
-    "yaml.schemas": {
-        "https://raw.githubusercontent.com/deployphp/deployer/master/src/schema.json": "file:///home/shaiq/Dev/WebKnot/palette/palette-microservices/.github/workflows/deploy.yml"
-    }
-}

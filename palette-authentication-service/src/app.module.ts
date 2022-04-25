@@ -1,14 +1,16 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import Joi from 'joi';
-
+import { SfModule } from '@gowebknot/palette-salesforce-service';
 import { WrapperModule } from '@gowebknot/palette-wrapper';
+
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './modules/auth/auth.module';
 import { UsersModule } from './modules/users/users.module';
 
+// sls start offline
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,19 +23,25 @@ import { UsersModule } from './modules/users/users.module';
       }),
       envFilePath: '.env',
     }),
+    SfModule.forRoot(),
+    TypeOrmModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        type: 'mysql',
+        host: configService.get<string>('DB_HOST'),
+        port: configService.get<number>('DB_PORT'),
+        username: configService.get<string>('DB_USER'),
+        password: configService.get<string>('DB_PASS'),
+        database: configService.get<string>('DB_NAME'),
+        synchronize: configService.get<boolean>('DB_SYNC'),
+        autoLoadEntities: true,
+        logging: configService.get<string>('NODE_ENV') === 'development',
+      }),
+    }),
     WrapperModule,
     UsersModule,
     AuthModule,
-    TypeOrmModule.forRoot({
-      type: process.env.DB_TYPE as any,
-      host: process.env.DB_HOST,
-      port: Number(process.env.DB_PORT),
-      username: process.env.DB_USERNAME,
-      password: process.env.DB_PASSWORD,
-      database: process.env.DB_NAME,
-      autoLoadEntities: true,
-      synchronize: Boolean(process.env.DB_SYNC) || false,
-    }),
   ],
   controllers: [AppController],
   providers: [AppService],

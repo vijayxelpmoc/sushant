@@ -1,15 +1,15 @@
 export interface User {
   Id: string;
   Name: string;
-  RecordTypeId: string;
-  Palette_Email__c: string;
-  Palette_Key__c: string;
+  Contact_Record_Type: string;
+  Palette_Email: string;
+  Palette_Key: string;
   Phone: string;
-  IsRegisteredOnPalette__c: boolean;
-  Record_Type_Name__c: string;
-  prod_uuid__c: string;
-  dev_uuid__c: string;
-  Is_Deactive__c: boolean;
+  IsRegisteredOnPalette: boolean;
+  Record_Type_Name: string;
+  prod_uuid: string;
+  dev_uuid: string;
+  Is_Deactive: boolean;
 }
 
 export enum Roles {

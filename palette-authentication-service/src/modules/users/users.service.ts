@@ -4,7 +4,7 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import Cryptr from 'cryptr';
-import { SfService } from '@gowebknot/palette-wrapper';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import { Errors, Responses } from '@src/constants';
 import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
@@ -17,14 +17,17 @@ export class UsersService {
     this._cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
   }
 
-  async preRegisterForPalette(preRegisterUserDto: PreRegisterUserDto) {
+  async preRegisterForPalette(preRegisterUserDto: PreRegisterUserDto, instituteId: string) {
     const { email, password, ferpa, role } = preRegisterUserDto;
+
     const user: User = (
       await this.sfService.generics.contacts.get(
-        'Id, Name, Palette_Email__c, RecordTypeId, Phone, IsRegisteredOnPalette__c, Palette_Key__c, Record_Type_Name__c',
+        'Id, Name, Palette_Email, Contact_Record_Type, Phone, IsRegisteredOnPalette, Palette_Key, Record_Type_Name',
         {
-          Palette_Email__c: email,
+          Palette_Email: email,
         },
+        {},
+        instituteId,
       )
     )[0];
     if (!user) {
@@ -32,7 +35,7 @@ export class UsersService {
     }
 
     // Check if user is already registered
-    if (user.IsRegisteredOnPalette__c === true) {
+    if (user.IsRegisteredOnPalette === true) {
       throw new UnauthorizedException(Errors.PRE_REGISTERED_ERROR);
     }
 
@@ -48,16 +51,22 @@ export class UsersService {
 
     isStudentOrGuardian
       ? await this.sfService.generics.contacts.update(user.Id, {
-          Palette_Key__c: newPasswordHash,
-          hed__FERPA__c: true,
-        })
+          Palette_Key: newPasswordHash,
+          FERPA: true,
+        },
+        instituteId
+        )
       : await this.sfService.generics.contacts.update(user.Id, {
-          Palette_Key__c: newPasswordHash,
-        });
+          Palette_Key: newPasswordHash,
+        },
+        instituteId
+        );
 
     await this.sfService.generics.contacts.update(user.Id, {
-      IsRegisteredOnPalette__c: true,
-    });
+      IsRegisteredOnPalette: true,
+    },
+    instituteId
+    );
 
     const [fName, lName] = user.Name.split(' ');
     return {
@@ -67,8 +76,8 @@ export class UsersService {
         id: user.Id,
         firstName: fName,
         lastName: lName || '',
-        email: user.Palette_Email__c,
-        role: user.Record_Type_Name__c,
+        email: user.Palette_Email,
+        role: user.Record_Type_Name,
       },
     };
   }
@@ -76,10 +85,13 @@ export class UsersService {
   async addProfilePicture(
     addProfilePictureDto: AddProfilePictureDto,
     userId: string,
+    instituteId,
   ) {
     await this.sfService.generics.contacts.update(userId, {
-      Profile_Picture__c: addProfilePictureDto.url,
-    });
+      Profile_Picture: addProfilePictureDto.url,
+    }, 
+    instituteId
+    );
     return {
       statusCode: 200,
       message: Responses.ADD_PROFILE_PICTURE_SUCCESS,

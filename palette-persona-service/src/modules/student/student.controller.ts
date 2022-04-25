@@ -7,17 +7,18 @@ import {
   Body,
   Param,
   UseInterceptors,
+  Query,
 } from '@nestjs/common';
 import {
   JwtAuthGuard,
   RolesGuard,
   hasRoles,
   Role,
-  CachingService,
 } from '@gowebknot/palette-wrapper';
 
 import { StudentUpdateProfileDto } from './dto';
 import { StudentService } from './student.service';
+import { CachingService } from '@gowebknot/palette-salesforce-service';
 
 @Controller({
   path: 'student',
@@ -30,8 +31,11 @@ export class StudentController {
 
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('profile')
-  async getStudent(@Request() req) {
+  @Get('profile?')
+  async getStudent(
+    @Request() req,
+    @Query('instituteId') instituteId: string,  
+  ) {
     // Cache the user profile as it's accessed multiple
     // times throughout the application
     const cacheKey = `student_${req.user.id}`;
@@ -39,7 +43,7 @@ export class StudentController {
     if (cachedStudent) {
       return cachedStudent;
     }
-    const student = await this.studentService.getStudent(req.user.id);
+    const student = await this.studentService.getStudent(req.user.id, instituteId);
     await this.cachingService.set(cacheKey, student);
     return student;
   }
@@ -50,10 +54,12 @@ export class StudentController {
   async updateStudent(
     @Request() req,
     @Body() updateProfileDto: StudentUpdateProfileDto,
+    @Body('instituteId') instituteId: string,  
   ) {
     return await this.studentService.updateStudentProfile(
       req.user.id,
       updateProfileDto,
+      instituteId,
     );
   }
 
@@ -65,8 +71,11 @@ export class StudentController {
     Role.Faculty,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get(':id')
-  async getStudentDetails(@Param('id') id: string) {
-    return await this.studentService.getStudent(id);
+  @Get(':id?')
+  async getStudentDetails(
+    @Param('id') id: string,
+    @Query('instituteId') instituteId: string,  
+  ) {
+    return await this.studentService.getStudent(id, instituteId);
   }
 }

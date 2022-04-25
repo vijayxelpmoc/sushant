@@ -31,8 +31,11 @@ export class UsersController {
   @ApiUnauthorizedResponse({ description: Errors.PRE_REGISTERED_ERROR })
   @ApiForbiddenResponse({ description: Errors.FERPA_NOT_ACCEPTED })
   @ApiBody({ type: PreRegisterUserDto })
-  preRegister(@Body() preRegisterUserDto: PreRegisterUserDto) {
-    return this.usersService.preRegisterForPalette(preRegisterUserDto);
+  preRegister(
+    @Body() preRegisterUserDto: PreRegisterUserDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.usersService.preRegisterForPalette(preRegisterUserDto, instituteId);
   }
 
   @hasRoles(
@@ -50,10 +53,12 @@ export class UsersController {
   addProfilePicture(
     @Body() addProfilePictureDto: AddProfilePictureDto,
     @Req() req,
+    @Body('instituteId') instituteId: string,
   ) {
     return this.usersService.addProfilePicture(
       addProfilePictureDto,
       req.user.id,
+      instituteId,
     );
   }
 }

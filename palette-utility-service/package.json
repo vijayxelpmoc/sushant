@@ -27,6 +27,7 @@
     "class-validator": "^0.13.2",
     "joi": "^17.5.0",
     "module-alias": "^2.2.2",
+    "passport": "^0.5.2",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.4.0",

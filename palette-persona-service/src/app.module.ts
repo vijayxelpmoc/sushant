@@ -1,5 +1,5 @@
-import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { CacheModule, Module } from '@nestjs/common';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import Joi from 'joi';
 import { WrapperModule } from '@gowebknot/palette-wrapper';
 
@@ -9,6 +9,11 @@ import { AdminModule } from './modules/admin/admin.module';
 import { ObserverModule } from './modules/observer/observer.module';
 import { ParentModule } from './modules/parent/parent.module';
 import { StudentModule } from './modules/student/student.module';
+import { AdvisorModule } from './modules/advisor/advisor.module';
+
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { SfService, CachingService, SfModule } from '@gowebknot/palette-salesforce-service';
+
 
 @Module({
   imports: [
@@ -22,13 +27,31 @@ import { StudentModule } from './modules/student/student.module';
       }),
       envFilePath: '.env',
     }),
+    SfModule.forRoot(),
+    // TypeOrmModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (configService: ConfigService) => ({
+    //     type: 'mysql',
+    //     host: configService.get<string>('DB_HOST'),
+    //     port: configService.get<number>('DB_PORT'),
+    //     username: configService.get<string>('DB_USER'),
+    //     password: configService.get<string>('DB_PASS'),
+    //     database: configService.get<string>('DB_NAME'),
+    //     synchronize: configService.get<boolean>('DB_SYNC'),
+    //     autoLoadEntities: true,
+    //     logging: configService.get<string>('NODE_ENV') === 'development',
+    //   }),
+    // }),
+    // CacheModule.register({ ttl: 120, max: 30 }),
     WrapperModule,
     AdminModule,
     ObserverModule,
     ParentModule,
-    StudentModule
+    StudentModule,
+    AdvisorModule,
   ],
   controllers: [AppController],
-  providers: [AppService],
+  providers: [AppService, SfService, CachingService],
 })
 export class AppModule {}

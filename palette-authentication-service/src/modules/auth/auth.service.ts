@@ -9,12 +9,12 @@ import Cryptr from 'cryptr';
 import { v4 as uuid } from 'uuid';
 
 import {
-  SfService,
-  SFField,
   Notifier,
   NotificationType,
   EmailTemplates,
 } from '@gowebknot/palette-wrapper';
+
+// import { SfService, SFField } from '@gowebknot/palette-salesforce-service';
 
 import { Errors, Responses } from '@src/constants';
 import { User } from '@src/modules/users/types';
@@ -28,7 +28,8 @@ import {
 } from './dto';
 import { OtpManager } from './entities/otpManager.entity';
 import { AuthForgotPasswordSetNewDto } from './dto/auth-forgot-password-set-new.dto';
-
+import { SfService } from '@gowebknot/palette-salesforce-service';
+import { SFField } from '@gowebknot/palette-salesforce-service';
 @Injectable()
 export class AuthService {
   private _cryptr: Cryptr;
@@ -45,10 +46,10 @@ export class AuthService {
   async _generateJwtToken(user: User) {
     const payload = {
       id: user.Id,
-      recordTypeName: user.Record_Type_Name__c,
+      recordTypeName: user.Record_Type_Name,
       name: user.Name,
-      email: user.Palette_Email__c,
-      isRegisteredOnPalette: user.IsRegisteredOnPalette__c,
+      email: user.Palette_Email,
+      isRegisteredOnPalette: user.IsRegisteredOnPalette,
     };
     const accessToken = this.jwtService.sign(payload, {
       secret: process.env.JWT_SECRET,
@@ -77,28 +78,32 @@ export class AuthService {
     );
   }
 
-  async _getUser(identifier: SFField): Promise<User> {
+  async _getUser(identifier: SFField, sort?: SFField, instituteId?: string): Promise<User> {
     const _userFields =
-      'Id, Palette_Email__c, Name, RecordTypeId, Phone, IsRegisteredOnPalette__c, Palette_Key__c, Record_Type_Name__c, prod_uuid__c, dev_uuid__c, Is_Deactive__c';
+      'Id, Palette_Email, Name, Contact_Record_Type, Phone, IsRegisteredOnPalette, Palette_Key, Record_Type_Name, prod_uuid, dev_uuid, Is_Deactive';
 
     const user: User = (
-      await this.sfService.generics.contacts.get(_userFields, identifier)
+      await this.sfService.generics.contacts.get(_userFields, identifier, sort, instituteId)
     )[0];
     return user;
   }
 
   // Service Methods
 
-  async validateUser(authValidateDto: AuthValidateDto) {
+  async validateUser(authValidateDto: AuthValidateDto, instituteId: string) {
     const user = await this._getUser({
-      Palette_Email__c: authValidateDto.email,
-    });
+      Palette_Email: authValidateDto.email,
+    },
+    {},
+    instituteId,
+    );
+    console.log('user', user);
     if (!user) {
       throw new NotFoundException(Errors.USER_NOT_FOUND);
     }
 
     const preRegistered =
-      user.Palette_Key__c !== null || user.IsRegisteredOnPalette__c;
+      user.Palette_Key !== null || user.IsRegisteredOnPalette;
 
     return {
       statusCode: 200,
@@ -106,15 +111,20 @@ export class AuthService {
         ? Responses.USER_REGISTERED_SUCCESS
         : Responses.USERS_FOUND_SUCCESS,
       data: {
-        role: user.Record_Type_Name__c,
+        role: user.Record_Type_Name,
       },
     };
   }
 
-  async login(authLoginDto: AuthLoginDto) {
+  async login(authLoginDto: AuthLoginDto, instituteId: string) {
     this.logger.log('NEW login Request');
 
-    const user = await this._getUser({ Palette_Email__c: authLoginDto.email });
+    const user = await this._getUser(
+      { Palette_Email: authLoginDto.email },
+      {},
+      instituteId,
+    );
+    
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
@@ -123,31 +133,31 @@ export class AuthService {
     // [INFO] The monolith implementation of Palette uses Cryptr for hashing,
     // hence to keep the auth working for old users, cryptr is being used here
     // instead of bcrypt.
-    if (authLoginDto.password !== this._cryptr.decrypt(user.Palette_Key__c)) {
+    if (authLoginDto.password !== this._cryptr.decrypt(user.Palette_Key)) {
       throw new UnauthorizedException(Errors.INVALID_PASSWORD);
     }
 
     // Check if user is pre registered
-    if (user.IsRegisteredOnPalette__c === false) {
+    if (user.IsRegisteredOnPalette === false) {
       throw new UnauthorizedException(Errors.NOT_REGISTERED_ERROR);
     }
 
     // Check if account is active
-    if (user.Is_Deactive__c === true) {
+    if (user.Is_Deactive === true) {
       throw new UnauthorizedException(Errors.ACCOUNT_SUSPENDED);
     }
 
     const uuid =
       process.env.NODE_ENV === 'production'
-        ? user.prod_uuid__c
-        : user.dev_uuid__c;
+        ? user.prod_uuid
+        : user.dev_uuid;
 
     return {
       statusCode: 200,
       message: Responses.LOGIN_SUCCESS,
       data: {
         id: user.Id,
-        role: user.Record_Type_Name__c,
+        role: user.Record_Type_Name,
         uuid,
         tokens: { ...(await this._generateJwtToken(user)) },
       },
@@ -157,26 +167,35 @@ export class AuthService {
   async resetPassword(
     authResetPasswordDto: AuthResetPasswordDto,
     userId: string,
+    instituteId: string,
   ) {
     const { oldPassword, newPassword } = authResetPasswordDto;
     // Get the old password of the user from salesforce
-    const user = await this._getUser({ Id: userId });
+    const user = await this._getUser({ 
+        Id: userId 
+      },
+      {},
+      instituteId,
+    );
     if (!user) {
       throw new UnauthorizedException(Errors.INVALID_AUTH_TOKEN);
     }
-
+    
     // Validate the password
     this.logger.log(`REC : ${oldPassword} ${newPassword}`);
-    this.logger.log(`OLD : ${this._cryptr.decrypt(user.Palette_Key__c)}`);
-    if (oldPassword !== this._cryptr.decrypt(user.Palette_Key__c)) {
+    this.logger.log(`OLD : ${this._cryptr.decrypt(user.Palette_Key)}`);
+    if (oldPassword !== this._cryptr.decrypt(user.Palette_Key)) {
       throw new UnauthorizedException(Errors.PASSWORDS_MISMATCH_ERROR);
     }
 
     // Encrypt the new password and update the user
     const newPasswordHash = this._cryptr.encrypt(newPassword);
-    await this.sfService.generics.contacts.update(userId, {
-      Palette_Key__c: newPasswordHash,
-    });
+    await this.sfService.generics.contacts.update(userId, 
+      {
+        Palette_Key: newPasswordHash,
+      },
+      instituteId,
+    );
 
     // [TODO] Update password on firebase
     // [TODO] Send email to the user
@@ -187,15 +206,19 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(authForgotPasswordDto: AuthForgotPasswordDto) {
-    const user = await this._getUser({
-      Palette_Email__c: authForgotPasswordDto.email,
-    });
+  async forgotPassword(authForgotPasswordDto: AuthForgotPasswordDto, instituteId) {
+    const user = await this._getUser(
+      {
+        Palette_Email: authForgotPasswordDto.email,
+      },
+      {},
+      instituteId,
+    );
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
 
-    if (user.IsRegisteredOnPalette__c === false) {
+    if (user.IsRegisteredOnPalette === false) {
       throw new UnauthorizedException(Errors.NOT_REGISTERED_ERROR);
     }
 
@@ -203,7 +226,7 @@ export class AuthService {
     const otp = Math.floor(100000 + Math.random() * 900000);
     const otpMgr = new OtpManager();
     otpMgr.userId = user.Id;
-    otpMgr.email = user.Palette_Email__c;
+    otpMgr.email = user.Palette_Email;
     otpMgr.otp = String(otp);
     otpMgr.for = OtpChecks.FORGOT_PASSWORD;
     await otpMgr.save();
@@ -219,7 +242,7 @@ export class AuthService {
       `,
     });
     this._notifier.send(NotificationType.EMAIL, {
-      to: user.Palette_Email__c,
+      to: user.Palette_Email,
       subject: '[!IMP] Palette Password Reset OTP',
       useTemplate: true,
       templateAttrs: {
@@ -238,12 +261,15 @@ export class AuthService {
 
   async forgotPasswordValidateOtp(
     authForgotPasswordValidateOtpDto: AuthForgotPasswordValidateOtpDto,
+    instituteId: string,
   ) {
     const { email, otp } = authForgotPasswordValidateOtpDto;
 
     const userOtpMgr = await OtpManager.findOne({
-      email,
-      for: OtpChecks.FORGOT_PASSWORD,
+      where: {
+        email,
+        for: OtpChecks.FORGOT_PASSWORD,
+      }
     });
     if (!userOtpMgr) {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
@@ -279,20 +305,26 @@ export class AuthService {
 
   async forgotPasswordSetNew(
     authForgotPasswordSetNewDto: AuthForgotPasswordSetNewDto,
+    instituteId: string,
   ) {
     const { email, newPassword, senderValidationId } =
       authForgotPasswordSetNewDto;
     const user = await this._getUser({
-      Palette_Email__c: email,
-    });
+        Palette_Email__c: email,
+      },
+      {},
+      instituteId
+    );
     if (!user) {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
     }
 
     const userOtpMgr = await OtpManager.findOne({
-      email,
-      for: OtpChecks.FORGOT_PASSWORD,
-      senderValidationId,
+      where: {
+        email,
+        for: OtpChecks.FORGOT_PASSWORD,
+        senderValidationId
+      },
     });
     if (!userOtpMgr) {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
@@ -300,8 +332,10 @@ export class AuthService {
 
     const newPasswordHash = this._cryptr.encrypt(newPassword);
     await this.sfService.generics.contacts.update(user.Id, {
-      Palette_Key__c: newPasswordHash,
-    });
+        Palette_Key: newPasswordHash,
+      }, 
+      instituteId
+    );
 
     return {
       statusCode: 200,
@@ -315,5 +349,5 @@ export class AuthService {
       subject: '[!IMP] Palette Password Reset OTP',
       body: 'Hello this is a test email',
     });
-  }
+  } 
 }

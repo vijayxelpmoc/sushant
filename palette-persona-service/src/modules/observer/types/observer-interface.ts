@@ -33,37 +33,36 @@ interface Attributes {
 export interface ObserverSFInstitutesList {
   attributes: Attributes;
   Id: string;
-  Name: string;
-  hed__Account__c: string;
-  hed__Affiliation_Type__c: string;
-  hed__Contact__c: string;
-  hed__EndDate__c: string;
-  hed__StartDate__c: string;
-  hed__Role__c: string;
-  Tenure__c: string;
-  hed__Description__c: string;
-  Designation__c: string;
+  Affiliation_Name: string;
+  Organization: string;
+  Affiliation_Type: string;
+  Contact: string;
+  End_Date: string;
+  Start_Date: string;
+  Role: string;
+  Tenure: string;
+  Description: string;
+  Designation: string;
 }
-
 export interface SFObserverContact {
   attributes: Attributes;
   Id: string;
   Name: string;
   Phone: string;
-  Palette_Email__c: string;
+  Palette_Email: string;
   MailingCity: string;
   MailingCountry: string;
   MailingState: string;
   MailingStreet: string;
   MailingPostalCode: string;
-  Facebook__c: string;
-  Whatsapp__c: string;
-  Instagram__c: string;
-  Website__c: string;
-  WebsiteTitle__c: string;
-  Github__c: string;
-  LinkedIn_URL__c: string;
-  Profile_Picture__c: string;
+  Facebook: string;
+  Whatsapp: string;
+  Instagram: string;
+  Website: string;
+  Website_Title: string;
+  Github: string;
+  LinkedIn_URL: string;
+  Profile_Picture: string;
 }
 
 export interface ObserverUpdateResponse {
