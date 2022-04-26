@@ -19,58 +19,51 @@ export class ParentService {
   constructor(private readonly sfService: SfService) {}
 
   async getParent(id: string, instituteId: string) {
-    const responseData: SFParentContact[] =
-      await this.sfService.generics.contacts.get(
-        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name, Primary_Educational_Institution',
-        {
-          Id: id,
-        },
-        {},
-        instituteId,
-      );
-    const {
-      Id,
-      Name,
-      prod_uuid,
-      dev_uuid,
-      Phone,
-      Palette_Email,
-      MailingCity,
-      MailingCountry,
-      MailingState,
-      MailingPostalCode,
-      MailingStreet,
-      Facebook,
-      Whatsapp,
-      Instagram,
-      Website,
-      Website_Title,
-      Github,
-      LinkedIn_URL,
-      Profile_Picture,
-      Account_Name,
-    } = responseData[0];
+    // const responseData: SFParentContact[] =
+    //   await this.sfService.generics.contacts.get(
+    //     'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name, Primary_Educational_Institution',
+    //     {
+    //       Id: id,
+    //     },
+    //     {},
+    //     instituteId,
+    //   );
 
-    if (!responseData) {
-      throw new NotFoundException(`parent with ID "${id}" not found`);
-    }
+      // console.log('responseData', responseData);
+      
+    // const {
+    //   Id,
+    //   Name,
+    //   prod_uuid,
+    //   dev_uuid,
+    //   Phone,
+    //   Palette_Email,
+    //   MailingCity,
+    //   MailingCountry,
+    //   MailingState,
+    //   MailingPostalCode,
+    //   MailingStreet,
+    //   Facebook,
+    //   Whatsapp,
+    //   Instagram,
+    //   Website,
+    //   Website_Title,
+    //   Github,
+    //   LinkedIn_URL,
+    //   Profile_Picture,
+    //   Account_Name,
+    // } = responseData[0];
 
-    const rlnship: any[] = await this.sfService.models.relationships.get(
-      '*',
-      {
-        Related_Contact: Id,
-        // Type: GuardianSubRoles,
-      },
-      {},
-      instituteId,
-    );
-    console.log('dcmldscn lsdc ', rlnship);
+    // if (!responseData) {
+    //   throw new NotFoundException(`parent with ID "${id}" not found`);
+    // }
 
-    const studentList: ParentStudentListSF[] =
+    // const studentList: ParentStudentListSF[] =
+    const studentList: any[] =
       await this.sfService.models.relationships.get(
-        'Id, Name, Contact.Id, Type, Relationship_Explanation, Related_Contact, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
+        'Id, Name, Contact.Id, Type, Relationship_Explanation, Related_Contact.Id, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
         {
-          Related_Contact: Id,
+          Related_Contact: id,
           // Type: GuardianSubRoles,
         },
         {},
