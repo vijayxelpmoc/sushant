@@ -26,8 +26,11 @@ provider:
     PORT: ${env:PORT}
     DB_SYNC: ${env:DB_SYNC}
     NODE_ENV: ${env:NODE_ENV}
+    CACHE_TTL: ${env:CACHE_TTL}
     PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
     PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    PALETTE_REDIS_HOST: ${env:PALETTE_REDIS_HOST}
+    PALETTE_REDIS_PORT: ${env:PALETTE_REDIS_PORT}
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
 
 functions:
@@ -128,4 +131,9 @@ functions:
       - http:
           method: POST
           path: con/manager/sffields/load
+          cors: true
+      # Testing Executor
+      - http:
+          method: POST
+          path: con/service/executor
           cors: true

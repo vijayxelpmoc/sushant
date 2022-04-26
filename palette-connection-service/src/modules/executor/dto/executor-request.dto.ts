@@ -1,7 +1,8 @@
 type ExecutorServices =
   | 'sfCredentialService'
   | 'sfFieldService'
-  | 'sfModelService';
+  | 'sfModelService'
+  | 'dataProcessorService';
 
 type ExecutorMethods =
   | 'get'
@@ -11,7 +12,7 @@ type ExecutorMethods =
   | 'delete'
   | 'load';
 
-export interface ExecutorCall {
+export class ExecutorRequestDto {
   service: ExecutorServices;
   method: ExecutorMethods;
   args: Array<any>;

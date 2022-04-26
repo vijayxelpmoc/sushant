@@ -5,6 +5,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { SFCredentialsModule } from './modules/sf-credentials/sf-credentials.module';
 import { SFModelsModule } from './modules/sf-models/sf-models.module';
 import { SFFieldsModule } from './modules/sf-fields/sf-fields.module';
+import { DataProcessorModule } from './modules/data-processor/data-processor.module';
 import { ExecutorModule } from './modules/executor/executor.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { ExecutorModule } from './modules/executor/executor.module';
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
     }),
+    DataProcessorModule,
     SFCredentialsModule,
     SFModelsModule,
     SFFieldsModule,

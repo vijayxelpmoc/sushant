@@ -1,9 +1,10 @@
 import { Injectable, Logger, BadRequestException } from '@nestjs/common';
 
-import { SFCredentialsService } from '../sf-credentials/sf-credentials.service';
-import { SFFieldsService } from '../sf-fields/sf-fields.service';
-import { SFModelsService } from '../sf-models/sf-models.service';
-import { ExecutorCall } from './types';
+import { SFCredentialsService } from '@src/modules/sf-credentials/sf-credentials.service';
+import { SFFieldsService } from '@src/modules/sf-fields/sf-fields.service';
+import { SFModelsService } from '@src/modules/sf-models/sf-models.service';
+import { DataProcessorService } from '@src/modules/data-processor/data-processor.service';
+import { ExecutorRequestDto } from './dto/executor-request.dto';
 
 @Injectable({})
 export class ExecutorService {
@@ -13,9 +14,10 @@ export class ExecutorService {
     private sfCredentialsService: SFCredentialsService,
     private sfFieldsService: SFFieldsService,
     private sfModelsService: SFModelsService,
+    private dataProcessorService: DataProcessorService,
   ) {}
 
-  async execute(data: ExecutorCall) {
+  async execute(data: ExecutorRequestDto) {
     const { service, method, args } = data;
 
     this.logger.log(`
