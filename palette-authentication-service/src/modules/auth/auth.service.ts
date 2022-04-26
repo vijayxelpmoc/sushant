@@ -124,10 +124,12 @@ export class AuthService {
       {},
       instituteId,
     );
-    
+    console.log('user', user);
+      
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
+    
 
     // Validate the password
     // [INFO] The monolith implementation of Palette uses Cryptr for hashing,

@@ -36,7 +36,7 @@ import { UsersModule } from './modules/users/users.module';
         database: configService.get<string>('DB_NAME'),
         synchronize: configService.get<boolean>('DB_SYNC'),
         autoLoadEntities: true,
-        logging: configService.get<string>('NODE_ENV') === 'development',
+        // logging: configService.get<string>('NODE_ENV') === 'development',
       }),
     }),
     WrapperModule,
