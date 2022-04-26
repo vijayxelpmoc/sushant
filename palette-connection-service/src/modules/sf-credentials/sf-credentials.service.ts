@@ -16,9 +16,9 @@ export class SFCredentialsService {
     return this.sfCredentialsRepository.find();
   }
 
-  async getById(id: number): Promise<SFCredentialEntity> {
+  async getById(id: string): Promise<SFCredentialEntity> {
     const found = await this.sfCredentialsRepository.findOne({
-      where: { id },
+      where: { instituteId: id },
     });
     if (!found) {
       throw new NotFoundException(
