@@ -41,7 +41,7 @@ export class SFCredentialsService {
   }
 
   async update(
-    id: number,
+    id: string,
     data: Partial<CreateSFCredentialDto>,
   ): Promise<SFCredentialEntity> {
     const creds = await this.getById(id);
@@ -52,8 +52,8 @@ export class SFCredentialsService {
   }
 
   //
-  async delete(id: number): Promise<void> {
-    const result = await this.sfCredentialsRepository.delete({ id });
+  async delete(id: string): Promise<void> {
+    const result = await this.sfCredentialsRepository.delete({ instituteId: id });
     if (result.affected === 0) {
       throw new NotFoundException(
         `Unable to delete, no creds with ${id} was found`,
