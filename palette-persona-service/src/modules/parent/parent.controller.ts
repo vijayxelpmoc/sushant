@@ -30,16 +30,18 @@ export class ParentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getParent(@Request() req, @Query('instituteId') instituteId: string) {
-    // // Cache the user profile as it's accessed multiple
-    // // times throughout the application
-    // const cacheKey = `parent_${req.user.id}`;
-    // const cachedParent = await this.cachingService.get(cacheKey);
-    // if (cachedParent) {
-    //   return cachedParent;
-    // }
+    // Cache the user profile as it's accessed multiple
+    // times throughout the application
+    const cacheKey = `parent_${req.user.id}`;
+    const cachedParent = await this.cachingService.get(cacheKey);
+    if (cachedParent) {
+      console.log();
+      
+      return cachedParent;
+    }
     const parent = await this.parentService.getParent(req.user.id, instituteId);
-    // await this.cachingService.set(cacheKey, parent);
-    // return parent;
+    await this.cachingService.set(cacheKey, parent);
+    return parent;
   }
 
   // @hasRoles(Role.Parent)
