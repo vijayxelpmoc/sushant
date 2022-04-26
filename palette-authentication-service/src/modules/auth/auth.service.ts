@@ -4,6 +4,7 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import Cryptr from 'cryptr';
 import { v4 as uuid } from 'uuid';
@@ -36,8 +37,8 @@ export class AuthService {
   private _notifier: Notifier;
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private sfService: SfService, private jwtService: JwtService) {
-    this._cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+  constructor(private sfService: SfService, private jwtService: JwtService, private configService: ConfigService) {
+    this._cryptr = new Cryptr(configService.get<string>('PASSWORD_HASHING_KEY'));
     this._notifier = new Notifier();
   }
 
