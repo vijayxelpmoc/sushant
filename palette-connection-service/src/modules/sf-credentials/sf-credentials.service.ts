@@ -16,6 +16,10 @@ export class SFCredentialsService {
     return this.sfCredentialsRepository.find();
   }
 
+  async getInstitutes(): Promise<any[]> {
+    return this.sfCredentialsRepository.find({ select: ["id", "instituteName", "instituteId"] });
+  }
+
   async getById(id: string): Promise<SFCredentialEntity> {
     const found = await this.sfCredentialsRepository.findOne({
       where: { instituteId: id },
