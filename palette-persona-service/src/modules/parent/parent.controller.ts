@@ -34,9 +34,7 @@ export class ParentController {
     // times throughout the application
     const cacheKey = `parent_${req.user.id}`;
     const cachedParent = await this.cachingService.get(cacheKey);
-    if (cachedParent) {
-      console.log();
-      
+    if (cachedParent) {      
       return cachedParent;
     }
     const parent = await this.parentService.getParent(req.user.id, instituteId);

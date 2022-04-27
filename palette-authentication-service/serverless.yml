@@ -8,7 +8,7 @@ plugins:
   
 custom:
   warmup:
-    myFunction:
+    main:
       enabled: true
       events:
         - schedule: cron(0/5 8-17 ? * MON-FRI *)

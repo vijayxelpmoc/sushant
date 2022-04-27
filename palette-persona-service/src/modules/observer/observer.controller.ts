@@ -43,7 +43,7 @@ export class ObserverController {
   })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBearerAuth()
-  @Get('profile?')
+  @Get('profile')
   async getObserver(@Request() req, @Query('instituteId') instituteId: string) {
     return await this.observerService.getObserver(req.user.id, instituteId);
   }
