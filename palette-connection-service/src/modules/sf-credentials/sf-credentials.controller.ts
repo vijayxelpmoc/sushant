@@ -23,6 +23,11 @@ export class SFCredentialsController {
     return await this.sfCredentialsService.get();
   }
 
+  @Get('institutes')
+  async getInstitutes(): Promise<any[]> {
+    return await this.sfCredentialsService.getInstitutes();
+  }
+
   @Get('/:id')
   async getById(@Param('id') id: string): Promise<SFCredentialEntity> {
     return await this.sfCredentialsService.getById(id);
