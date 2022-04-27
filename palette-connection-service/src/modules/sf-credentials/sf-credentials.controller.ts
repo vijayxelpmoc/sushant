@@ -24,7 +24,7 @@ export class SFCredentialsController {
   }
 
   @Get('/:id')
-  async getById(@Param('id') id: number): Promise<SFCredentialEntity> {
+  async getById(@Param('id') id: string): Promise<SFCredentialEntity> {
     return await this.sfCredentialsService.getById(id);
   }
 
@@ -35,14 +35,14 @@ export class SFCredentialsController {
 
   @Patch('/:id')
   async update(
-    @Param('id') id: number,
+    @Param('id') id: string,
     @Body() data: Partial<CreateSFCredentialDto>,
   ): Promise<SFCredentialEntity> {
     return await this.sfCredentialsService.update(id, data);
   }
 
   @Delete('/:id')
-  async delete(@Param('id') id: number): Promise<void> {
+  async delete(@Param('id') id: string): Promise<void> {
     return this.sfCredentialsService.delete(id);
   }
 

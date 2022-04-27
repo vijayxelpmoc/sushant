@@ -4,6 +4,15 @@ useDotenv: true
 plugins:
   - serverless-offline
   - serverless-deployment-bucket
+  - serverless-plugin-warmup
+  
+custom:
+  warmup:
+    myFunction:
+      enabled: true
+      events:
+        - schedule: cron(0/5 8-17 ? * MON-FRI *)
+      concurrency: 10
 
 provider:
   name: aws

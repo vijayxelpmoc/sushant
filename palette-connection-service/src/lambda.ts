@@ -8,7 +8,7 @@ import { Callback, Context, Handler } from 'aws-lambda';
 
 import { ExecutorService } from './modules/executor/executor.service';
 import { preBuildApp } from './main';
-import { ExecutorCall } from './modules/executor/types';
+import { ExecutorRequestDto } from './modules/executor/dto/executor-request.dto';
 import { AppModule } from './app.module';
 
 let server: Handler;
@@ -35,7 +35,7 @@ export const handler: Handler = async (
 ) => {
   // Handle the executor events
   if (event.executor) {
-    const callData: ExecutorCall = event.executor;
+    const callData: ExecutorRequestDto = event.executor;
     const instance = await getAppContext();
     const contextId = ContextIdFactory.create();
     instance.registerRequestByContextId({ context }, contextId);
