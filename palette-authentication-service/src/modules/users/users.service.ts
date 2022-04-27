@@ -33,7 +33,8 @@ export class UsersService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-
+    console.log('user', user);
+    
     // Check if user is already registered
     if (user.IsRegisteredOnPalette === true) {
       throw new UnauthorizedException(Errors.PRE_REGISTERED_ERROR);

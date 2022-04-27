@@ -31,7 +31,7 @@ export class AdminController {
 
   @hasRoles(Role.Administrator)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('profile?')
+  @Get('profile')
   async getAdmin(@Request() req, @Query('instituteId') instituteId: string) {
     // Cache the user profile as it's accessed multiple
     // times throughout the application

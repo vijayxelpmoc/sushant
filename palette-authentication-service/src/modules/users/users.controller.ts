@@ -20,22 +20,18 @@ import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
 @ApiTags('users')
 @Controller({
   path: 'users',
-  // version: '1',
 })
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('register/pre')
-  @ApiOkResponse({ description: Responses.PRE_REGISTER_SUCCESS })
-  @ApiUnauthorizedResponse({ description: Errors.EMAIL_ADDRESS_NOT_FOUND })
-  @ApiUnauthorizedResponse({ description: Errors.PRE_REGISTERED_ERROR })
-  @ApiForbiddenResponse({ description: Errors.FERPA_NOT_ACCEPTED })
   @ApiBody({ type: PreRegisterUserDto })
-  preRegister(
+  async preRegister(
     @Body() preRegisterUserDto: PreRegisterUserDto,
     @Body('instituteId') instituteId: string,
   ) {
     return this.usersService.preRegisterForPalette(preRegisterUserDto, instituteId);
+    // return 'ok';
   }
 
   @hasRoles(
@@ -48,9 +44,7 @@ export class UsersController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('profile/add/picture')
-  @ApiOkResponse({ description: Responses.ADD_PROFILE_PICTURE_SUCCESS })
-  @ApiBody({ type: AddProfilePictureDto })
-  addProfilePicture(
+  async addProfilePicture(
     @Body() addProfilePictureDto: AddProfilePictureDto,
     @Req() req,
     @Body('instituteId') instituteId: string,
