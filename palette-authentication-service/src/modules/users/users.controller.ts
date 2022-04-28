@@ -25,13 +25,11 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Post('register/pre')
-  @ApiBody({ type: PreRegisterUserDto })
   async preRegister(
     @Body() preRegisterUserDto: PreRegisterUserDto,
     @Body('instituteId') instituteId: string,
   ) {
     return this.usersService.preRegisterForPalette(preRegisterUserDto, instituteId);
-    // return 'ok';
   }
 
   @hasRoles(
