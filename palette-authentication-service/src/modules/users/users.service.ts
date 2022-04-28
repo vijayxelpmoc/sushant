@@ -3,18 +3,19 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
-import Cryptr from 'cryptr';
+// import Cryptr from 'cryptr';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import { Errors, Responses } from '@src/constants';
 import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
 import { User, Roles } from './types';
+const Cryptr = require('cryptr');
 
 @Injectable()
 export class UsersService {
-  private _cryptr: Cryptr;
+  // private _cryptr: Cryptr;
   constructor(private sfService: SfService) {
-    this._cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+    // this._cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
   }
 
   async preRegisterForPalette(preRegisterUserDto: PreRegisterUserDto, instituteId: string) {
@@ -33,7 +34,6 @@ export class UsersService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-    console.log('user', user);
     
     // Check if user is already registered
     if (user.IsRegisteredOnPalette === true) {
@@ -48,8 +48,8 @@ export class UsersService {
     }
 
     // Encrypt the new password and update the user
-    const newPasswordHash = this._cryptr.encrypt(password);
-
+    const cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+    const newPasswordHash = cryptr.encrypt(password);
     isStudentOrGuardian
       ? await this.sfService.generics.contacts.update(user.Id, {
           Palette_Key: newPasswordHash,

@@ -82,3 +82,7 @@ functions:
           method: POST
           path: users/profile/add/picture
           cors: true
+      - http:
+          method: POST
+          path: auth/testing
+          cors: true
