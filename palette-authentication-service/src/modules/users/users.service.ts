@@ -4,13 +4,13 @@ import {
   ForbiddenException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-// import Cryptr from 'cryptr';
+import Cryptr from 'cryptr';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import { Errors, Responses } from '@src/constants';
 import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
 import { User, Roles } from './types';
-const Cryptr = require('cryptr');
+// const Cryptr = require('cryptr');
 
 @Injectable()
 export class UsersService {
@@ -38,14 +38,15 @@ export class UsersService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
+
+    console.log('user', user);
     
     // Check if user is already registered
     if (user.IsRegisteredOnPalette === true) {
       throw new UnauthorizedException(Errors.PRE_REGISTERED_ERROR);
     }
 
-    const isStudentOrGuardian =
-      role === Roles.Student || role === Roles.Guardian;
+    const isStudentOrGuardian = role === Roles.Student || role === Roles.Guardian;
 
     if (isStudentOrGuardian && !ferpa) {
       throw new ForbiddenException(Errors.FERPA_NOT_ACCEPTED);
@@ -54,26 +55,31 @@ export class UsersService {
     // Encrypt the new password and update the user
     const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
     const newPasswordHash = cryptr.encrypt(password);
+    console.log('newPasswordHash', newPasswordHash);
     isStudentOrGuardian
       ? await this.sfService.generics.contacts.update(user.Id, {
           Palette_Key: newPasswordHash,
           FERPA: true,
         },
-        instituteId
+        instituteId,
         )
       : await this.sfService.generics.contacts.update(user.Id, {
           Palette_Key: newPasswordHash,
         },
-        instituteId
+        instituteId,
         );
-
+    console.log('isStudentOrGuardian', isStudentOrGuardian);
+    
     await this.sfService.generics.contacts.update(user.Id, {
       IsRegisteredOnPalette: true,
     },
     instituteId
     );
+    console.log('updated');
 
     const [fName, lName] = user.Name.split(' ');
+    console.log('fName', fName);
+    console.log('lName', lName);
     return {
       statusCode: 200,
       message: Responses.PRE_REGISTER_SUCCESS,

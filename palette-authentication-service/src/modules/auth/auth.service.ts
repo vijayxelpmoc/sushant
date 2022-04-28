@@ -31,7 +31,7 @@ import { OtpManager } from './entities/otpManager.entity';
 import { AuthForgotPasswordSetNewDto } from './dto/auth-forgot-password-set-new.dto';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { SFField } from '@gowebknot/palette-salesforce-service';
-const Cryptr = require('cryptr');
+import Cryptr from 'cryptr';
 @Injectable()
 export class AuthService {
   // private _cryptr: Cryptr;
@@ -130,7 +130,8 @@ export class AuthService {
       {},
       instituteId,
     );
-      
+    console.log('user', user);
+    
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
@@ -142,6 +143,7 @@ export class AuthService {
     // instead of bcrypt.
     const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
+    console.log('decryptedPassword', decryptedPassword);
     if (authLoginDto.password !== decryptedPassword) {
       throw new UnauthorizedException(Errors.INVALID_PASSWORD);
     }
@@ -160,6 +162,7 @@ export class AuthService {
       process.env.NODE_ENV === 'production'
         ? user.prod_uuid
         : user.dev_uuid;
+    console.log('uuid', uuid);
 
     return {
       statusCode: 200,
