@@ -38,7 +38,11 @@ export class AuthService {
   private _notifier: Notifier;
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private sfService: SfService, private jwtService: JwtService, private configService: ConfigService) {
+  constructor(
+    private sfService: SfService, 
+    private jwtService: JwtService, 
+    private configService: ConfigService
+  ) {
     // this._cryptr = new Cryptr(configService.get<string>('PASSWORD_HASHING_KEY'));
     this._notifier = new Notifier();
   }
@@ -136,7 +140,7 @@ export class AuthService {
     // [INFO] The monolith implementation of Palette uses Cryptr for hashing,
     // hence to keep the auth working for old users, cryptr is being used here
     // instead of bcrypt.
-    const cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
     if (authLoginDto.password !== decryptedPassword) {
       throw new UnauthorizedException(Errors.INVALID_PASSWORD);
@@ -187,7 +191,7 @@ export class AuthService {
     }
     
     // Validate the password
-    const cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
 
     this.logger.log(`REC : ${oldPassword} ${newPassword}`);
@@ -338,7 +342,7 @@ export class AuthService {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
     }
 
-    const cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
     const newPasswordHash = cryptr.encrypt(newPassword);
     await this.sfService.generics.contacts.update(user.Id, {
         Palette_Key: newPasswordHash,
@@ -358,5 +362,5 @@ export class AuthService {
       subject: '[!IMP] Palette Password Reset OTP',
       body: 'Hello this is a test email',
     });
-  } 
+  }
 }

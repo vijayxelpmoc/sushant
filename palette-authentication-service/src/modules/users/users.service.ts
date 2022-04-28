@@ -3,6 +3,7 @@ import {
   UnauthorizedException,
   ForbiddenException,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 // import Cryptr from 'cryptr';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 
@@ -14,7 +15,10 @@ const Cryptr = require('cryptr');
 @Injectable()
 export class UsersService {
   // private _cryptr: Cryptr;
-  constructor(private sfService: SfService) {
+  constructor(
+    private sfService: SfService,
+    private configService: ConfigService
+    ) {
     // this._cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
   }
 
@@ -48,7 +52,7 @@ export class UsersService {
     }
 
     // Encrypt the new password and update the user
-    const cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
     const newPasswordHash = cryptr.encrypt(password);
     isStudentOrGuardian
       ? await this.sfService.generics.contacts.update(user.Id, {
