@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Responses } from '@src/constants';
 import { Repository } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import { CreateSFCredentialDto } from './dto/create-sf-credential.dto';
@@ -16,8 +17,13 @@ export class SFCredentialsService {
     return this.sfCredentialsRepository.find();
   }
 
-  async getInstitutes(): Promise<any[]> {
-    return this.sfCredentialsRepository.find({ select: ["id", "instituteName", "instituteId"] });
+  async getInstitutes(): Promise<any> {
+    const institutesData = await this.sfCredentialsRepository.find({ select: ["id", "instituteName", "instituteId"] });
+    return {
+      statusCode: 200,
+      message: Responses.GET_INSTITUTES_SUCCESS,
+      data: institutesData
+    };
   }
 
   async getById(id: string): Promise<SFCredentialEntity> {

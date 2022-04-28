@@ -24,7 +24,7 @@ export class SFCredentialsController {
   }
 
   @Get('institutes')
-  async getInstitutes(): Promise<any[]> {
+  async getInstitutes(): Promise<any> {
     return await this.sfCredentialsService.getInstitutes();
   }
 
