@@ -11,3 +11,20 @@ export const Responses = {
   FEEDBACK_SUCCESS: 'Feedback saved successfully',
   GUIDES_SUCCESS: 'Guides retrieved successfully',
 };
+
+export enum Role {
+  Student = 'Student',
+  Parent = 'Guardian',
+  Administrator = 'Administrator',
+  Observer = 'Observer',
+  advisor = 'Advisor',
+  faculty = 'Faculty/Staff',
+}
+export enum Roles {
+  Student = 'Student',
+  Guardian = 'Guardian',
+  Admin = 'Admin',
+  Observer = 'Observer',
+  Advisor = 'Advisor',
+  faculty = 'Faculty/Staff',
+}

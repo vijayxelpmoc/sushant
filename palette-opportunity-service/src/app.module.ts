@@ -1,11 +1,13 @@
+/* eslint-disable */
 import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
-import {WrapperModule} from '@gowebknot/palette-wrapper';
+import { WrapperModule } from '@gowebknot/palette-wrapper';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { OpportunityModule } from './modules/opportunity/opportunity.module';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 @Module({
   imports: [
@@ -21,6 +23,7 @@ import { OpportunityModule } from './modules/opportunity/opportunity.module';
     }),
     WrapperModule,
     OpportunityModule,
+    SfService,
   ],
   controllers: [AppController],
   providers: [AppService],

@@ -1,3 +1,5 @@
+/* eslint-disable */
+
 import {
   BadRequestException,
   Injectable,
@@ -20,9 +22,11 @@ import {
 import {
   NotificationType,
   NotificationTypePush,
-  SfService,
+  // SfService,
   Notifier,
 } from '@gowebknot/palette-wrapper';
+
+import { SfService } from '@gowebknot/palette-salesforce-service';
 import {
   ApprovalStatus,
   CommentType,
@@ -44,7 +48,6 @@ import { CreatedByUserOpportunity } from './types/create-opportunity-interface';
 
 @Injectable()
 export class OpportunityService {
-
   private notifier: Notifier;
   constructor(private sfService: SfService) {
     this.notifier = new Notifier();
@@ -2026,5 +2029,670 @@ export class OpportunityService {
     });
 
     return filteredStudents;
+  }
+
+  // async getContactsList(userId : string, role : string ) {
+  //   const contacts = [];
+
+  //   const checkRelationship = await this.sfService.models.getRelationship.get('*', {hed__Contact__c : userId});
+  //   const checkAffiliation = await this.sfService.models.affiliations.get('*', {hed__Contact__c : userId});
+
+  //   if(!checkAffiliation || checkAffiliation.length === 0) {
+  //     throw new NotFoundException('No Affiliation Found');
+  //   }
+
+  //   switch(role) {
+  //     case 'Student':
+  //       const Roles = [];
+  //       // const getStudentNetwork = await (await  thi)
+
+  //       return {
+  //         statusCode: 200,
+  //         message: 'Contact List',
+  //         // contacts : 0,
+  //       }
+  //     case 'Administrator':
+  //       // const adminNetwork =
+  //       return {
+  //         statusCode: 200,
+  //         message: 'Contact List',
+  //       }
+  //     case 'Advisior':
+  //       // const advisorNetwork =
+  //       return {
+  //         statusCode : 200,
+  //         message: 'Contact List',
+
+  //       }
+
+  //     case 'Guardian':
+  //       // const guardianNetwork =
+  //       return {
+  //         statusCode : 200,
+  //         message: 'Contact List',
+
+  //       }
+  //     case 'Observer':
+  //       // const observerNetwork =
+  //       return {
+  //         statusCode : 200,
+  //         message: 'Contact List',
+
+  //       }
+
+  //     default :
+  //     return {
+  //       statusCode : 200,
+  //       message: `Route does not exist for the specified ${role} persona`
+  //     }
+  //   }
+
+  // }
+
+  async getUserStatus(
+    considerations: any,
+    todos: string[],
+    contactId: string,
+  ): Promise<string> {
+    let status = 'Open';
+    if (todos.indexOf(contactId) > -1) {
+      status = 'Enrolled';
+    } else if (considerations.hasOwnProperty(contactId)) {
+      if (considerations[contactId] === 'Pending') {
+        status = 'Recommended';
+      } else if (considerations[contactId] === 'Declined') {
+        status = 'Disinterest';
+      }
+    }
+    return status;
+  }
+
+  async getGuardianRelations(
+    userId: string,
+    insId: string,
+    considerations?: any,
+    todos?: string[],
+    scope?: string,
+  ) {
+    const repIds = [],
+      filteredData = [];
+    const studentsId = [];
+
+    repIds.push(userId);
+
+    const students = await this.sfService.models.relationships.get(
+      'hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.dev_uuid__c, hed__Contact__r.prod_uuid__c',
+      {
+        hed__RelatedContact__c: userId,
+        hed__Type__c: GuardianSubRoles,
+      },
+    );
+    for (let stu = 0; stu < students.length; stu++) {
+      if (repIds.indexOf(students[stu]['hed__Contact__r']['Id']) < 0) {
+        repIds.push(students[stu]['hed__Contact__r']['Id']);
+        studentsId.push(students[stu]['hed__Contact__r']['Id']);
+        const filterDataObj = {
+          Id: students[stu]['hed__Contact__r']['Id'],
+          name: students[stu]['hed__Contact__r']['Name'],
+          profilePicture:
+            students[stu]['hed__Contact__r']['Profile_Picture__c'],
+          role: 'Student',
+          status:
+            students[stu].hed__Contact__r.dev_uuid__c === null ||
+            students[stu].hed__Contact__r.prod_uuid__c === null
+              ? `Can't Share`
+              : await this.getUserStatus(
+                  considerations,
+                  todos,
+                  students[stu]['hed__Contact__r']['Id'],
+                ),
+        };
+        filteredData.push(filterDataObj);
+      }
+    }
+    if (scope === 'Discrete') {
+      return filteredData;
+    }
+    for (let i = 0; i < studentsId.length; i++) {
+      // getting student guardians
+      const guardians = await this.sfService.models.relationships(
+        'hed__RelatedContact__r.Id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.dev_uuid__c, hed__RelatedContact__r.prod_uuid__c',
+        {
+          hed__Contact__c: studentsId[i],
+          hed__Type__c: GuardianSubRoles,
+        },
+      );
+      for (let gar = 0; gar < guardians.length; gar++) {
+        if (
+          repIds.indexOf(guardians[gar]['hed__RelatedContact__r']['Id']) < 0
+        ) {
+          repIds.push(guardians[gar]['hed__RelatedContact__r']['Id']);
+          const filterDataObj = {
+            Id: guardians[gar]['hed__RelatedContact__r']['Id'],
+            name: guardians[gar]['hed__RelatedContact__r']['Name'],
+            profilePicture:
+              guardians[gar]['hed__RelatedContact__r']['Profile_Picture__c'],
+            role: 'Guardian',
+            status:
+              guardians[gar].hed__RelatedContact__r.dev_uuid__c === null ||
+              guardians[gar].hed__RelatedContact__r.prod_uuid__c === null
+                ? `Can't Share`
+                : await this.getUserStatus(
+                    considerations,
+                    todos,
+                    guardians[gar]['hed__RelatedContact__r']['Id'],
+                  ),
+          };
+          filteredData.push(filterDataObj);
+        }
+      }
+      const advisors = await this.sfService.models.relationships(
+        'hed__RelatedContact__r.Id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.dev_uuid__c, hed__RelatedContact__r.prod_uuid__c',
+        {
+          hed__Contact__c: studentsId[i],
+          hed__Type__c: MentorSubRoles,
+        },
+      );
+      for (let adv = 0; adv < advisors.length; adv++) {
+        if (repIds.indexOf(advisors[adv]['hed__RelatedContact__r']['Id']) < 0) {
+          repIds.push(advisors[adv]['hed__RelatedContact__r']['Id']);
+          const filterDataObj = {
+            Id: advisors[adv]['hed__RelatedContact__r']['Id'],
+            name: advisors[adv]['hed__RelatedContact__r']['Name'],
+            profilePicture:
+              advisors[adv]['hed__RelatedContact__r']['Profile_Picture__c'],
+            role: 'Advisor',
+            status:
+              advisors[adv].hed__RelatedContact__r.dev_uuid__c === null ||
+              advisors[adv].hed__RelatedContact__r.prod_uuid__c === null
+                ? `Can't Share`
+                : await this.getUserStatus(
+                    considerations,
+                    todos,
+                    advisors[adv]['hed__RelatedContact__r']['Id'],
+                  ),
+          };
+          filteredData.push(filterDataObj);
+        }
+      }
+    }
+    // getting admins
+    const admins = await this.sfService.models.affiliations.get(
+      'hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.dev_uuid__c, hed__Contact__r.prod_uuid__c',
+      {
+        hed__Account__c: insId,
+        hed__Role__c: 'Admin',
+      },
+    );
+    for (let i = 0; i < admins.length; i++) {
+      if (repIds.indexOf(admins[i]['hed__Contact__r']['Id']) < 0) {
+        repIds.push(admins[i]['hed__Contact__r']['Id']);
+        const filterDataObj = {
+          Id: admins[i]['hed__Contact__r']['Id'],
+          name: admins[i]['hed__Contact__r']['Name'],
+          profilePicture: admins[i]['hed__Contact__r']['Profile_Picture__c'],
+          role: 'Admin',
+          status:
+            admins[i].hed__Contact__r.dev_uuid__c === null ||
+            admins[i].hed__Contact__r.prod_uuid__c === null
+              ? `Can't Share`
+              : await this.getUserStatus(
+                  considerations,
+                  todos,
+                  admins[i]['hed__Contact__r']['Id'],
+                ),
+        };
+        filteredData.push(filterDataObj);
+      }
+    }
+    return filteredData;
+  }
+
+  async getAdminRelations(
+    userId: string,
+    insId: string,
+    considerations?: any,
+    todos?: string[],
+    scope?: string,
+  ) {
+    const repIds = [];
+    const filteredData = [];
+
+    const personas = await this.sfService.models.affiliations.get(
+      'hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Role__c, hed__Contact__r.dev_uuid__c, hed__Contact__r.prod_uuid__c',
+      {
+        hed__Account__c: insId,
+      },
+    );
+    for (let i = 0; i < personas.length; i++) {
+      if (
+        personas[i]['hed__Contact__r'] !== null &&
+        personas[i].hed__Contact__r.Id !== userId
+      ) {
+        if (repIds.indexOf(personas[i]['hed__Contact__r']['Id']) < 0) {
+          if (personas[i]['hed__Role__c'] !== null) {
+            let isNull = true; // assuming uuid is null
+            if (process.env.NODE_ENV == 'dev') {
+              if (personas[i].hed__Contact__r.dev_uuid__c !== null)
+                // contradiction
+                isNull = false;
+            } else if (process.env.NODE_ENV == 'prod') {
+              if (personas[i].hed__Contact__r.prod_uuid__c !== null)
+                // contradiction
+                isNull = false;
+            }
+            // isNull true = > uuid is not there, else it should be false
+            repIds.push(personas[i]['hed__Contact__r']['Id']);
+            const filterDataObj = {
+              Id: personas[i]['hed__Contact__r']['Id'],
+              name: personas[i]['hed__Contact__r']['Name'],
+              profilePicture:
+                personas[i]['hed__Contact__r']['Profile_Picture__c'],
+              role: personas[i]['hed__Role__c'],
+              status: isNull
+                ? `Can't Share`
+                : await this.getUserStatus(
+                    considerations,
+                    todos,
+                    personas[i]['hed__Contact__r']['Id'],
+                  ),
+            };
+            filteredData.push(filterDataObj);
+          }
+        }
+      }
+    }
+
+    return filteredData;
+  }
+
+  async getStudentsRelations(
+    userId: string,
+    insId: string,
+    considerations?: any,
+    todos?: string[],
+    // scope?: string,
+  ) {
+    const repIds = [];
+    const filteredData = [];
+
+    repIds.push(userId);
+
+    // getting guardians
+    const guardians = await this.sfService.models.relationships.get(
+      'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.dev_uuid__c, hed__RelatedContact__r.prod_uuid__c',
+      {
+        hed__Contact__c: userId,
+        // hed__Type__c: ...GuardianSubRoles,
+        hed__Type__c: GuardianSubRoles,
+      },
+    );
+    for (let i = 0; i < guardians.length; i++) {
+      if (repIds.indexOf(guardians[i].hed__RelatedContact__r.Id) < 0) {
+        repIds.push(guardians[i].hed__RelatedContact__r.Id);
+        const filterDataObj = {
+          Id: guardians[i].hed__RelatedContact__r.Id,
+          name: guardians[i].hed__RelatedContact__r.Name,
+          profilePicture:
+            guardians[i].hed__RelatedContact__r.Profile_Picture__c,
+          role: 'Guardian',
+          status:
+            guardians[i].hed__RelatedContact__r.dev_uuid__c === null ||
+            guardians[i].hed__RelatedContact__r.prod_uuid__c === null
+              ? `Can't Share`
+              : await this.getUserStatus(
+                  considerations,
+                  todos,
+                  guardians[i].hed__RelatedContact__r.Id,
+                ),
+        };
+        filteredData.push(filterDataObj);
+      }
+    }
+    // getting advisors
+    const advisors = await this.sfService.models.relationships.get(
+      'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.dev_uuid__c, hed__RelatedContact__r.prod_uuid__c',
+      {
+        hed__Contact__c: userId,
+        hed__Type__c: MentorSubRoles,
+      },
+    );
+    for (let i = 0; i < advisors.length; i++) {
+      if (repIds.indexOf(advisors[i].hed__RelatedContact__r.Id) < 0) {
+        repIds.push(advisors[i].hed__RelatedContact__r.Id);
+        const filterDataObj = {
+          Id: advisors[i].hed__RelatedContact__r.Id,
+          name: advisors[i].hed__RelatedContact__r.Name,
+          profilePicture: advisors[i].hed__RelatedContact__r.Profile_Picture__c,
+          role: 'Advisor',
+          status:
+            advisors[i].hed__RelatedContact__r.dev_uuid__c === null ||
+            advisors[i].hed__RelatedContact__r.prod_uuid__c === null
+              ? `Can't Share`
+              : await this.getUserStatus(
+                  considerations,
+                  todos,
+                  advisors[i].hed__RelatedContact__r.Id,
+                ),
+        };
+        filteredData.push(filterDataObj);
+      }
+    }
+    // getting admins
+    const admins = await this.sfService.models.affiliations.get(
+      'hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.Primary_Educational_Institution__c, hed__Contact__r.dev_uuid__c, hed__Contact__r.prod_uuid__c',
+      {
+        hed__Account__c: insId,
+        hed__Role__c: 'Admin',
+      },
+    );
+    for (let i = 0; i < admins.length; i++) {
+      if (repIds.indexOf(admins[i]['hed__Contact__r']['Id']) < 0) {
+        repIds.push(admins[i]['hed__Contact__r']['Id']);
+        const filterDataObj = {
+          Id: admins[i]['hed__Contact__r']['Id'],
+          name: admins[i]['hed__Contact__r']['Name'],
+          profilePicture: admins[i]['hed__Contact__r']['Profile_Picture__c'],
+          role: 'Admin',
+          status:
+            admins[i].hed__Contact__r.dev_uuid__c === null ||
+            admins[i].hed__Contact__r.prod_uuid__c === null
+              ? `Can't Share`
+              : await this.getUserStatus(
+                  considerations,
+                  todos,
+                  admins[i]['hed__Contact__r']['Id'],
+                ),
+        };
+        filteredData.push(filterDataObj);
+      }
+    }
+    return filteredData;
+  }
+
+  async getAdvisorRelations(
+    userId: string,
+    insId: string,
+    considerations?: any,
+    todos?: string[],
+    scope?: string,
+  ) {
+    const repIds = [];
+    const filteredData = [];
+    const studentsId = [];
+
+    repIds.push(userId);
+
+    const students = await this.sfService.models.relationships.get(
+      'hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.dev_uuid__c, hed__Contact__r.prod_uuid__c',
+      {
+        hed__RelatedContact__c: userId,
+        hed__Type__c: MentorSubRoles,
+      },
+    );
+    for (let stu = 0; stu < students.length; stu++) {
+      if (repIds.indexOf(students[stu]['hed__Contact__r']['Id']) < 0) {
+        studentsId.push(students[stu]['hed__Contact__r']['Id']);
+        repIds.push(students[stu]['hed__Contact__r']['Id']);
+        const filterDataObj = {
+          Id: students[stu]['hed__Contact__r']['Id'],
+          name: students[stu]['hed__Contact__r']['Name'],
+          profilePicture:
+            students[stu]['hed__Contact__r']['Profile_Picture__c'],
+          role: 'Student',
+          status:
+            students[stu].hed__Contact__r.dev_uuid__c === null ||
+            students[stu].hed__Contact__r.prod_uuid__c === null
+              ? `Can't Share`
+              : await this.getUserStatus(
+                  considerations,
+                  todos,
+                  students[stu]['hed__Contact__r']['Id'],
+                ),
+        };
+        filteredData.push(filterDataObj);
+      }
+    }
+    if (scope === 'Discrete') {
+      return filteredData;
+    }
+    for (let i = 0; i < studentsId.length; i++) {
+      // getting student guardians
+      const guardians = await this.sfService.models.relationships.get(
+        'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.dev_uuid__c, hed__RelatedContact__r.prod_uuid__c',
+        {
+          hed__Contact__c: studentsId[i],
+          hed__Type__c: GuardianSubRoles,
+        },
+      );
+      for (let gar = 0; gar < guardians.length; gar++) {
+        if (
+          repIds.indexOf(guardians[gar]['hed__RelatedContact__r']['Id']) < 0
+        ) {
+          repIds.push(guardians[gar]['hed__RelatedContact__r']['Id']);
+          const filterDataObj = {
+            Id: guardians[gar]['hed__RelatedContact__r']['Id'],
+            name: guardians[gar]['hed__RelatedContact__r']['Name'],
+            profilePicture:
+              guardians[gar]['hed__RelatedContact__r']['Profile_Picture__c'],
+            role: 'Guardian',
+            status:
+              guardians[gar].hed__RelatedContact__r.dev_uuid__c === null ||
+              guardians[gar].hed__RelatedContact__r.prod_uuid__c === null
+                ? `Can't Share`
+                : await this.getUserStatus(
+                    considerations,
+                    todos,
+                    guardians[gar]['hed__RelatedContact__r']['Id'],
+                  ),
+          };
+          filteredData.push(filterDataObj);
+        }
+      }
+      const advisors = await this.sfService.models.relationships.get(
+        'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.dev_uuid__c, hed__RelatedContact__r.prod_uuid__c',
+        {
+          hed__Contact__c: studentsId[i],
+          hed__Type__c: MentorSubRoles,
+        },
+      );
+      for (let adv = 0; adv < advisors.length; adv++) {
+        if (repIds.indexOf(advisors[adv]['hed__RelatedContact__r']['Id']) < 0) {
+          repIds.push(advisors[adv]['hed__RelatedContact__r']['Id']);
+          const filterDataObj = {
+            Id: advisors[adv]['hed__RelatedContact__r']['Id'],
+            name: advisors[adv]['hed__RelatedContact__r']['Name'],
+            profilePicture:
+              advisors[adv]['hed__RelatedContact__r']['Profile_Picture__c'],
+            role: 'Advisor',
+            status:
+              advisors[adv].hed__RelatedContact__r.dev_uuid__c === null ||
+              advisors[adv].hed__RelatedContact__r.prod_uuid__c === null
+                ? `Can't Share`
+                : await this.getUserStatus(
+                    considerations,
+                    todos,
+                    advisors[adv]['hed__RelatedContact__r']['Id'],
+                  ),
+          };
+          filteredData.push(filterDataObj);
+        }
+      }
+    }
+    // getting admins
+    const admins = await this.sfService.models.affiliations.get(
+      'hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.dev_uuid__c, hed__Contact__r.prod_uuid__c',
+      {
+        hed__Account__c: insId,
+        hed__Role__c: 'Admin',
+      },
+    );
+    for (let i = 0; i < admins.length; i++) {
+      if (repIds.indexOf(admins[i]['hed__Contact__r']['Id']) < 0) {
+        repIds.push(admins[i]['hed__Contact__r']['Id']);
+        const filterDataObj = {
+          Id: admins[i]['hed__Contact__r']['Id'],
+          name: admins[i]['hed__Contact__r']['Name'],
+          profilePicture: admins[i]['hed__Contact__r']['Profile_Picture__c'],
+          role: 'Admin',
+          status:
+            admins[i].hed__Contact__r.dev_uuid__c === null ||
+            admins[i].hed__Contact__r.prod_uuid__c === null
+              ? `Can't Share`
+              : await this.getUserStatus(
+                  considerations,
+                  todos,
+                  admins[i]['hed__Contact__r']['Id'],
+                ),
+        };
+        filteredData.push(filterDataObj);
+      }
+    }
+    return filteredData;
+  }
+
+  async getOppShareRecipients(userId, recordTypeName, opportunityId) {
+    const considerations = [];
+    const todos = [];
+    const opp = await this.sfService.models.accounts.get('*', {
+      Id: opportunityId,
+    });
+    const insId = opp[0].ParentId;
+
+    const considerationsList = await this.sfService.models.recommendations.get(
+      'Id, Assignee__c, Accepted__c',
+      {
+        Event__c: opportunityId,
+        Recommended_by__c: userId,
+      },
+    );
+
+    considerationsList.map((cons) => {
+      considerations[cons.Assignee__c] = cons.Accepted__c;
+    });
+
+    const todosList = await this.sfService.generics.activities.get(
+      'Id, Contact__c',
+      {
+        Event__c: opportunityId,
+      },
+    );
+
+    todosList.map((todo) => {
+      todos.push(todo.Contact__c);
+    });
+
+    if (opp[0].opportunityScope__c === 'Discrete') {
+      const getUserOpp = await this.sfService.models.opportunities.get('Id', {
+        Account__c: opportunityId,
+        Contact__c: userId,
+      });
+      if (getUserOpp.length > 0 || opp[0].Listed_by__c === userId) {
+        switch (recordTypeName) {
+          case 'Student':
+            return {
+              statusCode: 200,
+              message: 'Recipients',
+              InstituteID: null,
+              data: null,
+            };
+          case 'Advisor' || 'Faculty/Staff':
+            return {
+              statusCode: 200,
+              message: 'Recipients',
+              InstituteID: `${insId}`,
+              data: await this.getAdvisorRelations(
+                userId,
+                insId,
+                considerations,
+                todos,
+                'Discrete',
+              ),
+            };
+          case 'Guardian':
+            return {
+              statusCode: 200,
+              message: 'Recipients',
+              InstituteID: `${insId}`,
+              data: await this.getGuardianRelations(
+                userId,
+                insId,
+                considerations,
+                todos,
+                'Discrete',
+              ),
+            };
+          case 'Administrator':
+            return {
+              statusCode: 200,
+              message: 'Recipients',
+              InstituteID: `${insId}`,
+              data: await this.getAdminRelations(
+                userId,
+                insId,
+                considerations,
+                todos,
+                'Discrete',
+              ),
+            };
+          default:
+            throw new NotFoundException('Record Type Not Found');
+        }
+      }
+      return { statusCode: 200, message: 'Not Authorised To share' };
+    } else {
+      switch (recordTypeName) {
+        case 'Student':
+          return {
+            statusCode: 200,
+            message: 'Recipients',
+            InstituteID: `${insId}`,
+            data: await this.getStudentsRelations(
+              userId,
+              insId,
+              considerations,
+              todos,
+            ),
+          };
+        case 'Advisor' || 'Faculty/Staff':
+          return {
+            statusCode: 200,
+            message: 'Recipients',
+            InstituteID: `${insId}`,
+            data: await this.getAdvisorRelations(
+              userId,
+              insId,
+              considerations,
+              todos,
+            ),
+          };
+        case 'Guardian':
+          return {
+            statusCode: 200,
+            message: 'Recipients',
+            InstituteID: `${insId}`,
+            data: await this.getGuardianRelations(
+              userId,
+              insId,
+              considerations,
+              todos,
+            ),
+          };
+        case 'Administrator':
+          return {
+            statusCode: 200,
+            message: 'Recipients',
+            InstituteID: `${insId}`,
+            data: await this.getAdminRelations(
+              userId,
+              insId,
+              considerations,
+              todos,
+            ),
+          };
+        default:
+          throw new NotFoundException('Record Type Not Found');
+      }
+    }
   }
 }
