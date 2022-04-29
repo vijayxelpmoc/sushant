@@ -16,7 +16,7 @@
     "sls": "npm run build && serverless offline"
   },
   "dependencies": {
-    "@gowebknot/palette-salesforce-service": "^1.0.7-stable",
+    "@gowebknot/palette-salesforce-service": "^1.0.10-stable",
     "@gowebknot/palette-wrapper": "^1.0.9",
     "@nestjs/common": "^8.1.1",
     "@nestjs/config": "^1.1.6",
@@ -27,10 +27,11 @@
     "@nestjs/typeorm": "^9.0.0-next.2",
     "@vendia/serverless-express": "^4.5.2",
     "aws-lambda": "^1.0.7",
+    "aws-serverless-express": "^3.4.0",
     "bcryptjs": "^2.4.3",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.13.2",
-    "cryptr": "^6.0.2",
+    "cryptr": "^6.0.3",
     "joi": "^17.5.0",
     "module-alias": "^2.2.2",
     "mysql2": "^2.3.3",
@@ -38,6 +39,7 @@
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.4.0",
+    "serverless-plugin-warmup": "^7.1.0",
     "swagger-ui-express": "^4.3.0",
     "typeorm": "^0.3.6",
     "uuid": "^8.3.2"

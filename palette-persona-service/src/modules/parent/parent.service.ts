@@ -28,6 +28,7 @@ export class ParentService {
         {},
         instituteId,
       );
+      
     const {
       Id,
       Name,
@@ -55,99 +56,87 @@ export class ParentService {
       throw new NotFoundException(`parent with ID "${id}" not found`);
     }
 
-    const rlnship: any[] = await this.sfService.models.relationships.get(
-      '*',
-      {
-        Related_Contact: Id,
-        // Type: GuardianSubRoles,
-      },
-      {},
-      instituteId,
-    );
-    console.log('dcmldscn lsdc ', rlnship);
-
     const studentList: ParentStudentListSF[] =
       await this.sfService.models.relationships.get(
-        'Id, Name, Contact.Id, Type, Relationship_Explanation, Related_Contact, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
+        'Id, Name, Contact.Id, Type, Relationship_Explanation, Related_Contact.Id, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
         {
-          Related_Contact: Id,
+          Related_Contact: id,
           // Type: GuardianSubRoles,
         },
         {},
         instituteId,
       );
-    console.log('studentList', studentList);
 
-    // const students: Array<{
-    //   Id: string;
-    //   Name: string;
-    //   profilePicture: string;
-    // }> = [];
+    const students: Array<{
+      Id: string;
+      Name: string;
+      profilePicture: string;
+    }> = [];
 
-    // const getInstitute = await this.sfService.models.affiliations.get(
-    //   'Organization',
-    //   {
-    //     Contact: id,
-    //     // Role: 'Guardian',
-    //   },
-    //   {},
-    //   instituteId,
-    // );
+    const getInstitute = await this.sfService.models.affiliations.get(
+      'Organization',
+      {
+        Contact: id,
+        // Role: 'Guardian',
+      },
+      {},
+      instituteId,
+    );
 
-    // const Institute_Id = getInstitute[0].Organization; // Real Institute Id
-    // // const Institute_Id = responseData[0].Primary_Educational_Institution;
+    const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+    // const Institute_Id = responseData[0].Primary_Educational_Institution;
 
-    // const institute:
-    //   | ParentInstituteName[]
-    //   | null = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', {
-    //   Id: Institute_Id,
-    // },
-    // {},
-    // instituteId,
-    // );
+    const institute:
+      | ParentInstituteName[]
+      | null = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', {
+      Id: Institute_Id,
+    },
+    {},
+    instituteId,
+    );
 
-    // studentList.map(student => {
-    //   if (student.Contact.Is_Deactive === false) {
-    //     const filterObj = {
-    //       Id: student.Contact.Id,
-    //       Name: student.Contact.Name,
-    //       profilePicture: student.Contact.Profile_Picture,
-    //     };
-    //     students.push(filterObj);
-    //   }
-    // });
+    studentList.map(student => {
+      if (student.Contact.Is_Deactive === false) {
+        const filterObj = {
+          Id: student.Contact.Id,
+          Name: student.Contact.Name,
+          profilePicture: student.Contact.Profile_Picture,
+        };
+        students.push(filterObj);
+      }
+    });
 
-    // const parentData: ParentBEResponse = {
-    //   Id: Id,
-    //   name: Name,
-    //   firebase_uuid:
-    //     process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
-    //   phone: Phone,
-    //   instituteId: institute[0].Id,
-    //   instituteLogo: institute[0].program_logo,
-    //   institute_name: institute[0].Account_Name,
-    //   email: Palette_Email,
-    //   profilePicture: Profile_Picture,
-    //   pupils: students,
-    //   mailingCity: MailingCity,
-    //   mailingCountry: MailingCountry,
-    //   mailingState: MailingState,
-    //   mailingStreet: MailingStreet,
-    //   mailingPostalCode: MailingPostalCode,
-    //   facebook_link: Facebook,
-    //   whatsapp_link: Whatsapp,
-    //   instagram_link: Instagram,
-    //   website_link: Website,
-    //   website_Title: Website_Title,
-    //   github_link: Github,
-    //   linkedin_link: LinkedIn_URL,
-    // };
+    const parentData: ParentBEResponse = {
+      Id: Id,
+      name: Name,
+      firebase_uuid:
+        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
+      phone: Phone,
+      instituteId: institute[0].Id,
+      instituteLogo: institute[0].program_logo,
+      institute_name: institute[0].Account_Name,
+      email: Palette_Email,
+      profilePicture: Profile_Picture,
+      pupils: students,
+      mailingCity: MailingCity,
+      mailingCountry: MailingCountry,
+      mailingState: MailingState,
+      mailingStreet: MailingStreet,
+      mailingPostalCode: MailingPostalCode,
+      facebook_link: Facebook,
+      whatsapp_link: Whatsapp,
+      instagram_link: Instagram,
+      website_link: Website,
+      website_Title: Website_Title,
+      github_link: Github,
+      linkedin_link: LinkedIn_URL,
+    };
+    console.log('parentData', parentData);
 
-    // return {
-    //   statusCode: 200,
-    //   message: Responses.PROFILE_FETCHED,
-    //   data: parentData,
-    // };
-    throw new NotFoundException('NOT FOUND!');
+    return {
+      statusCode: 200,
+      message: Responses.PROFILE_FETCHED,
+      data: parentData,
+    };
   }
 }

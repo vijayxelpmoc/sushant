@@ -1,5 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
+import { Responses } from '@src/constants';
 import { Repository } from 'typeorm';
 import { v4 as uuid } from 'uuid';
 import { CreateSFCredentialDto } from './dto/create-sf-credential.dto';
@@ -16,9 +17,18 @@ export class SFCredentialsService {
     return this.sfCredentialsRepository.find();
   }
 
-  async getById(id: number): Promise<SFCredentialEntity> {
+  async getInstitutes(): Promise<any> {
+    const institutesData = await this.sfCredentialsRepository.find({ select: ["id", "instituteName", "instituteId"] });
+    return {
+      statusCode: 200,
+      message: Responses.GET_INSTITUTES_SUCCESS,
+      data: institutesData
+    };
+  }
+
+  async getById(id: string): Promise<SFCredentialEntity> {
     const found = await this.sfCredentialsRepository.findOne({
-      where: { id },
+      where: { instituteId: id },
     });
     if (!found) {
       throw new NotFoundException(
@@ -41,7 +51,7 @@ export class SFCredentialsService {
   }
 
   async update(
-    id: number,
+    id: string,
     data: Partial<CreateSFCredentialDto>,
   ): Promise<SFCredentialEntity> {
     const creds = await this.getById(id);
@@ -52,8 +62,8 @@ export class SFCredentialsService {
   }
 
   //
-  async delete(id: number): Promise<void> {
-    const result = await this.sfCredentialsRepository.delete({ id });
+  async delete(id: string): Promise<void> {
+    const result = await this.sfCredentialsRepository.delete({ instituteId: id });
     if (result.affected === 0) {
       throw new NotFoundException(
         `Unable to delete, no creds with ${id} was found`,

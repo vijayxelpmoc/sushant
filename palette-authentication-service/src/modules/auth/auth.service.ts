@@ -4,8 +4,9 @@ import {
   NotFoundException,
   Logger,
 } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-import Cryptr from 'cryptr';
+// import Cryptr from 'cryptr';
 import { v4 as uuid } from 'uuid';
 
 import {
@@ -30,14 +31,19 @@ import { OtpManager } from './entities/otpManager.entity';
 import { AuthForgotPasswordSetNewDto } from './dto/auth-forgot-password-set-new.dto';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { SFField } from '@gowebknot/palette-salesforce-service';
+import Cryptr from 'cryptr';
 @Injectable()
 export class AuthService {
-  private _cryptr: Cryptr;
+  // private _cryptr: Cryptr;
   private _notifier: Notifier;
   private readonly logger = new Logger(AuthService.name);
 
-  constructor(private sfService: SfService, private jwtService: JwtService) {
-    this._cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+  constructor(
+    private sfService: SfService, 
+    private jwtService: JwtService, 
+    private configService: ConfigService
+  ) {
+    // this._cryptr = new Cryptr(configService.get<string>('PASSWORD_HASHING_KEY'));
     this._notifier = new Notifier();
   }
 
@@ -97,7 +103,7 @@ export class AuthService {
     {},
     instituteId,
     );
-    console.log('user', user);
+
     if (!user) {
       throw new NotFoundException(Errors.USER_NOT_FOUND);
     }
@@ -124,16 +130,21 @@ export class AuthService {
       {},
       instituteId,
     );
+    console.log('user', user);
     
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
+    
 
     // Validate the password
     // [INFO] The monolith implementation of Palette uses Cryptr for hashing,
     // hence to keep the auth working for old users, cryptr is being used here
     // instead of bcrypt.
-    if (authLoginDto.password !== this._cryptr.decrypt(user.Palette_Key)) {
+    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
+    const decryptedPassword = cryptr.decrypt(user.Palette_Key);
+    console.log('decryptedPassword', decryptedPassword);
+    if (authLoginDto.password !== decryptedPassword) {
       throw new UnauthorizedException(Errors.INVALID_PASSWORD);
     }
 
@@ -151,6 +162,7 @@ export class AuthService {
       process.env.NODE_ENV === 'production'
         ? user.prod_uuid
         : user.dev_uuid;
+    console.log('uuid', uuid);
 
     return {
       statusCode: 200,
@@ -182,14 +194,17 @@ export class AuthService {
     }
     
     // Validate the password
+    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
+    const decryptedPassword = cryptr.decrypt(user.Palette_Key);
+
     this.logger.log(`REC : ${oldPassword} ${newPassword}`);
-    this.logger.log(`OLD : ${this._cryptr.decrypt(user.Palette_Key)}`);
-    if (oldPassword !== this._cryptr.decrypt(user.Palette_Key)) {
+    this.logger.log(`OLD : ${decryptedPassword}`);
+    if (oldPassword !== decryptedPassword) {
       throw new UnauthorizedException(Errors.PASSWORDS_MISMATCH_ERROR);
     }
 
     // Encrypt the new password and update the user
-    const newPasswordHash = this._cryptr.encrypt(newPassword);
+    const newPasswordHash = cryptr.encrypt(newPassword);
     await this.sfService.generics.contacts.update(userId, 
       {
         Palette_Key: newPasswordHash,
@@ -330,7 +345,8 @@ export class AuthService {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
     }
 
-    const newPasswordHash = this._cryptr.encrypt(newPassword);
+    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
+    const newPasswordHash = cryptr.encrypt(newPassword);
     await this.sfService.generics.contacts.update(user.Id, {
         Palette_Key: newPasswordHash,
       }, 
@@ -349,5 +365,5 @@ export class AuthService {
       subject: '[!IMP] Palette Password Reset OTP',
       body: 'Hello this is a test email',
     });
-  } 
+  }
 }

@@ -35,5 +35,21 @@ functions:
     events: 
       - http:  
           method: GET
+          path: admin/profile
+          cors: true
+      - http:  
+          method: GET
+          path: advisor/profile
+          cors: true
+      - http:  
+          method: GET
+          path: observer/profile
+          cors: true
+      - http:  
+          method: GET
+          path: parent/profile
+          cors: true
+      - http:  
+          method: GET
           path: student/profile
           cors: true
