@@ -20,7 +20,7 @@ import {
 import {
   NotificationType,
   NotificationTypePush,
-  SfService,
+  // SfService,
   Notifier,
 } from '@gowebknot/palette-wrapper';
 import {
@@ -41,6 +41,7 @@ import {
 } from '@src/constants';
 import _ from 'lodash';
 import { CreatedByUserOpportunity } from './types/create-opportunity-interface';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 @Injectable()
 export class OpportunityService {
