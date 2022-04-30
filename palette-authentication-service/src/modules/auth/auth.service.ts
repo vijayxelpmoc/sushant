@@ -194,10 +194,13 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(Errors.INVALID_AUTH_TOKEN);
     }
-    
+    console.log('user', user);
+
     // Validate the password
     const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
+    console.log('decryptedPassword', decryptedPassword);
+    
 
     this.logger.log(`REC : ${oldPassword} ${newPassword}`);
     this.logger.log(`OLD : ${decryptedPassword}`);
@@ -234,19 +237,23 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-
+    console.log('user', user);
+    
     if (user.IsRegisteredOnPalette === false) {
       throw new UnauthorizedException(Errors.NOT_REGISTERED_ERROR);
     }
 
     // Create an otp and send that to the user
     const otp = Math.floor(100000 + Math.random() * 900000);
+    console.log('otp', otp);
     const otpMgr = new OtpManager();
     otpMgr.userId = user.Id;
     otpMgr.email = user.Palette_Email;
     otpMgr.otp = String(otp);
     otpMgr.for = OtpChecks.FORGOT_PASSWORD;
     await otpMgr.save();
+    console.log('otpMgr', otpMgr);
+    
 
     // Send the otp to user via email and sms.
     this._notifier.send(NotificationType.SMS, {
@@ -275,7 +282,7 @@ export class AuthService {
       message: Responses.OTP_SENT_SUCCESS,
     };
   }
-
+  
   async forgotPasswordValidateOtp(
     authForgotPasswordValidateOtpDto: AuthForgotPasswordValidateOtpDto,
     instituteId: string,
@@ -320,6 +327,7 @@ export class AuthService {
     };
   }
 
+  // f3ea7f7a-9f63-4e9b-9568-58f98a2cb927
   async forgotPasswordSetNew(
     authForgotPasswordSetNewDto: AuthForgotPasswordSetNewDto,
     instituteId: string,

@@ -56,6 +56,7 @@ export class AuthController {
     Role.Observer,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('password/reset')
   async resetPassword(
     @Body() authResetPasswordDto: AuthResetPasswordDto,
     @Req() req,
