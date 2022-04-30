@@ -126,10 +126,7 @@ export class AuthService {
 
   async login(authLoginDto: AuthLoginDto, instituteId: string) {
     this.logger.log('NEW login Request');
-    
-    const pro = EnvKeys.PASSWORD_HASHING_KEY;
-    console.log('pro', pro);
-
+  
     const user = await this._getUser(
       { Palette_Email: authLoginDto.email },
       {},
@@ -194,14 +191,11 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(Errors.INVALID_AUTH_TOKEN);
     }
-    console.log('user', user);
 
     // Validate the password
     const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
-    console.log('decryptedPassword', decryptedPassword);
     
-
     this.logger.log(`REC : ${oldPassword} ${newPassword}`);
     this.logger.log(`OLD : ${decryptedPassword}`);
     if (oldPassword !== decryptedPassword) {
@@ -237,7 +231,6 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-    console.log('user', user);
     
     if (user.IsRegisteredOnPalette === false) {
       throw new UnauthorizedException(Errors.NOT_REGISTERED_ERROR);
@@ -245,15 +238,12 @@ export class AuthService {
 
     // Create an otp and send that to the user
     const otp = Math.floor(100000 + Math.random() * 900000);
-    console.log('otp', otp);
     const otpMgr = new OtpManager();
     otpMgr.userId = user.Id;
     otpMgr.email = user.Palette_Email;
     otpMgr.otp = String(otp);
     otpMgr.for = OtpChecks.FORGOT_PASSWORD;
-    await otpMgr.save();
-    console.log('otpMgr', otpMgr);
-    
+    await otpMgr.save();    
 
     // Send the otp to user via email and sms.
     this._notifier.send(NotificationType.SMS, {
