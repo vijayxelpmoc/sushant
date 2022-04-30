@@ -23,7 +23,7 @@ import {
   ApprovedStatus,
   CreateTodoV2Dto,
 } from './dtos';
-import { v4 as uuidv4} from "uuid";
+import uuid from "uuid-random"
 import {
   SFActivityActivityDetail,
   SFAdmins,
@@ -439,7 +439,7 @@ export class TodoService {
     userId: string,
     role: string,
   ): Promise<any> {
-    const groupId = uuidv4();
+    const groupId = uuid();
     const todoObj: SFTodo = {
       Name: draft.name,
       Description: draft.description,
@@ -949,7 +949,7 @@ export class TodoService {
   }
 
   async createTodo(todo: CreateTodoV2Dto) {
-    const groupId = uuidv4();
+    const groupId = uuid();
 
     const todoObj = [];
     for (const assignee of todo.assignee) {
@@ -1429,7 +1429,7 @@ export class TodoService {
       userId: userToBeNotified,
       title: todoNotificationData.title,
       body: todoNotificationData.message,
-      notificationId: uuidv4(),
+      notificationId: uuid(),
       notificationData: {
         data,
         type: 'todo',
