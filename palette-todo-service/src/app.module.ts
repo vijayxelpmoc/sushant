@@ -9,6 +9,13 @@ import { TodoModule } from './modules/todo/todo.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { EventsModule } from './modules/events/events.module';
 
+
+import {
+  SfService,
+  CachingService,
+  SfModule,
+} from '@gowebknot/palette-salesforce-service';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -21,6 +28,7 @@ import { EventsModule } from './modules/events/events.module';
       }),
       envFilePath: ['.env'],
     }),
+    SfModule.forRoot(),
     WrapperModule,
     TodoModule,
     ActivitiesModule,

@@ -5,7 +5,9 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ActivityEvents, Errors, Responses } from '@src/constants';
-import { SfService } from '@gowebknot/palette-wrapper';
+// import { SfService } from '@gowebknot/palette-wrapper';
+
+import { SfService } from '@gowebknot/palette-salesforce-service';
 import {
   AcceptRecommendationDto,
   EventTodoDto,

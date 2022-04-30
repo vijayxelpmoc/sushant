@@ -5,12 +5,14 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ActivityEvents, Errors, Responses } from '@src/constants';
+
+import { SfService } from '@gowebknot/palette-salesforce-service';
 import {
-  SfService,
+  // SfService,
   Notifier,
   NotificationType,
+  Role,
 } from '@gowebknot/palette-wrapper';
-import { v4 as uuidv4 } from 'uuid';
 import {
   CreateTodoDto,
   BulkUpdateTodoStatusDto,
@@ -19,7 +21,9 @@ import {
   TodoResourceDto,
   CreateTodoResourcesDto,
   ApprovedStatus,
+  CreateTodoV2Dto,
 } from './dtos';
+import { v4 as uuidv4} from "uuid";
 import {
   SFActivityActivityDetail,
   SFAdmins,
@@ -50,6 +54,8 @@ export class TodoService {
     this.notifier = new Notifier();
   }
 
+
+  // doubt
   /**
    * create todo from a event for a parent
    * @param userId user id whom the todo must be created
@@ -60,26 +66,26 @@ export class TodoService {
     const { eventId, listedBy } = eventTodoDto;
     // checking if the user is already enrolled in the event
     const getEventInstance: SFEventEnrollment[] =
-      await this.sfService.models.activities.get('Contact__c, Event__c', {
-        Contact__c: userId,
-        Event__c: eventId,
+      await this.sfService.models.activities.get('Contact, Event', {
+        Contact: userId,
+        Event: eventId,
       });
     if (getEventInstance.length >= 1) {
       throw new BadRequestException(Errors.USER_EXIST);
     }
     // if the user isnt enrolled then we will create a instance of paletteActivity to enroll him in the event
     await this.sfService.models.activities.create({
-      Contact__c: userId,
-      Event__c: eventId,
+      Contact: userId,
+      Event: eventId,
     });
 
     // getting all the event details by id
     const activityDetails: SFActivityActivityDetail[] =
       await this.sfService.models.activities.get(
-        'Id, Name, Description, Start_Date__c, End_Date__c, Category__c, Venue__c , ShippingAddress, Phone, Website, CreatedById, Listed_by__c, Record_Type_Name__c',
+        'Id, Name, Description, Start_Date, End_Date, Category, Venue , Shipping_Address, Phone, Website, Created_By, Listed_by, Record_Type_Name',
         {
           Id: eventId,
-          Record_Type_Name__c: ['Activity', 'Activities'], // Activities
+          Record_Type_Name: ['Activity', 'Activities'], // Activities
         },
       );
 
@@ -92,25 +98,25 @@ export class TodoService {
 
     // setting the todo type as per the event type
     let activityType = '';
-    activityType = activityDetails[0].Category__c;
-    if (activityDetails[0].Category__c in Object.values(ActivityEvents)) {
-      activityType = activityDetails[0].Category__c;
+    activityType = activityDetails[0].Category;
+    if (activityDetails[0].Category in Object.values(ActivityEvents)) {
+      activityType = activityDetails[0].Category;
     } else {
       activityType = 'Other';
     }
 
     // creation data
     const eventToDoDetails = {
-      Assignee__c: userId,
-      Group_Id__c: activityDetails[0].Id,
+      Assignee: userId,
+      Group_Id: activityDetails[0].Id,
       Name: activityDetails[0].Name,
-      Description__c: activityDetails[0].Description,
-      Task_status__c: 'Open',
-      Type__c: activityType ? activityType : 'Other',
-      Event_At__c: activityDetails[0].End_Date__c,
-      Event_Venue__c: activityDetails[0].Venue__c,
-      Complete_By__c: activityDetails[0].End_Date__c,
-      Listed_by__c: listedBy || activityDetails[0].Listed_by__c,
+      Description: activityDetails[0].Description,
+      Task_status: 'Open',
+      Type: activityType ? activityType : 'Other',
+      Event_At: activityDetails[0].End_Date,
+      Event_Venue: activityDetails[0].Venue,
+      Complete_By: activityDetails[0].End_Date,
+      Listed_by: listedBy || activityDetails[0].Listed_by,
     };
 
     // creating the todo
@@ -122,7 +128,7 @@ export class TodoService {
     if (eventResourceIds.length >= 1) {
       for (const connection of eventResourceIds) {
         await this.sfService.models.resourceConnections.update(connection, {
-          Todo__c: createTodoResponse.id,
+          Todo: createTodoResponse.id,
         });
       }
     }
@@ -140,9 +146,9 @@ export class TodoService {
   ): Promise<any> {
     const resources: SFEventResource[] =
       await this.sfService.models.resourceConnections.get(
-        'Id, Name, Event__c, Resource__c, Resource__r.Name, Resource__r.URL__c, Resource__r.Resource_Type__c',
+        'Id, Name, Event, Resource, Resource__r.Resource_Name, Resource__r.URL, Resource__r.Resource_Type',
         {
-          Event__c: activitiesIds,
+          Event: activitiesIds,
         },
       );
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
@@ -150,19 +156,19 @@ export class TodoService {
     const resourceConnectionsId = [];
     resources.map((resource) => {
       const resourcesObj = {
-        name: resource.Resource__r.Name,
-        url: resource.Resource__r.URL__c,
-        type: resource.Resource__r.Resource_Type__c,
+        name: resource.Resource__r.Resource_Name,
+        url: resource.Resource__r.URL,
+        type: resource.Resource__r.Resource_Type,
       };
       // if a record with a todo task is present then add the object into it or if not create one
-      const hashResource = allResource[`${resource.Event__c}`];
+      const hashResource = allResource[`${resource.Event}`];
       if (hashResource) {
         hashResource.push(resourcesObj);
-        allResource[`${resource.Event__c}`] = hashResource;
+        allResource[`${resource.Event}`] = hashResource;
       } else {
         const Allresources: any = [];
         Allresources.push(resourcesObj);
-        allResource[`${resource.Event__c}`] = Allresources;
+        allResource[`${resource.Event}`] = Allresources;
       }
       resourceConnectionsId.push(resource.Id);
     });
@@ -176,7 +182,7 @@ export class TodoService {
 
   async getTodos(userId: string) {
     const todos = await this.sfService.models.todos.get('*', {
-      Assignee__c: userId,
+      Assignee: userId,
     });
 
     if (!todos || todos.length === 0) {
@@ -184,13 +190,13 @@ export class TodoService {
     }
 
     // get all the guys who have assigned the todo
-    const listedByArray = todos.map((todo) => todo.Listed_by__c);
+    const listedByArray = todos.map((todo) => todo.Listed_by);
 
     // get all the ids (unique)
     const listedBy = [...new Set(listedByArray)].filter((id) => id !== null);
 
     const assignee = await this.sfService.generics.contacts.get(
-      'Id, Name, Profile_Picture__c',
+      'Id, Name, Profile_Picture',
       { Id: userId },
     );
 
@@ -210,27 +216,27 @@ export class TodoService {
       const obj = {
         todo: {
           id: todoObj.Id,
-          name: todoObj.Name,
-          description: todoObj.Description__c,
-          taskStatus: todoObj.Task_status__c,
-          acceptedStatus: todoObj.Assignee_accepted_status__c,
-          type: todoObj.Type__c,
-          completeBy: todoObj.Complete_By__c,
-          todoScope: todoObj.Todo_Scope__c,
+          name: todoObj.To_do,
+          description: todoObj.Description,
+          taskStatus: todoObj.Task_status,
+          acceptedStatus: todoObj.Assignee_accepted_status,
+          type: todoObj.Type,
+          completeBy: todoObj.Complete_By,
+          todoScope: todoObj.Todo_Scope,
           listedBy: {
-            Id: todoObj.Listed_by_c,
-            Name: listedByMap.get(todoObj.Listed_by__c),
+            Id: todoObj.Listed_by,
+            Name: listedByMap.get(todoObj.Listed_by),
           },
-          status: todoObj.Status__c,
-          eventVenue: todoObj.Event_Venue__c || null,
-          eventAt: todoObj.Event_At__c || null,
+          status: todoObj.Status,
+          eventVenue: todoObj.Event_Venue || null,
+          eventAt: todoObj.Event_At || null,
           Assignee: [
             {
-              Id: todoObj.Assignee__c,
+              Id: todoObj.Assignee,
               name: assignee[0].Name,
-              profilePicture: assignee[0].Profile_Picture__c,
-              status: todoObj.Status__c,
-              Archived: todoObj.Archived__c,
+              profilePicture: assignee[0].Profile_Picture,
+              status: todoObj.Status,
+              Archived: todoObj.Archived,
               todoId: todoObj.Id,
             },
           ],
@@ -260,18 +266,18 @@ export class TodoService {
     const todo = (
       await this.sfService.models.todos.get('*', {
         Id: todoId,
-        Assignee__c: userId,
+        // Assignee: userId,
       })
     )[0];
     if (!todo) {
       throw new BadRequestException(Errors.INVALID_TODO_ID);
     }
 
-    // const resources = await getResourcesById([todo.Id]);
+    const todoResources = await this.getResourcesById([todo.Id]);
     const assignees = await this.sfService.generics.contacts.get(
-      'Name, Profile_Picture__c, Id',
+      'Name, Profile_Picture, Id',
       {
-        Id: todo.Assignee__c,
+        Id: todo.Assignee,
       },
     );
 
@@ -281,27 +287,60 @@ export class TodoService {
       data: {
         id: todo.Id,
         name: todo.Name,
-        description: todo.Description__c,
-        taskStatus: todo.Task_status__c,
-        type: todo.Type__c,
-        completedBy: todo.Complete_By__c,
-        listedBy: todo.Listed_by__c,
-        groupId: todo.Group_Id__c,
-        status: todo.Status__c,
-        eventAt: todo.Event_At__c || null,
-        venue: todo.Event_Venue__c || null,
-        // resources: todoResources[todo.Id] || [],
+        description: todo.Description,
+        taskStatus: todo.Task_status,
+        type: todo.Type,
+        completedBy: todo.Complete_By,
+        listedBy: todo.Listed_by,
+        groupId: todo.Group_Id,
+        status: todo.Status,
+        eventAt: todo.Event_At || null,
+        venue: todo.Event_Venue || null,
+        resources: todoResources[todo.Id] || [],
         Assignee: assignees,
       },
     };
   }
+
+  async notifyOnTaskStatusChange(taskId: string, currentStatus) {
+    const tasks = await this.sfService.models.todos.get(
+      'Id, Archived, Name, Group_Id, Assignee, Assignee__r.Name, Complete_By, Description, Listed_by, Task_status, Created_at, Created_By, Type, Event_At, Event_Venue',
+      { Id: taskId },
+    );
+
+    let response;
+    if (tasks.length > 0) {
+      const task = tasks[0];
+
+      const notificationTitle = `${task.Assignee__r.Name} has ${currentStatus} your task`;
+
+      if (task.Listed_by !== task.Assignee) {
+        response = await this.sendTodoNotification({
+          title: notificationTitle,
+          message: task.Name,
+          notifyTo: 'listedBy',
+          groupId: task.Group_Id,
+          assigneeId: task.Assignee,
+          listedById: task.Listed_by,
+          todoId: task.Id,
+        });
+      }
+    }
+    return response;
+  }
   /*
     update the status of the todo
   */
-  async updateToDoStatus(userId: string, todoId: string, status: string) {
+  async updateToDoStatus(
+    userId: string,
+    todoId: string,
+    status: string,
+    role: string,
+    note?: string,
+  ) {
     const requestedTodo = await this.sfService.models.todos.get('*', {
       Id: todoId,
-      Assignee__c: userId,
+      // Assignee: userId,
     });
 
     // if todo is invalid
@@ -309,34 +348,61 @@ export class TodoService {
       throw new BadRequestException(Errors.INVALID_TODO_ID);
     }
 
-    if (requestedTodo[0].Status__c === 'Requested') {
+    if (requestedTodo[0].Status === 'Requested') {
       throw new BadRequestException(Errors.TODO_REQUESTED_STATE);
     }
-    // if this person has listed the todo, then update the status for all the assignees
-
-    if (requestedTodo.Listed_by__c === userId) {
-      const todoGroupId = requestedTodo[0].Group_Id__c;
-      const sameGroupTodos = await this.sfService.models.todos.get('*', {
-        Group_Id__c: todoGroupId,
-        Listed_by__c: userId,
-      });
-
-      sameGroupTodos.map(async (groupTodo) => {
-        await this.sfService.models.todos.update(
-          {
-            Status__c: status,
-          },
-          groupTodo.Id,
-        );
-      });
-    } else {
-      await this.sfService.models.todos.update(
-        {
-          Status__c: status,
-        },
-        todoId,
+    if (
+      requestedTodo[0].Todo_Scope === 'Global' &&
+      !(requestedTodo[0].Listed_by === userId || role === 'Administrator')
+    ) {
+      throw new BadRequestException(
+        'You cannot update status of this global todo!',
       );
     }
+
+    // if this person has listed the todo, then update the status for all the assignees
+
+    if (requestedTodo[0].Listed_by === userId) {
+      const todoGroupId = requestedTodo[0].Group_Id;
+      // Try to get all the todo's with same group Id
+      const sameGroupTodos = await this.sfService.models.todos.get('*', {
+        Group_Id: todoGroupId,
+        Listed_by: userId,
+      });
+
+      // Update all the todo's in the response
+      for (const todo of sameGroupTodos) {
+        const response = await this.sfService.models.todos.update(todo.Id, {
+          Task_status: status,
+          Note: note !== '' ? note : null,
+        });
+        // Send Notification that creator has updated the status of todo.
+        // The assignee can also revert back the status
+        if (response.success === true) {
+          this.notifyOnTaskStatusChange(todo.Id, status.toUpperCase());
+        }
+      }
+    } else {
+      // Update the status of current todo only
+      const response = await this.sfService.models.todos.update(todoId, {
+        Task_status: status,
+        Note: note !== '' ? note : null,
+      });
+      if (response.success === true) {
+        this.notifyOnTaskStatusChange(todoId, status.toUpperCase());
+      }
+    }
+
+    // await this.sfService.createNotification({
+    //   Title: `Todo Status updated to ${status}`,
+    //   Contact: requestedTodo[0].Listed_by,
+    //   Created_at: new Date(),
+    //   Is_Read: false,
+    //   Type: 'To-Do Status Update',
+    //   Todo: todoId,
+    //   Notification_Todo_Type: requestedTodo[0].Type,
+    //   Notification_By: userId,
+    // });
     return {
       statusCode: 201,
       message: Responses.TODO_STATUS_UPDATE_SUCCESS,
@@ -348,48 +414,49 @@ export class TodoService {
     userId: string,
     todoIds: string[],
     status: string,
+    role: string,
   ) {
+    // Can be used as check to report any update failure
     let hasErrors = false;
-
-    todoIds.map(async (todo) => {
+    todoIds.map(async todo => {
       try {
-        await this.updateToDoStatus(userId, todo, status);
-      } catch (error) {
+        await this.updateToDoStatus(userId, todo, status, role);
+      } catch (err) {
+        console.log(`[ERROR] Updating Todo [${todo}] : `, err);
         hasErrors = true;
       }
     });
-
     return {
       statusCode: 201,
       message: hasErrors
-        ? Errors.TODOS_BULK_UPDATE_PARTIAL_FAILURE
-        : Responses.TODOS_BULK_UPDATE_SUCCESS,
+        ? 'There were some errors in updating all the todos'
+        : 'All of the todos were updated successfully.',
     };
   }
 
   async createDraftToDo(
-    draft: CreateTodoDto,
+    draft: CreateTodoV2Dto,
     userId: string,
     role: string,
   ): Promise<any> {
     const groupId = uuidv4();
     const todoObj: SFTodo = {
       Name: draft.name,
-      Description__c: draft.description,
-      Task_status__c: draft.status,
-      Type__c: draft.type,
-      Complete_By__c: draft.completeBy,
-      Listed_by__c: draft.listedBy,
-      Status__c: 'Draft',
-      Group_Id__c: groupId,
+      Description: draft.description,
+      Task_status: draft.status,
+      Type: draft.type,
+      Complete_By: draft.completeBy,
+      Listed_by: draft.listedBy,
+      Status: 'Draft',
+      Group_Id: groupId,
     };
 
     if (draft.eventAt) {
-      todoObj.Event_At__c = draft.eventAt;
+      todoObj.Event_At = draft.eventAt;
     }
 
     if (draft.venue) {
-      todoObj.Event_Venue__c = draft.venue;
+      todoObj.Event_Venue = draft.venue;
     }
 
     // Create a discrete Todo
@@ -399,10 +466,10 @@ export class TodoService {
       for (const assignee of draft.assignee) {
         assigneeTodos.push({
           ...todoObj,
-          Assignee__c: assignee,
-          Todo_Scope__c: 'Discrete',
+          Assignee: assignee,
+          Todo_Scope: 'Discrete',
           // If the assignee is the creator of the todo, then the status is accepted
-          Assignee_accepted_status__c:
+          Assignee_accepted_status:
             userId === assignee ? 'Accepted' : 'Requested',
         });
       }
@@ -430,8 +497,8 @@ export class TodoService {
     } else if (draft.instituteId) {
       const response = await this.sfService.models.todos.create({
         ...todoObj,
-        Todo_Scope__c: 'Global',
-        Parentid__c: draft.instituteId,
+        Todo_Scope: 'Global',
+        Parent_Account: draft.instituteId,
       });
       if (response.success) {
         return {
@@ -459,8 +526,8 @@ export class TodoService {
   ) {
     const requestedTodo = await this.sfService.models.todos.get('*', {
       Id: todoId,
-      Assignee__c: userId,
-      Assignee_accepted_status__c: 'Requested',
+      Assignee: userId,
+      Assignee_accepted_status: 'Requested',
     });
 
     if (requestedTodo.length === 0) {
@@ -469,7 +536,7 @@ export class TodoService {
     try {
       await this.sfService.models.todos.update(
         {
-          Assignee_accepted_status__c: status,
+          Assignee_accepted_status: status,
         },
         todoId,
       );
@@ -496,7 +563,7 @@ export class TodoService {
       try {
         await this.sfService.models.todos.update(
           {
-            Assignee_accepted_status__c: status,
+            Assignee_accepted_status: status,
           },
           id,
         );
@@ -523,10 +590,10 @@ export class TodoService {
     // getting the institute of the admin
     const institute: SFInstitute[] =
       await this.sfService.models.affiliations.get(
-        'Id, Name,  hed__Account__c, hed__Account__r.Name',
+        'Id, Name,  Account, Account__r.Name',
         {
-          hed__Contact__c: userId,
-          hed__Role__c: 'Admin',
+          Contact: userId,
+          Role: 'Admin',
         },
       );
 
@@ -536,10 +603,10 @@ export class TodoService {
 
     // getting all the admin inside the institute
     const Admins: SFAdmins[] = await this.sfService.models.affiliations.get(
-      'hed__Contact__c, hed__Contact__r.Name, hed__Role__c, hed__Contact__r.Profile_Picture__c, hed__Contact__r.IsRegisteredOnPalette__c, hed__Contact__r.Is_Deactive__c',
+      'Contact, Contact__r.Name, Role, Contact__r.Profile_Picture, Contact__r.IsRegisteredOnPalette, Contact__r.Is_Deactive',
       {
-        hed__Account__c: institute[0].hed__Account__c,
-        hed__Role__c: 'Admin',
+        Account: institute[0].Account,
+        Role: 'Admin',
       },
     );
 
@@ -547,14 +614,14 @@ export class TodoService {
       // checking this to exclude the user that are deactivated
       // and also excluding the user requesting
       if (
-        admin.hed__Contact__c !== userId &&
-        admin.hed__Contact__r.Is_Deactive__c === false
+        admin.Contact !== userId &&
+        admin.Contact__r.Is_Deactive === false
       ) {
         const adminObj = {
-          Id: admin.hed__Contact__c,
-          name: admin.hed__Contact__r.Name,
-          profilePicture: admin.hed__Contact__r.Profile_Picture__c || null,
-          isRegistered: admin.hed__Contact__r.IsRegisteredOnPalette__c,
+          Id: admin.Contact,
+          name: admin.Contact__r.Name,
+          profilePicture: admin.Contact__r.Profile_Picture || null,
+          isRegistered: admin.Contact__r.IsRegisteredOnPalette,
         };
         filteredAdmins.push(adminObj);
       }
@@ -562,18 +629,18 @@ export class TodoService {
 
     // getting all the students inside the institute
     const students: SFStudents[] = await this.sfService.generics.contacts.get(
-      'Id, Name, Grade__c, Primary_Educational_Institution__r.Name, Profile_Picture__c, Is_Deactive__c',
+      'Id, Name, Grade, Primary_Educational_Institution__r.Name, Profile_Picture, Is_Deactive',
       {
-        Primary_Educational_Institution__c: institute[0].hed__Account__c,
+        Primary_Educational_Institution: institute[0].Account,
       },
     );
 
     // getting all the mentors inside the institute
     const mentors: SFMentors[] = await this.sfService.models.affiliations.get(
-      'Id, Name,  hed__Account__c, hed__Affiliation_Type__c, hed__Contact__c, hed__Description__c, hed__Role__c, hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Designation__c, hed__Contact__r.Profile_Picture__c, hed__Contact__r.IsRegisteredOnPalette__c, hed__Contact__r.Palette_Email__c, hed__Contact__r.Is_Deactive__c',
+      'Id, Name,  Account, Affiliation_Type, Contact, Description, Role, Contact__r.Id, Contact__r.Name, Contact__r.Designation, Contact__r.Profile_Picture, Contact__r.IsRegisteredOnPalette, Contact__r.Palette_Email, Contact__r.Is_Deactive',
       {
-        hed__Account__c: institute[0].hed__Account__c,
-        hed__Role__c: 'Advisor',
+        Account: institute[0].Account,
+        Role: 'Advisor',
       },
     );
 
@@ -582,15 +649,15 @@ export class TodoService {
     if (students.length > 0) {
       students.map((student) => {
         // checking this to exclude the user that are deactivated
-        if (student.Is_Deactive__c === false) {
+        if (student.Is_Deactive === false) {
           const filteredObj = {
             Id: student.Id,
             name: student.Name,
-            profilePicture: student.Profile_Picture__c,
-            institute: student.Primary_Educational_Institution__r
-              ? student.Primary_Educational_Institution__r.Name
+            profilePicture: student.Profile_Picture,
+            institute: student.Primary_Educational_Institution
+              ? student.Primary_Educational_Institution.Name
               : null,
-            grade: student.Grade__c,
+            grade: student.Grade,
           };
           filteredStudents.push(filteredObj);
           studentIds.push(student.Id);
@@ -603,16 +670,16 @@ export class TodoService {
       mentors.map((mentor) => {
         // checking this to exclude the user that are deactivated
         if (
-          mentor.hed__Contact__r &&
-          mentor.hed__Contact__r.Is_Deactive__c === false
+          mentor.Contact__r &&
+          mentor.Contact__r.Is_Deactive === false
         ) {
           const filteredObj = {
-            Id: mentor.hed__Contact__r.Id,
-            name: mentor.hed__Contact__r.Name,
-            profilePicture: mentor.hed__Contact__r.Profile_Picture__c,
-            instituteName: institute[0].hed__Account__r.Name,
-            designation: mentor.hed__Contact__r.Designation__c,
-            isRegistered: mentor.hed__Contact__r.IsRegisteredOnPalette__c,
+            Id: mentor.Contact__r.Id,
+            name: mentor.Contact__r.Name,
+            profilePicture: mentor.Contact__r.Profile_Picture,
+            instituteName: institute[0].Account__r.Name,
+            designation: mentor.Contact__r.Designation,
+            isRegistered: mentor.Contact__r.IsRegisteredOnPalette,
           };
           filteredMentor.push(filteredObj);
         }
@@ -622,10 +689,10 @@ export class TodoService {
     // getting all the guardians of the students
     const studentConnection: StudentConnectionResponseSF[] =
       await this.sfService.models.relationships.get(
-        'hed__Contact__r.Primary_Educational_Institution__c, hed__RelatedContact__c, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.Name, hed__RelatedContact__r.Palette_Email__c, hed__Type__c, hed__RelatedContact__r.Is_Deactive__c',
+        'Contact__r.Primary_Educational_Institution, RelatedContact, RelatedContact__r.Profile_Picture, RelatedContact__r.Name, RelatedContact__r.Palette_Email, Type, RelatedContact__r.Is_Deactive',
         {
-          hed__Contact__c: studentIds,
-          hed__Type__c: GuardianObserverSubRoles,
+          Contact: studentIds,
+          Type: GuardianObserverSubRoles,
         },
       );
 
@@ -635,17 +702,17 @@ export class TodoService {
     if (studentConnection.length > 0) {
       studentConnection.map((user) => {
         // checking this to exclude the user that are deactivated
-        if (user.hed__RelatedContact__r.Is_Deactive__c === false) {
+        if (user.RelatedContact__r.Is_Deactive === false) {
           const filteredObj = {
-            Id: user.hed__RelatedContact__c,
-            name: user.hed__RelatedContact__r.Name,
-            profilePicture: user.hed__RelatedContact__r.Profile_Picture__c,
-            instituteName: institute[0].hed__Account__r.Name,
-            designation: user.hed__Contact__r.Designation__c,
+            Id: user.RelatedContact,
+            name: user.RelatedContact__r.Name,
+            profilePicture: user.RelatedContact__r.Profile_Picture,
+            instituteName: institute[0].Account__r.Name,
+            designation: user.Contact__r.Designation,
           };
-          if (user.hed__Type__c === 'Observer')
+          if (user.Type === 'Observer')
             filteredObserver.push(filteredObj);
-          if (user.hed__Type__c === 'Guardian')
+          if (user.Type === 'Guardian')
             filteredParent.push(filteredObj);
         }
       });
@@ -690,48 +757,50 @@ export class TodoService {
       case 'Student':
         const institute = (
           await this.sfService.generics.contacts.get(
-            'Primary_Educational_Institution__c',
+            'Primary_Educational_Institution',
             {
               Id: userId,
             },
           )
-        )[0].Primary_Educational_Institution__c;
+        )[0].Primary_Educational_Institution;
         const studentRecepients = [];
         const relations = ['Guardian', 'Mentor'];
         for (const relation of relations) {
           const relationRecepients =
             await this.sfService.models.relationships.get(
-              'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.Primary_Educational_Institution__c',
+              'RelatedContact__r.Id, RelatedContact__r.Name, RelatedContact__r.Profile_Picture, RelatedContact__r.Primary_Educational_Institution',
               {
-                hed__Contact__c: userId,
-                hed__Type__c: relation,
+                Contact: userId,
+                Type: relation,
               },
             );
           relationRecepients.map((recepient) => {
             studentRecepients.push({
-              Id: recepient.hed__RelatedContact__r.Id,
-              name: recepient.hed__RelatedContact__r.Name,
+              Id: recepient.RelatedContact__r.Id,
+              name: recepient.RelatedContact__r.Name,
               profilePicture:
-                recepient.hed__RelatedContact__r.Profile_Picture__c,
+                recepient.RelatedContact__r.Profile_Picture,
               institute:
-                recepient.hed__RelatedContact__r
-                  .Primary_Educational_Institution__c,
+                recepient.RelatedContact__r
+                  .Primary_Educational_Institution,
             });
           });
         }
+
+        // doubt
         const admins = await this.sfService.models.affiliations.get(
-          'Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.Primary_Educational_Institution__c',
+          'Id, Affiliation_Name, Contact__r.Profile_Picture, Contact__r.Primary_Educational_Institution',
           {
-            hed__Account__c: institute,
-            hed__Role__c: 'Admin',
+            Account: institute,
+            Role: 'Admin',
           },
         );
         admins.map((admin) => {
           studentRecepients.push({
             Id: admin.Id,
-            name: admin.hed__Contact__r.Name,
-            profilePicture: admin.hed__Contact__r.Profile_Picture__c,
-            institute: admin.hed__Contact__r.Primary_Educational_Institution__c,
+            name: admin.Affiliation_Name,
+            profilePicture: admin.Contact__r.Profile_Picture,
+            institute: admin.Contact__r.Primary_Educational_Institution,
           });
         });
 
@@ -765,8 +834,8 @@ export class TodoService {
     if (!valid) {
       throw new BadRequestException(Errors.INVALID_TASKS_FOR_GROUP);
     }
-    // updated istedBy.Id to listed_by__c
-    if (filteredTasks[0].Listed_by__c !== userId) {
+    // updated istedBy.Id to listed_by
+    if (filteredTasks[0].Listed_by !== userId) {
       throw new BadRequestException(Errors.REQUESTER_NOT_CREATOR_OF_TODO);
     }
 
@@ -777,27 +846,27 @@ export class TodoService {
 
     if (updateTodoDto.hasOwnProperty('Description')) {
       const { Description } = updateTodoDto;
-      updateObj.Description__c = Description;
+      updateObj.Description = Description;
     }
 
     if (updateTodoDto.hasOwnProperty('type')) {
       const { type } = updateTodoDto;
-      updateObj.Type__c = type;
+      updateObj.Type = type;
     }
 
     if (updateTodoDto.hasOwnProperty('eventAt')) {
       const { eventAt } = updateTodoDto;
-      updateObj.Event_At__c = eventAt;
+      updateObj.Event_At = eventAt;
     }
 
     if (updateTodoDto.hasOwnProperty('venue')) {
       const { venue } = updateTodoDto;
-      updateObj.Event_Venue__c = venue;
+      updateObj.Event_Venue = venue;
     }
 
     if (updateTodoDto.hasOwnProperty('completeBy')) {
       const { completeBy } = updateTodoDto;
-      updateObj.Complete_By__c = completeBy;
+      updateObj.Complete_By = completeBy;
     }
 
     const updateObjArray = [todoIds].map((Id) => ({
@@ -836,7 +905,7 @@ export class TodoService {
     const updateArray = todoIds.map((todo) => {
       return {
         Id: todo,
-        Task_status__c: todoStatus,
+        Task_status: todoStatus,
       };
     });
 
@@ -852,40 +921,55 @@ export class TodoService {
     }
   }
 
-  async deleteTodo(todoId: string) {
-    const response = await this.sfService.models.todos.delete(todoId);
-    const success = response.success;
+  // async deleteAllTodos(serId: string,) {
+  //   const response = await this.sfService.models.todos.delete(todoId);
+  //   const success = response.success;
 
-    if (success) {
-      return { statusCode: 200, message: Responses.TODO_DELETION_SUCCESS };
-    } else {
-      throw new BadRequestException(Errors.TODO_DELETION_FAILURE);
+  //   if (success) {
+  //     return { statusCode: 200, message: Responses.TODO_DELETION_SUCCESS };
+  //   } else {
+  //     throw new BadRequestException(Errors.TODO_DELETION_FAILURE);
+  //   }
+  // }
+
+  async deleteAllTodos(Id: string, role: string) {
+    try {
+      const allTodos = await this.sfService.models.todos.get(Id, role);
+
+      const allTodoIds = allTodos.data.map(todo => {
+        return todo.todo.Id;
+      });
+
+      const deleteResponse = await this.sfService.models.todos.delete(allTodoIds);
+
+      return deleteResponse;
+    } catch (error) {
+      return error;
     }
   }
 
-  async createTodo(todo: CreateTodoDto) {
+  async createTodo(todo: CreateTodoV2Dto) {
     const groupId = uuidv4();
 
     const todoObj = [];
     for (const assignee of todo.assignee) {
       const obj: any = {
-        Assignee__c: assignee,
+        Assignee: assignee,
         Name: todo.name,
-        Description__c: todo.description,
-        Task_status__c: todo.status,
-        Status__c: todo.approved_status,
-        Type__c: todo.type,
-        Complete_By__c: todo.completeBy,
-        Listed_by__c: todo.listedBy,
-        Group_Id__c: groupId,
+        Description: todo.description,
+        Task_status: todo.status,
+        Type: todo.type,
+        Complete_By: todo.completeBy,
+        Listed_by: todo.listedBy,
+        Group_Id: groupId,
       };
 
       if (todo.eventAt) {
-        obj.Event_At__c = todo.eventAt;
+        obj.Event_At = todo.eventAt;
       }
 
       if (todo.venue) {
-        obj.Event_Venue__c = todo.venue;
+        obj.Event_Venue = todo.venue;
       }
 
       todoObj.push(obj);
@@ -924,7 +1008,7 @@ export class TodoService {
     const resourceCon: TodoResourceConnection[] = [];
 
     const todoList: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived__c, Name, Group_Id__c, Assignee__c, Assignee__r.Name, Complete_By__c, Description__c, Listed_by__c, Task_status__c, Created_at__c, CreatedById, Type__c, Event_At__c, Event_Venue__c',
+      'Id, Archived, To_do, Group_Id, Assignee, Assignee__r.Name, Complete_By, Description, Listed_by, Task_status, Created_at, Created_By, Type, Event_At, Event_Venue',
       {
         Id: todoIds,
       },
@@ -934,15 +1018,15 @@ export class TodoService {
       throw new BadRequestException(Errors.TODO_NOT_FOUND);
     }
 
-    const groupId = todoList[0].Group_Id__c;
+    const groupId = todoList[0].Group_Id;
 
-    const isValid = todoList.every((todo) => todo.Group_Id__c === groupId);
+    const isValid = todoList.every((todo) => todo.Group_Id === groupId);
 
     if (!isValid) {
       throw new BadRequestException(Errors.INVALID_TASKS_FOR_GROUP);
     }
 
-    if (todoList[0].Listed_by__c != listedById) {
+    if (todoList[0].Listed_by != listedById) {
       throw new BadRequestException(Errors.REQUESTER_NOT_CREATOR_OF_TODO);
     }
 
@@ -950,8 +1034,8 @@ export class TodoService {
     for (const resource of createTodoResourcesDto.resources) {
       const resObj = {
         Name: resource.name,
-        Resource_Type__c: resource.type,
-        URL__c: resource.url,
+        Resource_Type: resource.type,
+        URL: resource.url,
       };
       resources.push(resObj);
     }
@@ -961,8 +1045,8 @@ export class TodoService {
     for (const resource of resourceRes) {
       for (const todoId of todoIds) {
         const resourceConObj = {
-          Todo__c: todoId,
-          Resource__c: resource.id,
+          Todo: todoId,
+          Resource: resource.id,
         };
         resourceCon.push(resourceConObj);
       }
@@ -972,9 +1056,9 @@ export class TodoService {
 
     if (isNewTodo) {
       for (const todo of todoList) {
-        if (todo.Assignee__c !== todo.Listed_by__c) {
+        if (todo.Assignee !== todo.Listed_by) {
           const user = await this.sfService.generics.contacts.get('Id, Name', {
-            Id: todo.Listed_by__c,
+            Id: todo.Listed_by,
           });
           const message = 'New Task by ' + user[0].Name;
 
@@ -982,9 +1066,9 @@ export class TodoService {
             title: message,
             message: todo.Name,
             notifyTo: 'assignee',
-            groupId: todo.Group_Id__c,
-            assigneeId: todo.Assignee__c,
-            listedById: todo.Listed_by__c,
+            groupId: todo.Group_Id,
+            assigneeId: todo.Assignee,
+            listedById: todo.Listed_by,
             todoId: todo.Id,
           });
         }
@@ -1024,9 +1108,9 @@ export class TodoService {
       deletedResources.map(async (resourceId) => {
         // Gets Resource Connections of the particular resource
         const resourceCon = await this.sfService.models.resourceConnections.get(
-          'Id, Resource__c, Todo__c, Resource__r.URL__c',
+          'Id, Resource, Todo, Resource__r.URL',
           {
-            Resource__c: resourceId,
+            Resource: resourceId,
           },
         );
 
@@ -1034,7 +1118,7 @@ export class TodoService {
           let count = 0;
           // Deletes Resource connection of the specified todo
           for (const resCon of resourceCon) {
-            if (todoId.includes(resCon.Todo__c)) {
+            if (todoId.includes(resCon.Todo)) {
               await this.sfService.models.resourceConnections.delete(resCon.Id);
               count++;
             }
@@ -1043,7 +1127,7 @@ export class TodoService {
           // Deletes Resource if the resource isn't linked with any other entity
           if (resourceCon.length === count) {
             const resource = resourceCon[0].Resource__r;
-            let url = resource.URL__c;
+            let url = resource.URL;
 
             try {
               // Deletes resource from firebase
@@ -1075,17 +1159,17 @@ export class TodoService {
    */
   async getTasks(filters) {
     const allToDo: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived__c, Assignee__c, Assignee__r.Name, Assignee__r.Profile_Picture__c, Complete_By__c, Created_at__c, Description__c, Task_status__c, Name, CreatedById, Type__c, Event_At__c, Event_Venue__c, Listed_by__c, Group_Id__c',
+      'Id, Archived, Assignee, Assignee__r.Name, Assignee__r.Profile_Picture, Complete_By, Created_at, Description, Task_status, Name, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
       filters,
     );
-    // not getting the CreatedById name so getting the names of the user by the ids
+    // not getting the Created_By name so getting the names of the user by the ids
     const createdUserIds = [];
     const listedByContactIds = [];
     allToDo.map((todo) => {
-      if (todo.Listed_by__c) {
-        listedByContactIds.push(todo.Listed_by__c);
+      if (todo.Listed_by) {
+        listedByContactIds.push(todo.Listed_by);
       } else {
-        createdUserIds.push(todo.CreatedById);
+        createdUserIds.push(todo.Created_By);
       }
     });
 
@@ -1128,22 +1212,22 @@ export class TodoService {
     allToDo.map((todo) => {
       const filteredToDoObject: Task = {
         Id: todo.Id,
-        Assignee: todo.Assignee__c,
+        Assignee: todo.Assignee,
         AssigneeName: todo.Assignee__r.Name,
-        profilePicture: todo.Assignee__r.Profile_Picture__c,
-        groupId: todo.Group_Id__c,
-        Archived: todo.Archived__c,
+        profilePicture: todo.Assignee__r.Profile_Picture,
+        groupId: todo.Group_Id,
+        Archived: todo.Archived,
         name: todo.Name,
-        description: todo.Description__c,
-        status: todo.Task_status__c,
-        type: todo.Type__c,
-        eventAt: todo.Event_At__c,
-        venue: todo.Event_Venue__c,
-        completeBy: todo.Complete_By__c,
-        createdAt: todo.Created_at__c,
-        listedBy: createdUser[`${todo.Listed_by__c}`]
-          ? createdUser[`${todo.Listed_by__c}`]
-          : createdUser[`${todo.CreatedById}`],
+        description: todo.Description,
+        status: todo.Task_status,
+        type: todo.Type,
+        eventAt: todo.Event_At,
+        venue: todo.Event_Venue,
+        completeBy: todo.Complete_By,
+        createdAt: todo.Created_at,
+        listedBy: createdUser[`${todo.Listed_by}`]
+          ? createdUser[`${todo.Listed_by}`]
+          : createdUser[`${todo.Created_By}`],
       };
       filteredToDos.push(filteredToDoObject);
       toDoIds.push(todo.Id);
@@ -1160,8 +1244,8 @@ export class TodoService {
   async getResourcesById(tasksId: string[]) {
     const resources: SFResource[] =
       await this.sfService.models.resourceConnections.get(
-        'Name, Todo__c, Resource__c, Resource__r.Id, Resource__r.Name, Resource__r.URL__c, Resource__r.Resource_Type__c',
-        { Todo__c: tasksId },
+        'Name, Todo, Resource, Resource__r.Id, Resource__r.Resource_Name, Resource__r.URL, Resource__r.Resource_Type',
+        { Todo: tasksId },
       );
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
     const allResource = {};
@@ -1169,19 +1253,19 @@ export class TodoService {
       if (resource.Resource__r) {
         const resourcesObj = {
           Id: resource.Resource__r.Id,
-          name: resource.Resource__r.Name,
-          url: resource.Resource__r.URL__c,
-          type: resource.Resource__r.Resource_Type__c,
+          name: resource.Resource__r.Resource_Name,
+          url: resource.Resource__r.URL,
+          type: resource.Resource__r.Resource_Type,
         };
         // if a record with a todo task is present then add the object into it or if not create one
-        const hashResource = allResource[`${resource.Todo__c}`];
+        const hashResource = allResource[`${resource.Todo}`];
         if (hashResource) {
           hashResource.push(resourcesObj);
-          allResource[`${resource.Todo__c}`] = hashResource;
+          allResource[`${resource.Todo}`] = hashResource;
         } else {
           const AllResources = [];
           AllResources.push(resourcesObj);
-          allResource[`${resource.Todo__c}`] = AllResources;
+          allResource[`${resource.Todo}`] = AllResources;
         }
       }
     });
@@ -1316,7 +1400,7 @@ export class TodoService {
         userToBeNotified = todoNotificationData.assigneeId;
         const tasks = await this.getTasks({
           Id: todoNotificationData.todoId,
-          Assignee__c: todoNotificationData.assigneeId,
+          Assignee: todoNotificationData.assigneeId,
         });
         const tasksAndResources = await this.getTasksAndResource(tasks);
         data = tasksAndResources.data[0];
@@ -1327,13 +1411,13 @@ export class TodoService {
         let tasks;
         if (todoNotificationData.groupId) {
           tasks = await this.getTasks({
-            Group_Id__c: todoNotificationData.groupId,
-            Listed_by__c: todoNotificationData.listedById,
+            Group_Id: todoNotificationData.groupId,
+            Listed_by: todoNotificationData.listedById,
           });
         } else {
           tasks = await this.getTasks({
             Id: todoNotificationData.todoId,
-            Assignee__c: todoNotificationData.assigneeId,
+            Assignee: todoNotificationData.assigneeId,
           });
         }
         const tasksAndResources = await this.getTasksAndResource(tasks);
@@ -1353,6 +1437,53 @@ export class TodoService {
     };
 
     return await this.notifier.send(NotificationType.PUSH, notificationConfig);
+  }
+
+  async isValidAssignee(
+    assignee: string[],
+    listedBy: string,
+    recordType: Role,
+  ) {
+    switch (recordType) {
+      case Role.Student: {
+        if (assignee[0] === listedBy && assignee.length === 1) {
+          return true;
+        }
+        return false;
+      }
+
+      // doubt
+      // case Role.Parent: {
+      //   const { pupils } = await this.parentService.getParent(listedBy);
+      //   const pupilIds = pupils.map(pupil => pupil.Id);
+      //   return assignee.every(i => pupilIds.includes(i));
+      // }
+
+      // case Role.Advisor: {
+      //   const students = await this.advisorService.getFilteredStudents(
+      //     listedBy,
+      //   );
+      //   const studentIds = students.map(student => student.Id);
+      //   return assignee.every(i => studentIds.includes(i));
+      // }
+
+      // case Role.Faculty: {
+      //   const students = await this.advisorService.getFilteredStudents(
+      //     listedBy,
+      //   );
+      //   const studentIds = students.map(student => student.Id);
+      //   return assignee.every(i => studentIds.includes(i));
+      // }
+
+      // case Role.Administrator: {
+      //   const filteredStudents = await (await this.adminService.getAdminInstituteDetails(
+      //     listedBy,
+      //   )).data.students;
+      //   const studentIds = filteredStudents.map(student => student.Id);
+      //   return assignee.every(i => studentIds.includes(i));
+      // }
+    }
+    return false;
   }
 
   /**

@@ -33,10 +33,13 @@ import {
   BulkUpdateTodoStatusDto,
   UpdateTaskStatusDto,
   EventTodoDto,
+  CreateTodoV2Dto,
+  AssigneeInfoDtoV2,
 } from './dtos';
 
 import { TodoService } from './todo.service';
 import { Errors } from '@src/constants';
+import { CreateTodo } from './types';
 
 @Controller({
   path: 'todo',
@@ -49,6 +52,8 @@ export class TodoController {
    *@param EventTodoDto contains eventId and listedBy
    * return status code and errors
    */
+
+  // done
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
@@ -67,17 +72,23 @@ export class TodoController {
       eventTodoDto,
     );
   }
+
+  // done
+  @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/')
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
-    description: 'Fetch all todos assigned to the logged in user',
+    description: 'Returns list of todos.',
+    // type: getTodosResponseBodyDto,
+    isArray: true,
   })
   async getTodos(@Request() req) {
     return await this.todoService.getTodos(req.user.id);
   }
 
+  // done
   /*
    * Create a new discrete or global Todo draft
    */
@@ -91,15 +102,18 @@ export class TodoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiBody({
-    type: CreateTodoDto,
+    type: CreateTodoV2Dto,
   })
   @ApiResponse({
     status: 200,
     description: 'Adds a discrete or global todo draft',
-    type: CreateTodoResponse,
+    type: CreateTodoV2Dto,
   })
   @Post('draft')
-  async createTodoDraft(@Body() createTodoDto: CreateTodoDto, @Request() req) {
+  async createTodoDraft(
+    @Body() createTodoDto: CreateTodoV2Dto,
+    @Request() req,
+  ) {
     return await this.todoService.createDraftToDo(
       createTodoDto,
       req.user.id,
@@ -107,6 +121,7 @@ export class TodoController {
     );
   }
 
+  // done
   /*
    * Accept a Todo Request
    */
@@ -138,6 +153,7 @@ export class TodoController {
     );
   }
 
+  // done
   /*
    * Reject a Todo Request
    */
@@ -169,6 +185,7 @@ export class TodoController {
     );
   }
 
+  // done
   @Get('/:id')
   @ApiBearerAuth()
   @ApiResponse({
@@ -179,6 +196,7 @@ export class TodoController {
     return await this.todoService.getTodo(req.user.id, id);
   }
 
+  // done
   /*
    * Bulk Accept Todo
    */
@@ -190,18 +208,11 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/bulk/accept')
+  @Post('todo/requested/bulk/accept')
   @ApiBearerAuth()
-  @ApiBody({
-    schema: {
-      properties: {
-        todoIds: { type: 'array', items: { type: 'string' } },
-      },
-    },
-  })
   @ApiResponse({
     status: 200,
-    description: 'Accepts requested todos.',
+    description: 'Accept requested todos.',
   })
   async acceptRequestedTodoBulk(
     @Request() req,
@@ -214,21 +225,42 @@ export class TodoController {
     );
   }
 
-  @Post('/update/:id')
+  // done
+  /**
+   * function to update the todo
+   * @param updateTodoDto
+   * fields with values that has to be updated
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/update/status/:id')
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
-    description: 'Fetch a single todo',
+    description: 'Updates a Todo',
   })
-  @ApiBody({ type: UpdateTaskStatusDto })
-  async updateToDoStatus(
+  async updateTodoStatus(
     @Request() req,
     @Param('id') id,
     @Body('status') status,
+    @Body('note') note,
   ) {
-    return await this.todoService.updateToDoStatus(req.user.id, id, status);
+    return await this.todoService.updateToDoStatus(
+      req.user.id,
+      id,
+      status,
+      req.user.RecordTypeName,
+      note,
+    );
   }
 
+  // done
   /*
    * Bulk Reject Todo
    */
@@ -240,18 +272,11 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/bulk/reject')
+  @Post('todo/requested/bulk/reject')
   @ApiBearerAuth()
-  @ApiBody({
-    schema: {
-      properties: {
-        todoIds: { type: 'array', items: { type: 'string' } },
-      },
-    },
-  })
   @ApiResponse({
     status: 200,
-    description: 'Rejects requested todos.',
+    description: 'Reject requested todos in bulk.',
   })
   async rejectRequestedTodoBulk(
     @Request() req,
@@ -264,6 +289,8 @@ export class TodoController {
     );
   }
 
+
+  // done
   /*
    * Get Todo Recepient List
    */
@@ -281,7 +308,7 @@ export class TodoController {
   @ApiResponse({
     status: 200,
     description: 'Gets Todo recipients',
-    type: AssigneeInfoDto,
+    type: AssigneeInfoDtoV2,
     isArray: true,
   })
   async getTodoRecepients(@Request() req) {
@@ -291,6 +318,8 @@ export class TodoController {
     );
   }
 
+
+  // done
   /**
    * function to create todo resources and connect them to the todo.
    * ONLY TO BE USED TO CONNECT RESOURCES WITH NEW TODO
@@ -310,7 +339,7 @@ export class TodoController {
     status: 200,
     description: 'Creates todo resources and connects them to todos.',
   })
-  @Post('add/resources')
+  @Post('todoresources') // route
   async createTodoResources(
     @Body() createTodoResourcesDto: CreateTodoResourcesDto,
     @Request() req,
@@ -322,21 +351,26 @@ export class TodoController {
     );
   }
 
+  // doubt
   /**
    * function to update the todo
    * @param todoID
    * fields with values that has to be updated
    */
   @hasRoles(Role.Student, Role.Parent, Role.Advisor, Role.Faculty)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'Todo Deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @Delete('/delete/:id')
-  async deleteTodo(@Param() params) {
-    return await this.todoService.deleteTodo(params.id);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete('/todo/deleteAll')
+  async deleteAllTodos(@Request() req) {
+    return this.todoService.deleteAllTodos(
+      req.user.id,
+      req.user.RecordTypeName,
+    );
   }
 
+  // done
   /**
    * function to update the todo
    * @param updateTodoDto
@@ -360,6 +394,7 @@ export class TodoController {
     );
   }
 
+  // done
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOkResponse({ description: 'Todo Updated successfully' })
@@ -368,33 +403,18 @@ export class TodoController {
   @Patch('bulk/status/update')
   bulkUpdate(
     @Request() req,
-    @Body()
-    bulkUpdateTodoStatusDto: BulkUpdateTodoStatusDto,
-  ) {
-    return this.todoService.bulkUpdateStatus('', bulkUpdateTodoStatusDto);
-  }
-  @hasRoles(
-    Role.Student,
-    Role.Parent,
-    Role.Advisor,
-    Role.Faculty,
-    Role.Administrator,
-  )
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @Post('/bulk/status/update')
-  async updateTodoStatusBulk(
-    @Request() req,
     @Body('todoIds') todoIds: string[],
     @Body('status') status: string,
   ) {
-    return await this.todoService.updateTodoStatusBulk(
+    return this.todoService.updateTodoStatusBulk(
       req.user.id,
       todoIds,
       status,
+      req.user.RecordTypeName,
     );
   }
 
+  // done
   @hasRoles(
     Role.Student,
     Role.Parent,
@@ -404,39 +424,84 @@ export class TodoController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('/todo')
-  async createTodo(@Body() createTodoDto: CreateTodoDto, @Request() req) {
-    const id: string = req.user.id;
-    const recordType: Role = req.user.RecordTypeName;
-    let todo: CreateTodoDto;
-    if (!createTodoDto.assignee) {
-      throw new BadRequestException(Errors.ASSIGNEE_EMPTY);
-    }
-    // TODO :- Enabled after enabling valid assignee service
-    // if (
-    //   !(await this.todoService.isValidAssignee(todo.assignee, id, recordType))
-    // ) {
-    //   throw new BadRequestException(Errors.ASSIGNEE_INVALID);
-    // }
-    switch (recordType) {
-      case Role.Student: {
-        todo = {
-          ...createTodoDto,
-          assignee: [id],
-          listedBy: id,
-        };
-        break;
+    @ApiResponse({
+      status: 200,
+      description: 'Creates a todo',
+      type: CreateTodoResponse,
+    })
+    async createTodo(@Body() createTodoDto: CreateTodoV2Dto, @Request() req) {
+      const id: string = req.user.id;
+      const recordType: Role = req.user.RecordTypeName;
+  
+      let todo: CreateTodoV2Dto;
+  
+      switch (recordType) {
+        case Role.Student: {
+          todo = {
+            ...createTodoDto,
+            assignee: [id],
+            listedBy: id,
+          };
+          break;
+        }
+        case Role.Parent: {
+          if (!createTodoDto.assignee) {
+            throw new BadRequestException('Assignee not provided');
+          }
+  
+          todo = {
+            ...createTodoDto,
+            listedBy: id,
+          };
+        }
+        case Role.Advisor: {
+          if (!createTodoDto.assignee) {
+            throw new BadRequestException('Assignee not provided');
+          }
+  
+          todo = {
+            ...createTodoDto,
+            listedBy: id,
+          };
+        }
+        case Role.Faculty: {
+          if (!createTodoDto.assignee) {
+            throw new BadRequestException('Assignee not provided');
+          }
+  
+          todo = {
+            ...createTodoDto,
+            listedBy: id,
+          };
+        }
+        case Role.Administrator: {
+          if (!createTodoDto.assignee) {
+            throw new BadRequestException('Assignee not provided');
+          }
+  
+          todo = {
+            ...createTodoDto,
+            listedBy: id,
+          };
+        }
       }
-      case Role.Parent:
-      case Role.Advisor:
-      case Role.Faculty:
-      case Role.Administrator: {
-        todo = {
-          ...createTodoDto,
-          listedBy: id,
-        };
+  
+      if (
+        !(await this.todoService.isValidAssignee(
+          todo.assignee,
+          id,
+          recordType,
+        ))
+      ) {
+        throw new BadRequestException('Not a valid assignee');
       }
+  
+      const response = await this.todoService.createTodo(todo);
+  
+      return {
+        status: 201,
+        message: 'Todo Created',
+        data: response,
+      };
     }
-
-    return await this.todoService.createTodo(todo);
-  }
 }
