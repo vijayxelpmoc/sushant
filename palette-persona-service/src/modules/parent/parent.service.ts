@@ -131,7 +131,6 @@ export class ParentService {
       github_link: Github,
       linkedin_link: LinkedIn_URL,
     };
-    console.log('parentData', parentData);
 
     return {
       statusCode: 200,

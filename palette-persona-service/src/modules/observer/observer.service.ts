@@ -41,7 +41,6 @@ export class ObserverService {
         {},
         instituteId,
       );
-    console.log('responseData', responseData);
 
     const {
       Id,
