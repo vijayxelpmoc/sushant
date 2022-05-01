@@ -82,3 +82,9 @@ export interface ParentBEResponse {
   github_link: string;
   linkedin_link: string;
 }
+
+export interface ParentUpdateResponse {
+  id: string;
+  success: boolean;
+  errors: [];
+}

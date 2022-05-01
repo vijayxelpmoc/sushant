@@ -1,8 +1,11 @@
-import { IsOptional, IsString } from 'class-validator';
 
-export class UpdateSfObserverDto {
+
+
+import { IsArray, IsOptional, IsString, IsUrl } from 'class-validator';
+
+export class UpdateSfAdminDto {
   @IsOptional()
-  @IsString()
+  @IsUrl()
   facebook: string;
 
   @IsOptional()
@@ -10,22 +13,22 @@ export class UpdateSfObserverDto {
   whatsapp: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   instagram: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   website: string;
 
   @IsOptional()
   @IsString()
-  website_Title: string;
+  websiteTitle: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   github: string;
 
   @IsOptional()
-  @IsString()
+  @IsUrl()
   linkedin: string;
 }

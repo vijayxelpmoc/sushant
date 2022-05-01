@@ -1,6 +1,6 @@
 import { IsOptional, IsString } from 'class-validator';
 
-export class UpdateSfObserverDto {
+export class UpdateSfAdvisorDto {
   @IsOptional()
   @IsString()
   facebook: string;

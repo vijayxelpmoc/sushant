@@ -11,9 +11,11 @@ import {
   ParentBEResponse,
   ParentInstituteName,
   ParentStudentListSF,
+  ParentUpdateResponse,
   SFParentContact,
 } from './types/parent-interface';
 import { GuardianSubRoles } from '@src/roles/roles.enum';
+import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 @Injectable()
 export class ParentService {
   constructor(private readonly sfService: SfService) {}
@@ -137,5 +139,81 @@ export class ParentService {
       message: Responses.PROFILE_FETCHED,
       data: parentData,
     };
+  }
+
+  /** updates parent profile details
+   *  @param {UpdateSfAdvisorDto} updateSfAdvisorDto contains attributes that needs to be updated in the advisor profile data
+   * @returns {Object} status code and message
+   */
+  async update(
+    id: string,
+    updateSfParentDto: UpdateSfParentDto,
+    instituteId: string,
+  ) {
+    const responseData: SFParentContact[] = await this.sfService.getContact(
+      'Name, Palette_Email',
+      {
+        Id: id,
+      },
+      {},
+      instituteId,
+    );
+
+    if (!responseData) {
+      throw new NotFoundException(`parent with ID "${id}" not found`);
+    }
+
+    const updateObj: any = {};
+    if (updateSfParentDto.hasOwnProperty('facebook')) {
+      const { facebook } = updateSfParentDto;
+      updateObj.Facebook = facebook;
+    }
+
+    if (updateSfParentDto.hasOwnProperty('whatsapp')) {
+      const { whatsapp } = updateSfParentDto;
+      updateObj.Whatsapp = whatsapp;
+    }
+
+    if (updateSfParentDto.hasOwnProperty('instagram')) {
+      const { instagram } = updateSfParentDto;
+      updateObj.Instagram = instagram;
+    }
+
+    if (updateSfParentDto.hasOwnProperty('website')) {
+      const { website } = updateSfParentDto;
+      updateObj.Website = website;
+    }
+
+    if (updateSfParentDto.hasOwnProperty('website_Title')) {
+      const { website_Title } = updateSfParentDto;
+      updateObj.Website_Title = website_Title;
+    }
+
+    if (updateSfParentDto.hasOwnProperty('github')) {
+      const { github } = updateSfParentDto;
+      updateObj.Github = github;
+    }
+
+    if (updateSfParentDto.hasOwnProperty('linkedin')) {
+      const { linkedin } = updateSfParentDto;
+      updateObj.LinkedIn_URL = linkedin;
+    }
+
+    const updateUser: ParentUpdateResponse = await this.sfService.generics.contacts.update(
+      id,
+      updateObj,
+      instituteId,
+    );
+
+    if (updateUser.id && updateUser.success) {
+      return {
+        statusCode: 200,
+        message: Responses.PROFILE_UPDATED,
+      };
+    } else {
+      throw new BadRequestException(
+        'Exception occured unable save the changes',
+      );
+    }
   }
 }
