@@ -48,6 +48,23 @@ export class StudentController {
     return student;
   }
 
+  @hasRoles(
+    Role.Parent,
+    Role.Administrator,
+    Role.Advisor,
+    Role.Observer,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('details/:id')
+  async getStudentDetails(
+    @Param('id') id: string,
+    @Query('instituteId') instituteId: string,
+  ) {
+    // return 'ok';
+    return await this.studentService.getStudent(id, instituteId);
+  }
+
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('profile/update')
@@ -61,21 +78,5 @@ export class StudentController {
       updateProfileDto,
       instituteId,
     );
-  }
-
-  @hasRoles(
-    Role.Parent,
-    Role.Administrator,
-    Role.Advisor,
-    Role.Observer,
-    Role.Faculty,
-  )
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('/:id')
-  async getStudentDetails(
-    @Param('id') id: string,
-    @Query('instituteId') instituteId: string,
-  ) {
-    return await this.studentService.getStudent(id, instituteId);
   }
 }
