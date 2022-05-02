@@ -33,18 +33,18 @@ export class StudentController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getStudent(@Request() req, @Query('instituteId') instituteId: string) {
-    // Cache the user profile as it's accessed multiple
-    // times throughout the application
-    const cacheKey = `student_${req.user.id}`;
-    const cachedStudent = await this.cachingService.get(cacheKey);
-    if (cachedStudent) {
-      return cachedStudent;
-    }
+    // // Cache the user profile as it's accessed multiple
+    // // times throughout the application
+    // const cacheKey = `student_${req.user.id}`;
+    // const cachedStudent = await this.cachingService.get(cacheKey);
+    // if (cachedStudent) {
+    //   return cachedStudent;
+    // }
     const student = await this.studentService.getStudent(
       req.user.id,
       instituteId,
     );
-    await this.cachingService.set(cacheKey, student);
+    // await this.cachingService.set(cacheKey, student);
     return student;
   }
 
