@@ -150,7 +150,7 @@ export class ParentService {
     updateSfParentDto: UpdateSfParentDto,
     instituteId: string,
   ) {
-    const responseData: SFParentContact[] = await this.sfService.getContact(
+    const responseData: SFParentContact[] = await this.sfService.generics.contacts.get(
       'Name, Palette_Email',
       {
         Id: id,
