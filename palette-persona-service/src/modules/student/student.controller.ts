@@ -26,7 +26,7 @@ import { CachingService } from '@gowebknot/palette-salesforce-service';
 export class StudentController {
   constructor(
     private studentService: StudentService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Student)

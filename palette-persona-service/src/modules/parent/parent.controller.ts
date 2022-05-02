@@ -15,7 +15,7 @@ import {
   RolesGuard,
   Role,
 } from '@gowebknot/palette-wrapper';
-import { CachingService } from '@gowebknot/palette-salesforce-service';
+// import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { ParentService } from './parent.service';
 import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 
@@ -25,22 +25,22 @@ import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 export class ParentController {
   constructor(
     private parentService: ParentService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Parent)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getParent(@Request() req, @Query('instituteId') instituteId: string) {
-    // Cache the user profile as it's accessed multiple
-    // times throughout the application
-    const cacheKey = `parent_${req.user.id}`;
-    const cachedParent = await this.cachingService.get(cacheKey);
-    if (cachedParent) {      
-      return cachedParent;
-    }
+    // // Cache the user profile as it's accessed multiple
+    // // times throughout the application
+    // const cacheKey = `parent_${req.user.id}`;
+    // const cachedParent = await this.cachingService.get(cacheKey);
+    // if (cachedParent) {      
+    //   return cachedParent;
+    // }
     const parent = await this.parentService.getParent(req.user.id, instituteId);
-    await this.cachingService.set(cacheKey, parent);
+    // await this.cachingService.set(cacheKey, parent);
     return parent;
   }
 

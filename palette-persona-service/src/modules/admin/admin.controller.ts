@@ -17,7 +17,7 @@ import {
   Role,
 } from '@gowebknot/palette-wrapper';
 
-import { CachingService } from '@gowebknot/palette-salesforce-service';
+// import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { AdminService } from './admin.service';
 import { UpdateSfAdminDto } from './dto/admin-update-profile.dto';
 
@@ -28,7 +28,7 @@ import { UpdateSfAdminDto } from './dto/admin-update-profile.dto';
 export class AdminController {
   constructor(
     private adminService: AdminService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Administrator)
@@ -38,15 +38,15 @@ export class AdminController {
     @Request() req, 
     @Query('instituteId') instituteId: string
   ) {
-    // Cache the user profile as it's accessed multiple
-    // times throughout the application
-    const cacheKey = `admin_${req.user.id}`;
-    const cachedAdmin = await this.cachingService.get(cacheKey);
-    if (cachedAdmin) {
-      return cachedAdmin;
-    }
+    // // Cache the user profile as it's accessed multiple
+    // // times throughout the application
+    // const cacheKey = `admin_${req.user.id}`;
+    // const cachedAdmin = await this.cachingService.get(cacheKey);
+    // if (cachedAdmin) {
+    //   return cachedAdmin;
+    // }
     const admin = await this.adminService.getAdmin(req.user.id, instituteId);
-    await this.cachingService.set(cacheKey, admin);
+    // await this.cachingService.set(cacheKey, admin);
     return admin;
   }
 
