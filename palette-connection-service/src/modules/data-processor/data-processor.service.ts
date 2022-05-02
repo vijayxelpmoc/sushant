@@ -17,7 +17,7 @@ export class DataProcessorService {
     private sfModelsService: SFModelsService,
   ) {}
 
-  private async process() {
+  async process() {
     const credentials = await this.sfCredentialsService.get();
     const models = await this.sfModelsService.get();
     const fields = await this.sfFieldsService.get();
