@@ -1,6 +1,6 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import * as admin from 'firebase-admin';
-import { SfService } from '@gowebknot/palette-wrapper';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import { Contact, PushNotificationData, SFContact } from '@src/modules/firebase/types';
 import { Errors } from '@src/constants';
