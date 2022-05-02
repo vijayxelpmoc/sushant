@@ -76,6 +76,10 @@ functions:
           cors: true
       - http:
           method: POST
+          path: auth/password/forgot/set
+          cors: true 
+      - http:
+          method: POST
           path: users/register/pre
           cors: true
       - http:

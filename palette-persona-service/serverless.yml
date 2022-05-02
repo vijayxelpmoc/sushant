@@ -38,18 +38,58 @@ functions:
           path: admin/profile
           cors: true
       - http:  
+          method: PATCH
+          path: admin/profile/update
+          cors: true
+      - http:  
+          method: GET
+          path: admin/:id
+          cors: true
+      - http:  
           method: GET
           path: advisor/profile
+          cors: true
+      - http:  
+          method: PATCH
+          path: advisor/profile/update
+          cors: true
+      - http:  
+          method: GET
+          path: advisor/:id
           cors: true
       - http:  
           method: GET
           path: observer/profile
           cors: true
       - http:  
+          method: PATCH
+          path: observer/profile/update
+          cors: true
+      - http:  
+          method: GET
+          path: observer/:id
+          cors: true
+      - http:  
           method: GET
           path: parent/profile
           cors: true
       - http:  
+          method: PATCH
+          path: parent/profile/update
+          cors: true
+      - http:  
+          method: GET
+          path: parent/:id
+          cors: true
+      - http:  
           method: GET
           path: student/profile
+          cors: true
+      - http:  
+          method: PATCH
+          path: student/profile/update
+          cors: true
+      - http:  
+          method: GET
+          path: student/:id
           cors: true

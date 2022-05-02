@@ -176,8 +176,7 @@ export class StudentService {
       instituteId,
     );
 
-    const interests =
-      (student.Interests && student.Interests.split(',')) || null;
+    const interests = (student.Interests && student.Interests.split(',')) || null;
 
     const skills = (student.skills && student.skills.split(',')) || null;
 

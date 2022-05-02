@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Patch, Req, UseGuards, Query } from '@nestjs/common';
+import { Body, Controller, Post, Patch, Req, UseGuards, Query, Get } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -56,6 +56,7 @@ export class AuthController {
     Role.Observer,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('password/reset')
   async resetPassword(
     @Body() authResetPasswordDto: AuthResetPasswordDto,
     @Req() req,

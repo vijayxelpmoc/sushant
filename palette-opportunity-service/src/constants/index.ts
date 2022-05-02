@@ -153,3 +153,8 @@ export const NotificationDataTypes = {
   OPPORTUNITY_COMMENT: `Create opportunity comment`,
   OPPORTUNITY_CREATED: `Create opportunity`,
 };
+
+export const AccountActivity = {
+  ACTIVITY: 'Activity',
+  // ACTIVITY: 'activities',
+}

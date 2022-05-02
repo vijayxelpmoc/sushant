@@ -16,6 +16,7 @@ import {
 } from '@gowebknot/palette-wrapper';
 import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { ParentService } from './parent.service';
+import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 
 @Controller({
   path: 'parent',
@@ -42,23 +43,43 @@ export class ParentController {
     return parent;
   }
 
-  // @hasRoles(Role.Parent)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Patch('profile/update')
-  // async updateParentProfile(
-  //   @Request() req,
-  //   // @Body() updateSfParentDto: UpdateSfParentDto,
-  // ) {
-  //   return await this.parentService.updateParentProfile(
-  //     req.user.id,
-  //     updateSfParentDto,
-  //   );
-  // }
+  /** updates parent profile details
+   *  @param {UpdateSfAdvisorDto} updateSfAdvisorDto contains attributes that needs to be updated in the advisor profile data
+   * @returns {Object} status code and message
+   */
+  @hasRoles(Role.Parent)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('profile/update')
+  update(
+    @Request() req, 
+    @Body() updateSfParentDto: UpdateSfParentDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.parentService.update(
+      req.user.id, 
+      updateSfParentDto,
+      instituteId,
+    );
+  }
 
-  // @hasRoles(Role.Parent)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('dependents/institutes')
-  // async getAvailableInstitutes(@Request() req) {
-  //   return await this.parentService.getDependentInstitutes(req.user.id);
-  // }
+  /**
+   * Function to get the details of the parent by ID
+   * @param id id of the parent
+   * object Array of parent details
+   */
+   @hasRoles(
+    Role.Administrator,
+    Role.Parent,
+    Role.Student,
+    Role.advisor,
+    Role.Observer,
+    Role.faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('details/:id')
+  getParentDetails(@Param('id') id: string) {
+    return this.parentService.parentDetailsDashboard(id);
+  }
+
+  
 }

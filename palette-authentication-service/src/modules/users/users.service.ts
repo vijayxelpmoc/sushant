@@ -11,6 +11,7 @@ import { Errors, Responses } from '@src/constants';
 import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
 import { User, Roles } from './types';
 // const Cryptr = require('cryptr');
+import { EnvKeys } from '@src/constants';
 
 @Injectable()
 export class UsersService {
@@ -19,7 +20,7 @@ export class UsersService {
     private sfService: SfService,
     private configService: ConfigService
     ) {
-    // this._cryptr = new Cryptr(process.env.PASSWORD_HASHING_KEY);
+    // this._cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
   }
 
   async preRegisterForPalette(preRegisterUserDto: PreRegisterUserDto, instituteId: string) {
@@ -38,8 +39,6 @@ export class UsersService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-
-    console.log('user', user);
     
     // Check if user is already registered
     if (user.IsRegisteredOnPalette === true) {
@@ -51,15 +50,14 @@ export class UsersService {
     if (isStudentOrGuardian && !ferpa) {
       throw new ForbiddenException(Errors.FERPA_NOT_ACCEPTED);
     }
-
+    
     // Encrypt the new password and update the user
-    const cryptr = new Cryptr(this.configService.get<string>('PASSWORD_HASHING_KEY'));
+    const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const newPasswordHash = cryptr.encrypt(password);
-    console.log('newPasswordHash', newPasswordHash);
     isStudentOrGuardian
       ? await this.sfService.generics.contacts.update(user.Id, {
           Palette_Key: newPasswordHash,
-          FERPA: true,
+          FERPA: true,  
         },
         instituteId,
         )
@@ -68,18 +66,14 @@ export class UsersService {
         },
         instituteId,
         );
-    console.log('isStudentOrGuardian', isStudentOrGuardian);
     
     await this.sfService.generics.contacts.update(user.Id, {
       IsRegisteredOnPalette: true,
     },
     instituteId
     );
-    console.log('updated');
 
     const [fName, lName] = user.Name.split(' ');
-    console.log('fName', fName);
-    console.log('lName', lName);
     return {
       statusCode: 200,
       message: Responses.PRE_REGISTER_SUCCESS,

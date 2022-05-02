@@ -71,7 +71,7 @@ export class StudentController {
     Role.Faculty,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get(':id?')
+  @Get('/:id')
   async getStudentDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,

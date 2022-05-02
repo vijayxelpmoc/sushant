@@ -20,10 +20,11 @@ import {
 import {
   NotificationType,
   NotificationTypePush,
-  SfService,
+  // SfService,
   Notifier,
 } from '@gowebknot/palette-wrapper';
 import {
+  AccountActivity,
   ApprovalStatus,
   CommentType,
   Errors,
@@ -41,108 +42,157 @@ import {
 } from '@src/constants';
 import _ from 'lodash';
 import { CreatedByUserOpportunity } from './types/create-opportunity-interface';
+import { SfService } from '@gowebknot/palette-salesforce-service';
+import { SFALlAccountFields } from '@src/types/sf-interface';
 
 @Injectable()
 export class OpportunityService {
 
   private notifier: Notifier;
-  constructor(private sfService: SfService) {
+  constructor(
+    private sfService: SfService
+  ) {
     this.notifier = new Notifier();
   }
 
-  async addToConsiderations(userId: string, id: string) {
-    const existingOpportunities = await this.sfService.generics.activities.get(
-      'Contact__c, Event__c',
+  async CreateOpportunityOtherRoles(
+    OpportunitiesInfoDto: OpportunitiesInfoDto,
+    userId: string,
+    assigneeId: string,
+    InstituteId: string,
+    instituteId: string,
+  ): Promise<BasicResponse> {
+    const {
+      eventTitle,
+      description,
+      eventDateTime,
+      expirationDateTime,
+      phone,
+      website,
+      venue,
+      eventType,
+    } = OpportunitiesInfoDto;
+
+    const recordTypeId = await this.sfService.models.accounts.get(
+      'Account_Record_Type',
       {
-        Contact__c: userId,
-        Event__c: id,
+        Record_Type_Name: AccountActivity.ACTIVITY,
       },
+      {},
+      instituteId,
     );
-    if (existingOpportunities && existingOpportunities.length > 0) {
-      throw new BadRequestException(
-        Errors.OPPORTUNITY_EXISTS_IN_CONSIDERATIONS,
+
+    if (assigneeId) {
+      // save on salesforce for assignee
+      await this.sfService.models.accounts.create(
+        {
+          Account_Name: eventTitle,
+          Account_Record_Type: recordTypeId[0].Account_Record_Type,
+          Description: description,
+          Venue: venue,
+          Website: website,
+          Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+          Phone: phone,
+          Type: eventType,
+          Listed_by: userId,
+          Approval_Status: 'Approved',
+          Event_Assignee: assigneeId,
+          End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
+        },
+        instituteId,
       );
     }
 
-    await this.sfService.generics.activities.create({
-      // Assignee__c: userId,
-      Contact__c: userId,
-      Event__c: id,
-    });
-
-    return {
-      statusCode: 201,
-      message: Responses.ADDED_TO_CONSIDERATIONS,
-    };
+    if (InstituteId) {
+      // save on salesforce for Institute
+      await this.sfService.models.accounts.create(
+        {
+          Account_Name: eventTitle,
+          Account_Record_Type: recordTypeId[0].Account_Record_Type,
+          Description: description,
+          Venue: venue,
+          Website: website,
+          Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+          Phone: phone,
+          Type: eventType,
+          Listed_by: userId,
+          Approval_Status: 'In Review',
+          Parent_Account: InstituteId,
+          End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
+        },
+        instituteId,
+      );
+    }
+    return { statusCode: 201, message: Responses.OPPORTUNITY_CREATED };
   }
 
-  /*
-    add opportunity to todo
-    userId, considerationId
-  */
-  async addToTodo(userId: string, id: string) {
-    const todoResponse = await this.sfService.models.accounts.get('*', {
-      Id: id,
-      Approval_Status__c: 'Approved',
-    });
-
-    if (!todoResponse || todoResponse.length === 0) {
-      throw new NotFoundException(Errors.NO_TODO_FOUND);
-    }
-
-    const existingTodos = await this.sfService.generics.activities.get('Id', {
-      Contact__c: userId,
-      Event__c: id,
-    });
-    if (existingTodos && existingTodos.length !== 0) {
-      throw new BadRequestException(Errors.TODO_EXISTS);
-    }
-    const todo = todoResponse[0];
-    await this.sfService.models.todos.create({
-      Name: todo['Name'],
-      Description__c: todo['Description'],
-      Complete_By__c: todo['End_Date__c'],
-      Assignee__c: userId,
-      Task_status__c: 'Open',
-      Created_at__c: new Date(),
-      Type__c: todo['Category__c'],
-      Event_Venue__c: todo['Venue__c'],
-      Event_At__c: todo['Start_Date__c'],
-      Status__c: 'Approved',
-    });
-
-    await this.sfService.generics.activities.create({
-      Contact__c: userId,
-      Event__c: id,
-    });
-
-    // createNotifications (check in palette-be)
-    const notificationTitle = Responses.ADDED_TO_TODO;
-    const notificationMsg = Responses.ADDED_TO_TODO;
-
-    const notificationObj = await this.sfService.models.notifications.create({
-      Title__c: notificationTitle,
-      Contact__c: todo['Listed_by__c'],
-      Created_at__c: new Date(),
-      Is_Read__c: false,
-    });
-
-    /** send Push notification */
-    this.notifier.send(NotificationType.PUSH, {
-      userId: userId,
-      title: notificationTitle,
-      body: notificationMsg,
-      notificationId: notificationObj.Id,
-      data: {
-        data: Responses.ADDED_TO_TODO,
-        type: Responses.ADDED_TO_TODO,
+  /** gets all self created opportunities
+   *  @param {userId} string user id
+   * @returns {Object} status code and message and opportunity information
+   */
+   async getLinkedOpportunities(userId: string, instituteId: string) {
+    const createdOpportunities = await this.sfService.models.accounts.get('*', {
+        Listed_by: userId,
       },
-    });
+      {},
+      instituteId,
+    );
 
-    return {
-      statusCode: 201,
-      message: Responses.ADDED_TO_TODO,
-    };
+    const assignedOpportunities = await this.sfService.models.accounts.get('*', {
+        Event_Assignee: userId,
+      },
+      {},
+      instituteId,
+    );
+
+    const filteredData = [];
+    createdOpportunities.map(event => {
+      if (
+        (event.Approval_Status == 'Approved' && event.opportunityScope == 'Global') ||
+        (event.opportunityScope == 'Discrete' && event.Visibility == 'Available')
+      ) {
+        const filterDataObj = {
+          Id: event.Id,
+          eventName: event.Account_Name,
+          description: event.Description,
+          venue: event.Venue,
+          website: event.Website,
+          eventDate: event.Start_Date ? new Date(event.Start_Date) : null,
+          phone: event.Phone,
+          Type: event.Category,
+          approvalStatus: event.Approval_Status,
+          expirationDate: event.End_Date
+            ? new Date(event.End_Date)
+            : null,
+          opportunityScope: event.opportunityScope,
+        };
+        filteredData.push(filterDataObj);
+      }
+    });
+    assignedOpportunities.map(event => {
+      if (
+        (event.Approval_Status == 'Approved' && event.opportunityScope == 'Global') ||
+        (event.opportunityScope == 'Discrete' && event.Visibility == 'Available')
+      ) {
+        const filterDataObj = {
+          Id: event.Id,
+          eventName: event.Account_Name,
+          description: event.Description,
+          venue: event.Venue,
+          website: event.Website,
+          eventDate: event.Start_Date ? new Date(event.Start_Date) : null,
+          phone: event.Phone,
+          Type: event.Category,
+          approvalStatus: event.Approval_Status,
+          expirationDate: event.End_Date
+            ? new Date(event.End_Date)
+            : null,
+          opportunityScope: event.opportunityScope,
+        };
+        filteredData.push(filterDataObj);
+      }
+    });
+    return { statusCode: 201, message: '', data: filteredData };
   }
 
   /** updates an opportunity for all user
@@ -151,25 +201,26 @@ export class OpportunityService {
    *  @param {opportunityId} string the id of the record we updating
    * @returns {Object} status code and message
    */
-  async updateOpportunity(
+   async updateOpportunity(
     opportunitiesInfoDto: OpportunitiesInfoDto,
     opportunityId: string,
-    userId,
+    userId: string,
+    instituteId: string,
   ) {
-    const opportunitiesResponse = await this.sfService.models.accounts.get(
-      '*',
-      {
+    // get record details by id
+    // const dataExist: SFALlAccountFields[] = await this.sfService.getAccount(
+    const dataExist: any = await this.sfService.models.accounts.get('*', {
         Id: opportunityId,
       },
+      {},
+      instituteId,
     );
 
-    if (!opportunitiesResponse || opportunitiesResponse.length === 0) {
-      throw new NotFoundException(Errors.RECORD_NOT_FOUND);
-    }
+    // checking if the record user is trying to edit  whether it is been created by them
+    if (dataExist[0].Listed_by !== userId) throw new BadRequestException('you are not the creator of this opportunity.',);
 
-    if (opportunitiesResponse[0].Listed_by__c !== userId) {
-      throw new BadRequestException(Errors.YOU_ARE_NOT_CREATOR);
-    }
+    //bad request if there isn't any record for that id
+    if (!dataExist) throw new BadRequestException('Record not found');
 
     const {
       eventTitle,
@@ -182,586 +233,51 @@ export class OpportunityService {
       eventType,
     } = opportunitiesInfoDto;
 
-    await this.sfService.models.accounts.update(
-      {
-        Name: eventTitle,
-        Description: description,
-        Venue__c: venue,
-        Website: website,
-        Start_Date__c: eventDateTime,
-        phone: phone,
-        Type: eventType,
-        End_Date__c: expirationDateTime,
-      },
-      opportunityId,
-    );
-
-    return {
-      statusCode: 201,
-      message: Responses.OPPORTUNITY_UPDATED,
-    };
-  }
-
-  async bulkAddOpportunitiesToConsiderations(
-    userId: string,
-    opportunities: string[],
-  ) {
-    let hasErrors = false;
-    opportunities.map(async (opportunityId) => {
-      try {
-        await this.addToConsiderations(userId, opportunityId);
-      } catch (e) {
-        hasErrors = true;
-      }
-    });
-
-    return {
-      statusCode: 200,
-      message: !hasErrors
-        ? Responses.ALL_ADDED_TO_CONSIDERATIONS
-        : Errors.SOME_OPPORTUNITIES_NOT_ADDED,
-    };
-  }
-
-  /*Most opportunities exist in the accounts model*/
-  async getOpportunitiesCreatedByAuthenticatedUser(userId: string) {
-    const response = await this.sfService.models.accounts.get('*', {
-      Listed_by__c: userId,
-    });
-    if (!response || response.length === 0) {
-      throw new NotFoundException(Errors.NOT_FOUND);
-    }
-
-    const opportunitiesCreatedByUser: any = [...new Set(response)];
-
-    const res = [];
-    for (const opportunity of opportunitiesCreatedByUser) {
-      //check the type for this object
-      const obj: CreatedByUserOpportunity = {
-        Id: opportunity.Id,
-        evenName: opportunity.Name,
-        description: opportunity.Description,
-        venue: opportunity.Venue__c,
-        website: opportunity.Website,
-        eventDate: opportunity.Start_Date__c,
-        phone: opportunity.Phone,
-        type: opportunity.Category__c || 'Others',
-        visibility: opportunity.Visibility__c,
-        expirationDateTime: opportunity.End_Date__c,
-        status: opportunity.Approcal_Status__c,
-        opportunityScope: opportunity.opportunityScope__c,
-        Venue__c: opportunity.Venue__c ? opportunity.Venue__c : null,
-      };
-
-      res.push(obj);
-    }
-
-    return {
-      statusCode: 200,
-      message: Responses.SUCCESS,
-      data: res,
-    };
-  }
-
-  async getOpportunitiesFromConsiderations(userId: string) {
-    const considerations = await this.sfService.generics.activities.get('*', {
-      Contact__c: userId,
-    });
-
-    if (!considerations || considerations.length === 0) {
-      throw new NotFoundException(Errors.NO_CONSIDERATIONS_FOUND);
-    }
-
-    const myConsiderations = [];
-    for (const consideration of considerations) {
-      // create type for this
-      const obj: { ConsiderationId: string; Name: string; CreatedBy: string } =
-        {
-          ConsiderationId: consideration.Event__c,
-          Name: consideration.Name,
-          CreatedBy: consideration.CreatedById,
-        };
-      myConsiderations.push(obj);
-    }
-    return {
-      statusCode: 200,
-      message: Responses.SUCCESS,
-      data: myConsiderations,
-    };
-  }
-
-  async bulkAddOpportunitiesToTodo(userId: string, opportunities: string[]) {
-    let hasErrors = false;
-
-    for (const opportunity of opportunities) {
-      try {
-        await this.addToTodo(userId, opportunity);
-      } catch (e) {
-        hasErrors = true;
-      }
-    }
-
-    return {
-      statusCode: 200,
-      message: hasErrors
-        ? Errors.SOME_OPPORTUNITIES_NOT_ADDED
-        : Responses.ALL_ADDED_TO_TODOS,
-    };
-  }
-
-  async createDraftOpportunity(
-    draftInfoDto: DraftInfoDto,
-    userId: string,
-    assignees: string[],
-    instituteId: string,
-    recordTypeName: string,
-  ): Promise<BasicResponse> {
-    if (!instituteId && !assignees.length) {
-      const Institute = await this.sfService.models.affiliations.get(
-        'hed__Account__r.Id',
-        {
-          hed__Contact__c: userId,
-        },
-      );
-      instituteId = Institute[0].hed__Account__r.Id;
-    }
-
-    const recordTypeId = await this.sfService.models.accounts.get('*', {
-      Record_Type_Name__c: 'activities',
-    });
-    // const notificationTitle = `Draft created by user`;
-    // const notificationMsg = `Draft has been created by user`;
-    const {
-      eventTitle,
-      description,
-      eventDateTime,
-      expirationDateTime,
-      phone,
-      website,
-      venue,
-      eventType,
-    } = draftInfoDto;
-
-    const opportunityObject = {
+    await this.sfService.models.accounts.update(opportunityId, {
       Name: eventTitle,
       Description: description,
-      Start_Date__c: eventDateTime ? new Date(eventDateTime) : null,
-      End_Date__c: expirationDateTime ? new Date(expirationDateTime) : null,
-      Created_at__c: new Date(),
-      Phone: phone,
+      Venue: venue,
       Website: website,
-      Venue__c: venue,
-      Category__c: eventType,
-      Listed_by__c: userId,
-      opportunityScope__c: OpportunityScope.DISCRETE,
-      Visibility__c: Visibility.AVAILABLE,
-      Approval_Status__c: ApprovalStatus.DRAFT,
-      RecordTypeId: recordTypeId[0].RecordTypeId,
-    };
-
-    if (recordTypeName === RecordTypeName.STUDENT) {
-      if (assignees.length > 1 || assignees[0] !== userId) {
-        throw new BadRequestException(Errors.UNAUTHORIZED_OPPORTUNITY_CREATION);
-      }
-      const oppAcc = await this.sfService.models.accounts.create({
-        ...opportunityObject,
-      });
-      await this.sfService.models.opportunities.create({
-        Contact__c: userId,
-        Account__c: oppAcc['id'],
-      });
-    } else {
-      if (assignees.length) {
-        // creating discrete opportunity
-        const res = await this.sfService.models.accounts.create({
-          ...opportunityObject,
-        });
-        // assigning assignees to opportunity
-        assignees.map(
-          async (assignee) =>
-            await this.sfService.models.opportunities.create({
-              Contact__c: assignee,
-              Account__c: res['id'],
-            }),
-        );
-      } else {
-        // Null Institute Id Should be acceptable
-        // creating global opportunity
-        await this.sfService.models.accounts.create({
-          ...opportunityObject,
-          ParentId: instituteId,
-          opportunityScope__c: OpportunityScope.DISCRETE,
-        });
-      }
-    }
-    return {
-      statusCode: 201,
-      message: Responses.DRAFT_OPPORTUNITY_SAVED,
-    };
-  }
-
-  // updates opportunity status from draft => Available / In Review
-  async setDraftOpportunityStatus(opportunityId: string, userId: string) {
-    const opportunityDetails = await this.sfService.models.accounts.get('*', {
-      Id: opportunityId,
-      Listed_by__c: userId,
+      Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+      Phone: phone,
+      Type: eventType,
+      End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
     });
 
-    if (opportunityDetails.length == 0) {
-      throw new UnauthorizedException(
-        Errors.UNAUTHORIZED_OPPORTUNITY_STATUS_UPDATE,
-      );
-    }
+    // check logic !!! by @abhinav
+    // const opp = await this.sfService.models.accounts.get('*', { 
+    //     Id: opportunityId 
+    //   },
+    //   {},
+    //   instituteId,
+    // );
 
-    const status =
-      OpportunityScope.DISCRETE === opportunityDetails[0].opportunityScope__c
-        ? OpportunityStatus.APPROVED
-        : OpportunityStatus.IN_REVIEW;
+    // if (opp.Todo__c.length > 0) {
+    //   await this.sfService.updateTodo(opp.Todo__c, {
+    //     Name: eventTitle,
+    //     Description__c: description,
+    //     Event_Venue__c: venue,
+    //     Type__c: eventType,
+    //   });
+    // }
 
-    await this.sfService.models.accounts.update(
-      {
-        Status__c: status,
-      },
-      opportunityId,
-    );
-    return {
-      statusCode: 201,
-      message: Responses.STATUS_UPDATE,
-    };
+    return { statusCode: 201, message: Responses.OPPORTUNITY_UPDATED };
   }
 
-  // Soft Delete => visibility will change to "Removed"
-  // If Discrete?: visibility will change to "Removed"
-  // If Global?: Removal Status will change to "In Review"
-  async deleteOpportunity(
-    userId: string,
-    opportunityIds: string[],
-    message: string,
-    userType: string,
-  ) {
-    const results = [];
-    opportunityIds.forEach(async (opportunityId) => {
-      const tempResult = [];
-      tempResult.push(opportunityId);
-      // gets listed by user opportunities
-      if (!opportunityId) {
-        tempResult.push(Errors.NULL_OPPORTUNITY_ID);
-        results.push(tempResult);
-        return;
-      }
-      const listedBy = await this.sfService.models.accounts.get('*', {
-        Listed_by__c: userId,
-        // Record_Type_Name__c: 'activities',
-      });
-      let Flag = 0; // opportunityId present or not present
-      listedBy.map(async (event) => {
-        if (event.Id == opportunityId) {
-          if (
-            event.Visibility__c != Visibility.REMOVED &&
-            event.opportunityScope__c == OpportunityScope.DISCRETE
-          ) {
-            Flag = 1;
-            await this.sfService.models.accounts.update(
-              {
-                Visibility__c: Visibility.REMOVED,
-                message__c: message,
-              },
-              opportunityId,
-            );
-            tempResult.push(Responses.OPPORTUNITY_REMOVED);
-            results.push(tempResult);
-
-            const recipients = await this.sfService.models.opportunities.get(
-              '*',
-              {
-                Account__c: opportunityId,
-              },
-            );
-            const notificationTitle = NotificationTitles.OPPORTUNITY_REMOVED;
-            const notificationMsg =
-              NotificationMessage.OPPORTUNITY_REMOVED_BY_CREATOR;
-            recipients.map(async (event) => {
-              // create push notification  => Sent to Recipient
-              const recipientId = event.Contact__c;
-              const notificationConfig: NotificationTypePush = {
-                userId: recipientId,
-                title: notificationTitle,
-                body: notificationMsg,
-                notificationId: uuidv4(),
-                data: {
-                  data: NotificationDataTexts.OPPORTUNITY_REMOVED,
-                  type: NotificationDataTypes.OPPORTUNITY_REMOVED,
-                },
-              };
-              await this.notifier.send(
-                NotificationType.PUSH,
-                notificationConfig,
-              );
-              // Notifications history to be updated for delete opportunity => Discrete
-              await this.sfService.models.notifications.create({
-                Type__c: notificationTitle,
-                Title__c: notificationMsg,
-                Opportunity__c: opportunityId,
-                Contact__c: recipientId,
-                Notification_By__c: userId,
-                Created_at__c: new Date(),
-                Is_Read__c: false,
-              });
-            });
-          } else if (event.opportunityScope__c === OpportunityScope.GLOBAL) {
-            Flag = 1;
-            if (userType == RecordTypeName.ADMINISTRATOR) {
-              await this.sfService.models.accounts.update(
-                {
-                  Removal_Status__c: RemovalStatus.APPROVED,
-                  message__c: message,
-                },
-                event.Id,
-              );
-              // create push notification  => Sent to Admin
-              const notificationTitle = NotificationTitles.OPPORTUNITY_REMOVED;
-              const notificationMsg =
-                NotificationMessage.OPPORTUNITY_REMOVED_BY_ADMIN;
-              const notificationConfig = {
-                userId: userId,
-                title: notificationTitle,
-                body: notificationMsg,
-                notificationId: uuidv4(),
-                notificationData: {
-                  data: NotificationDataTexts.OPPORTUNITY_EDIT,
-                  type: NotificationDataTexts.OPPORTUNITY_EDIT,
-                },
-              };
-              await this.notifier.send(
-                NotificationType.PUSH,
-                notificationConfig,
-              );
-            } else {
-              await this.sfService.models.accounts.update(
-                {
-                  Removal_Status__c: 'In Review',
-                  message__c: message,
-                },
-                opportunityId,
-              );
-              // create push notification  => Sent to Admin
-              const notificationTitle =
-                NotificationTitles.OPPORTUNITY_REMOVE_REQUEST;
-              const notificationMsg =
-                NotificationMessage.OPPORTUNITY_REMOVE_REQUEST;
-              const allMods = await this.sfService.models.modifications.get(
-                'Id',
-                {
-                  Opportunity_Id__c: opportunityId,
-                },
-              );
-              if (allMods.length > 0) {
-                allMods.map(async (data) => {
-                  await this.sfService.models.modifications.update(
-                    {
-                      Valid__c: false,
-                    },
-                    data.Id,
-                  );
-                });
-              }
-              const instituteId = event.ParentId;
-              // fetch admin
-              const admins = await this.sfService.models.affiliations.get(
-                'hed__Contact__r.Id',
-                {
-                  hed__Account__c: instituteId,
-                  hed__Role__c: Roles.ADMIN,
-                },
-              );
-              admins.map(async (admin) => {
-                const notificationConfig = {
-                  userId: admin.hed__Contact__r.Id,
-                  title: notificationTitle,
-                  body: notificationMsg,
-                  notificationId: uuidv4(),
-                  notificationData: {
-                    data: NotificationDataTexts.OPPORTUNITY_REMOVED,
-                    type: NotificationDataTypes.OPPORTUNITY_REMOVED,
-                  },
-                };
-                await this.notifier.send(
-                  NotificationType.PUSH,
-                  notificationConfig,
-                );
-                // create notification
-                await this.sfService.models.notifications.create({
-                  Type__c: notificationTitle,
-                  Title__c: notificationMsg,
-                  Contact__c: admin.hed__Contact__r.Id,
-                  Opportunity__c: opportunityId,
-                  Notification_By__c: userId,
-                  Created_at__c: new Date(),
-                  Is_Read__c: false,
-                });
-              });
-              tempResult.push(Responses.OPPORTUNITY_REMOVAL_REQUEST_CREATED);
-              results.push(tempResult);
-            }
-          } else {
-          }
-        }
-      });
-
-      if (Flag == 0) {
-        tempResult.push(Errors.INVALID_OPPORTUNITY_REMOVAL_REQUEST);
-        results.push(tempResult);
-        return;
-      }
-    });
-
-    return {
-      statusCode: 201,
-      message: Responses.OPPORTUNITY_REMOVAL_REQUEST_CREATED,
-    };
-  }
-
-  // gets comments based on opportunity
-  async getOpportunityComments(
-    userId: string,
-    userType: string,
-    opportunityId: string,
-  ): Promise<AllCommentsDto> {
-    // extracting comments data
-    const opportunity = await this.sfService.models.accounts.get(
-      ' Approval_Status__c, Status_At__c, opportunityScope__c, Listed_by__c',
-      {
-        Id: opportunityId,
-      },
-    );
-
-    if (opportunity.length !== 0) {
-      const commentsList = await this.sfService.models.opportunityComments.get(
-        'Id, Contact__r.Name, Contact__r.Profile_Picture__c, Comment__c, Posted_at__c, Comment_Type__c',
-        {
-          Account__c: opportunityId,
-        },
-      );
-      // No comments
-      if (commentsList.length === 0) {
-        throw new NotFoundException(Errors.NO_COMMENTS);
-      }
-      const comments: any = [];
-      commentsList.map((comment) => {
-        const filterDataObj = {
-          Id: comment.Id,
-          name: comment.Contact__r.Name,
-          profilePicture: comment.Contact__r.Profile_Picture__c,
-          comment: comment.Comment__c,
-          posted_at: comment.Posted_at__c,
-        };
-        const isOpportunityListedByReqUserOrUserIsAdmin =
-          opportunity[0]['Listed_by__c'] === userId ||
-          userType === RecordTypeName.ADMINISTRATOR;
-        if (
-          comment.Comment_Type__c === CommentType.APPROVAL &&
-          isOpportunityListedByReqUserOrUserIsAdmin
-        ) {
-          comments.push(filterDataObj);
-        } else if (comment.Comment_Type__c === CommentType.GENERIC) {
-          comments.push(filterDataObj);
-        }
-      });
-      if (comments.length !== 0) {
-        return {
-          statusCode: 200,
-          message: Responses.ALL_COMMENTS_OF_OPP,
-          data: comments,
-        };
-      } else {
-        throw new NotFoundException(Errors.NO_COMMENTS);
-      }
-    }
-    throw new NotFoundException(Errors.INVALID_OPP);
-  }
-
-  // creates comment on opportunity
-  async createOpportunityComment(
-    userId: string,
-    commentsDto: CommentsDto,
-  ): Promise<BasicResponse> {
-    // destructing the Dto
-    const { id, comment, commentType } = commentsDto;
-
-    const opportunity = await this.sfService.models.accounts.get(
-      ' Approval_Status__c, opportunityScope__c, Listed_by__c',
-      {
-        Id: id,
-      },
-    );
-    // not found opportunity
-    if (opportunity.length === 0) {
-      throw new NotFoundException(Errors.INVALID_OPP);
-    }
-
-    const notificationTitle = NotificationTitles.NEW_CREATOR_COMMENT;
-    const notificationMsg = `Comment: ${comment}`;
-
-    const notificationConfig = {
-      userId: opportunity[0].Listed_by__c,
-      title: notificationTitle,
-      body: notificationMsg,
-      notificationId: uuidv4(),
-      notificationData: {
-        data: NotificationDataTexts.OPPORTUNITY_COMMENT,
-        type: NotificationDataTypes.OPPORTUNITY_COMMENT,
-      },
-    };
-    await this.sfService.models.opportunityComments.create({
-      Comment__c: comment,
-      Contact__c: userId,
-      Account__c: id,
-      Comment_Type__c: commentType,
-      Posted_at__c: new Date(),
-    });
-    await this.notifier.send(NotificationType.PUSH, notificationConfig);
-    // create notification
-    await this.sfService.models.notifications.create({
-      Type__c: notificationTitle,
-      Title__c: notificationMsg,
-      Opportunity__c: id,
-      Contact__c: opportunity[0].Listed_by__c,
-      Notification_By__c: userId,
-      Created_at__c: new Date(),
-      Is_Read__c: false,
-    });
-
-    if (userId === opportunity[0].Listed_by__c) {
-      const notificationTitle = NotificationTitles.NEW_ADMIN_COMMENT;
-
-      // create push notification
-      await this.notifier.send(NotificationType.PUSH, {
-        ...notificationConfig,
-        title: notificationTitle,
-      });
-
-      // create notification
-      await this.sfService.models.notifications.create({
-        Type__c: notificationTitle,
-        Title__c: notificationMsg,
-        Contact__c: opportunity[0].Listed_by__c,
-        Created_at__c: new Date(),
-        Is_Read__c: false,
-      });
-    }
-    return {
-      statusCode: 201,
-      message: Responses.COMMENT_CREATED,
-    };
-  }
-
-  async createOpportunity(
-    opportunitiesInfoDto: OpportunitiesInfoDto,
+  /** creates an opportunity for advisor, parent, admin role
+   *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
+   *  @param {userId} string user id
+   *  @param {assigneeId} string if the opportunity is for a user then the assignee id
+   *  @param {InstituteId} string if the opportunity is for a Institute then the institute id
+   * @returns {Object} status code and message
+   */
+   async CreateOpportunityForMultipleStudents(
+    OpportunitiesInfoDto: OpportunitiesInfoDto,
     userId: string,
     assignees: string[],
     InstituteId: string,
-    recordTypeName: string,
-  ) {
+    instituteId: string,
+  ): Promise<BasicResponse> {
     const {
       eventTitle,
       description,
@@ -771,1260 +287,480 @@ export class OpportunityService {
       website,
       venue,
       eventType,
-    } = opportunitiesInfoDto;
-    const recordTypeId = await this.sfService.models.activities.get();
+    } = OpportunitiesInfoDto;
 
-    if (recordTypeName === RecordTypeName.STUDENT) {
-      if (assignees.length !== 0) {
-        if (assignees.length > 1) {
-          throw new BadRequestException(
-            Errors.UNAUTHORIZED_OPPORTUNITY_CREATION,
-          );
-        }
-        if (assignees[0] !== userId) {
-          throw new BadRequestException(
-            Errors.UNAUTHORIZED_OPPORTUNITY_CREATION,
-          );
-        }
-        // create opportunity
-        const oppAcc = await this.sfService.models.accounts.create({
-          Name: eventTitle,
-          Description: description,
-          Start_Date__c:
-            eventDateTime !== null ? new Date(eventDateTime) : null,
-          End_Date__c:
-            expirationDateTime !== null ? new Date(expirationDateTime) : null,
-          Phone: phone,
-          Website: website,
-          Venue__c: venue,
-          Category__c: eventType,
-          Listed_by__c: userId,
-          opportunityScope__c: OpportunityScope.DISCRETE,
-          Visibility__c: Visibility.AVAILABLE,
-          RecordTypeId: recordTypeId[0].RecordTypeId,
-          Created_at__c: new Date(),
-          // Approval_Status__c: 'Approved',
-        });
-        // created self consideration
-        await this.sfService.models.opportunities.create({
-          Contact__c: userId,
-          Account__c: oppAcc['id'],
-        });
-        const notificationTitle = `opportunity ${eventTitle}`;
-        const notificationMsg = `${eventTitle} opportunity created`;
-        const notificationConfig = {
-          userId,
-          title: notificationTitle,
-          body: notificationMsg,
-          notificationId: uuidv4(),
-          notificationData: {
-            data: NotificationDataTexts.OPPORTUNITY_CREATED,
-            type: NotificationDataTypes.OPPORTUNITY_CREATED,
-          },
-        };
-        await this.notifier.send(NotificationType.PUSH, notificationConfig);
+    const recordTypeId = await this.sfService.models.accounts.get(
+      'Account_Record_Type',
+      {
+        Record_Type_Name: AccountActivity.ACTIVITY,
+      },
+      {},
+      instituteId,
+    );
 
-        // create notification
-        await this.sfService.models.notifications.create({
-          Contact__c: userId,
-          Notification_By__c: userId,
-          Created_at__c: new Date(),
-          Event_type__c: eventType,
-          Is_Read__c: false,
-          Opportunity__c: oppAcc.id,
-          Title__c: notificationMsg,
-          Type__c: NotificationTitles.NEW_CONSIDERATION,
-        });
-        return {
-          statusCode: 201,
-          message: Responses.OPPORTUNITY_CREATED,
-        };
-      } else if (InstituteId) {
-        const opportunity = await this.sfService.models.accounts.create({
-          Name: eventTitle,
-          Description: description,
-          Start_Date__c:
-            eventDateTime !== null ? new Date(eventDateTime) : null,
-          End_Date__c:
-            expirationDateTime !== null ? new Date(expirationDateTime) : null,
-          Phone: phone,
-          Website: website,
-          Venue__c: venue,
-          Category__c: eventType,
-          Listed_by__c: userId,
-          ParentId: InstituteId,
-          Approval_Status__c: RemovalStatus.IN_REVIEW,
-          Visibility__c: Visibility.AVAILABLE,
-          opportunityScope__c: OpportunityScope.GLOBAL,
-          RecordTypeId: recordTypeId[0].RecordTypeId,
-          Created_at__c: new Date(),
-        });
-        // fetch admin
-        const admins = await this.sfService.models.affiliations.get(
-          'hed__Contact__r.Id',
-          {
-            hed__Account__c: InstituteId,
-            hed__Role__c: 'Admin',
+    for (let i = 0; i < assignees.length - 1; i++) {
+      if (assignees[i]) {
+        // save on salesforce for assignee
+        await this.sfService.models.accounts.create({
+            Account_Name: eventTitle,
+            Account_Record_Type: recordTypeId[0].Account_Record_Type,
+            Description: description,
+            Venue: venue,
+            Website: website,
+            Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+            Phone: phone,
+            Type: eventType,
+            Listed_by: userId,
+            Approval_Status: 'Approved',
+            Event_Assignee: assignees[i],
+            End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
           },
+          instituteId,
         );
-        const notificationTitle = `Opportunity ${eventTitle}`;
-        const notificationMsg = `${eventTitle}`;
-        NotificationMessage.OPPORTUNITY_REQUEST_APPROVAL;
-        admins.map(async (admin) => {
-          // create push notification
-          const notificationConfig = {
-            userId: admin.hed__Contact__r.Id,
-            title: notificationTitle,
-            body: notificationMsg,
-            notificationId: uuidv4(),
-            notificationData: {
-              data: NotificationDataTexts.OPPORTUNITY_CREATED,
-              type: NotificationDataTypes.OPPORTUNITY_CREATED,
-            },
-          };
-          await this.notifier.send(NotificationType.PUSH, notificationConfig);
-
-          // create notification
-          await this.sfService.models.notifications.create({
-            Contact__c: admin.hed__Contact__r.Id,
-            Notification_By__c: userId,
-            Created_at__c: new Date(),
-            Event_type__c: eventType,
-            Is_Read__c: false,
-            Opportunity__c: opportunity.id,
-            Title__c: notificationMsg,
-            Type__c: NotificationTitles.OPPORTUNITY_APPROVAL_REQUEST,
-          });
-        });
-        return {
-          statusCode: 201,
-          message: Responses.OPPORTUNITY_CREATED,
-        };
       }
+    }
 
-      throw new BadRequestException(Errors.FAILED);
-    } else {
-      // Except student personas
-      if (assignees.length !== 0) {
-        // creating discrete opportunity
-        const res = await this.sfService.models.accounts.create({
-          Name: eventTitle,
+    if (InstituteId) {
+      // save on salesforce for Institute
+      await this.sfService.models.accounts.create({
+          Account_Name: eventTitle,
+          Account_Record_Type: recordTypeId[0].Account_Record_Type,
           Description: description,
-          Start_Date__c:
-            eventDateTime !== null ? new Date(eventDateTime) : null,
-          End_Date__c:
-            expirationDateTime !== null ? new Date(expirationDateTime) : null,
-          Phone: phone,
+          Venue: venue,
           Website: website,
-          Venue__c: venue,
-          Category__c: eventType,
-          Listed_by__c: userId,
-          opportunityScope__c: OpportunityScope.DISCRETE,
-          // Approval_Status__c: 'Approved',
-          Visibility__c: Visibility.AVAILABLE,
-          RecordTypeId: recordTypeId[0].RecordTypeId,
-          Created_at__c: new Date(),
-        });
-        // assigning assignees to opportunity
-        const notificationTitle = `Opportunity ${eventTitle}`;
-        const notificationMsg = `Added ${eventTitle} opportunity in consideration`;
-        for (const i of assignees) {
-          const result = await this.sfService.models.opportunities.create({
-            Contact__c: i,
-            Account__c: res.id,
-          });
-          if (result.length !== 0) {
-            const notificationConfig = {
-              userId: i,
-              title: notificationTitle,
-              body: notificationMsg,
-              notificationId: uuidv4(),
-              notificationData: {
-                data: NotificationDataTexts.OPPORTUNITY_REMOVED,
-                type: NotificationDataTypes.OPPORTUNITY_CREATED,
-              },
-            };
-            await this.notifier.send(NotificationType.PUSH, notificationConfig);
+          Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+          Phone: phone,
+          Type: eventType,
+          Listed_by: userId,
+          Approval_Status: 'In Review',
+          Parent_Account: InstituteId,
+          End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
+        },
+        instituteId,
+      );
+    }
 
-            // create notification
-            await this.sfService.models.notifications.create({
-              Contact__c: i,
-              Notification_By__c: userId,
-              Created_at__c: new Date(),
-              Event_type__c: eventType,
-              Is_Read__c: false,
-              Opportunity__c: res.id,
-              Title__c: notificationMsg,
-              Type__c: NotificationTitles.NEW_CONSIDERATION,
-            });
-          }
+    return {
+      statusCode: 201,
+      message: `Opportunity created for ${
+        assignees.length
+      } users successfully.`,
+    };
+  }
+
+
+  /** adds opportunities in bulk to to do for students
+   *  @param {userId} string user id
+   *  @param {opportunities} string[] a list of all opportunities to be added
+   * @returns {Object} status code and message
+   */
+   async bulkEditOpportunitiesStudent(
+    userId: string,
+    opportunities: string[],
+    instituteId: string,
+  ): Promise<any> {
+    if (opportunities.length === 0 || !opportunities) {
+      throw new NotFoundException('Opportunities Ids Required');
+    }
+
+    const ConsiderationsObj = {};
+    const delConsIds = [];
+    const considerations = await this.sfService.models.recommendations.get('Id, Event', {
+        Assignee: userId,
+        Accepted: 'Pending',
+      },
+      {},
+      instituteId,
+    );
+    considerations.map(cons => {
+      ConsiderationsObj[cons.Event] = cons.Id;
+    });
+
+    const resultList = [];
+    const GetTodos = await this.sfService.models.todos.get('Opportunit_Id', {
+      Assignee: userId,
+    });
+    const EventIds = [];
+    GetTodos.map(activity => {
+      if (activity.Event__c !== null) {
+        EventIds.push(activity.Event__c);
+      }
+    });
+
+    // const recordTypeId = await this.sfService.getActivitiesId();
+    const todoList = [];
+    const activityList = [];
+    for (let i = 0; i < opportunities.length; i++) {
+      if (EventIds.indexOf(opportunities[i]) < 0) {
+        const opp = await this.sfService.models.accounts.get('*', {
+            Id: opportunities[i],
+          },
+          {},
+          instituteId,
+        );
+        const groupId = uuidv4();
+        if (ConsiderationsObj.hasOwnProperty(opportunities[i])) {
+          delConsIds.push(ConsiderationsObj[opportunities[i]]);
         }
-        return {
-          statusCode: 201,
-          message: Responses.OPPORTUNITY_CREATED,
-        };
-      } else if (InstituteId) {
-        // creating global opportunity
-        if (recordTypeName === RecordTypeName.ADMINISTRATOR) {
-          await this.sfService.models.accounts.create({
-            Name: eventTitle,
-            Description: description,
-            Start_Date__c:
-              eventDateTime !== null ? new Date(eventDateTime) : null,
-            End_Date__c:
-              expirationDateTime !== null ? new Date(expirationDateTime) : null,
-            Phone: phone,
-            Website: website,
-            Venue__c: venue,
-            Category__c: eventType,
-            Listed_by__c: userId,
-            ParentId: InstituteId,
-            Approval_Status__c: ApprovalStatus.APPROVED,
-            Visibility__c: Visibility.AVAILABLE,
-            opportunityScope__c: OpportunityScope.GLOBAL,
-            RecordTypeId: recordTypeId[0].RecordTypeId,
-            Created_at__c: new Date(),
+        if (opp[0].opportunityScope === 'Discrete') {
+          const discreteAssigneeList = [];
+          const discreteAssignee = await this.sfService.models.opportunities.get('Contact', { 
+              Account: opportunities[i] 
+            },
+            {},
+            instituteId,
+          );
+          discreteAssignee.map(assignee => {
+            discreteAssigneeList.push(assignee.Contact);
           });
-          return {
-            statusCode: 201,
-            message: NotificationMessage.OPPORTUNITY_CREATED,
-          };
-        } else {
-          const opportunity = await this.sfService.models.accounts.create({
-            Name: eventTitle,
-            Description: description,
-            Start_Date__c: new Date(eventDateTime),
-            End_Date__c: new Date(expirationDateTime),
-            Phone: phone,
-            Website: website,
-            Venue__c: venue,
-            Category__c: eventType,
-            Listed_by__c: userId,
-            ParentId: InstituteId,
-            Approval_Status__c:
-              recordTypeName === RecordTypeName.GUARDIAN
-                ? 'AdvisorReview'
-                : 'In Review',
-            Visibility__c: Visibility.AVAILABLE,
-            opportunityScope__c: OpportunityScope.GLOBAL,
-            RecordTypeId: recordTypeId[0].RecordTypeId,
-            Created_at__c: new Date(),
-          });
-          if (recordTypeName === RecordTypeName.GUARDIAN) {
-            // fetch advisors
-            const advisors = await this.sfService.models.affiliations.get(
-              'hed__Contact__r.Id',
-              {
-                hed__Account__c: InstituteId,
-                hed__Role__c: 'Advisor',
-              },
-            );
-            const notificationTitle = `Opportunity ${eventTitle}`;
-            const notificationMsg = `${eventTitle} opportunity requested for approval`;
-            advisors.map(async (adv) => {
-              const notificationConfig = {
-                userId: adv.hed__Contact__r.Id,
-                title: notificationTitle,
-                body: notificationMsg,
-                notificationId: uuidv4(),
-                notificationData: {
-                  data: NotificationDataTexts.OPPORTUNITY_REMOVED,
-                  type: NotificationDataTypes.OPPORTUNITY_CREATED,
-                },
-              };
-              await this.notifier.send(
-                NotificationType.PUSH,
-                notificationConfig,
-              );
-              // create notification
-              await this.sfService.models.notifications.create({
-                Contact__c: adv.hed__Contact__r.Id,
-                Notification_By__c: userId,
-                Created_at__c: new Date(),
-                Event_type__c: eventType,
-                Is_Read__c: false,
-                Opportunity__c: opportunity.id,
-                Title__c: notificationMsg,
-                Type__c: NotificationTitles.OPPORTUNITY_APPROVAL_REQUEST,
-              });
+          if (discreteAssigneeList.indexOf(userId) > -1) {
+            const todoObj = {
+              Assignee: userId,
+              Complete_By: opp[0].End_Date
+                ? new Date(opp[0].End_Date)
+                : null,
+              Created_at: new Date(),
+              Description: opp[0].Description,
+              Event_At: opp[0].Start_Date
+                ? new Date(opp[0].Start_Date)
+                : null,
+              Event_Venue: opp[0].Venue,
+              Group_Id: groupId,
+              Listed_by: opp[0].Listed_by,
+              Status: 'Approved',
+              Task_Status: 'Open',
+              Todo_Scope: opp[0].opportunityScope,
+              Type: opp[0].Category,
+            };
+            todoList.push(todoObj);
+            resultList.push({
+              opportunity: opportunities[i],
+              status: 'Added',
             });
           } else {
-            // fetch admin
-            const admins = await this.sfService.models.affiliations.get(
-              'hed__Contact__r.Id',
-              {
-                hed__Account__c: InstituteId,
-                hed__Role__c: 'Admin',
-              },
-            );
-            const notificationTitle = `Opportunity ${eventTitle}`;
-            const notificationMsg = `${eventTitle} opportunity requested for approval`;
-            admins.map(async (admin) => {
-              const notificationConfig = {
-                userId: admin.hed__Contact__r.Id,
-                title: notificationTitle,
-                body: notificationMsg,
-                notificationId: uuidv4(),
-                notificationData: {
-                  data: NotificationDataTexts.OPPORTUNITY_REMOVED,
-                  type: NotificationDataTypes.OPPORTUNITY_CREATED,
-                },
-              };
-              await this.notifier.send(
-                NotificationType.PUSH,
-                notificationConfig,
-              );
-
-              // create notification
-              await this.sfService.models.notifications.create({
-                Contact__c: admin.hed__Contact__r.Id,
-                Notification_By__c: userId,
-                Created_at__c: new Date(),
-                Event_type__c: eventType,
-                Is_Read__c: false,
-                Opportunity__c: opportunity.id,
-                Title__c: notificationMsg,
-                Type__c: NotificationTitles.OPPORTUNITY_APPROVAL_REQUEST,
-              });
+            resultList.push({
+              opportunity: opportunities[i],
+              status: 'Not Added',
             });
           }
-          return {
-            statusCode: 201,
-            message: NotificationMessage.OPPORTUNITY_CREATED,
+        } else if (opp[0].opportunityScope === 'Global') {
+          const todoObj = {
+            Assignee: userId,
+            Complete_By: opp[0].End_Date
+              ? new Date(opp[0].End_Date)
+              : null,
+            Created_at: new Date(),
+            Description: opp[0].Description,
+            Event_At: opp[0].Start_Date
+              ? new Date(opp[0].Start_Date)
+              : null,
+            Event_Venue: opp[0].Venue,
+            Group_Id: groupId,
+            Listed_by: opp[0].Listed_by,
+            Status: 'Requested',
+            Task_Status: 'Open',
+            Todo_Scope: opp[0].opportunityScope,
+            Type: opp[0].Category,
           };
+          todoList.push(todoObj);
         }
+      } else {
+        resultList.push({
+          opportunity: opportunities[i],
+          status: 'Not Added',
+        });
       }
     }
-    throw new BadRequestException(Errors.FAILED);
+    if (todoList.length > 0) {
+      await this.sfService.models.todos.create(todoList, instituteId);
+    }
+
+    if (delConsIds.length > 0) {
+      await this.sfService.models.recommendations.delete(delConsIds, instituteId);
+    }
+
+    return {
+      statusCode: 201,
+      message: `Success`,
+      data: resultList,
+    };
   }
 
-  async changeHidingStatus(
+  /** adds opportunities in bulk to to do for Others
+   *  @param {userId} string user id
+   *  @param {assigneeId} string user id of the student the opportunities are to be recommended to
+   *  @param {opportunities} string[] a list of all opportunities to be added
+   * @returns {Object} status code and message
+   */
+   async bulkEditOpportunitiesOthers(
     userId: string,
-    opportunityIds: string[],
-    hidingStatus: string,
+    assigneeId: string,
+    OpportunitiesInfoDto: OpportunitiesInfoDto[],
+    instituteId: string,
   ) {
-    if (!(hidingStatus in [Visibility.HIDDEN, Visibility.AVAILABLE])) {
-      throw new BadRequestException(Errors.INVALID_HIDING_STATUS);
+    for (let i = 0; i < OpportunitiesInfoDto.length; i++) {
+      const groupId = uuidv4();
+
+      const opportunityObj = [];
+      const opportunity = OpportunitiesInfoDto[i];
+
+      const obj: any = {
+        Assignee: assigneeId,
+        To_do: opportunity.eventTitle,
+        Description: opportunity.description,
+        Task_Status: 'Open',
+        // Type: opportunity.type,
+        // Complete_By: opportunity.completeBy,
+        // Listed_by: opportunity.listedBy,
+        Group_Id: groupId,
+      };
+
+      if (opportunity.venue) {
+        obj.Event_Venue = opportunity.venue;
+      }
+
+      opportunityObj.push(obj);
+      const createResponse = await this.sfService.models.todos.create(opportunityObj, instituteId);
+      // return createResponse;
+      if (createResponse.every(response => response.success)) {
+        const Ids = createResponse.map(response => response.id);
+        return {
+          groupId,
+          Ids,
+        };
+      }
     }
-    const Result = [];
-    const listedBy = await this.sfService.models.activities.get({
-      Listed_by__c: userId,
-    });
-    const isPresent = new Map();
-    listedBy.map((event) => {
-      isPresent.set(event.Id, event);
-    });
-    opportunityIds.map(async (event) => {
-      const temp = [];
-      temp.push(event);
-      if (isPresent.has(event)) {
-        if (isPresent.get(event).Visibility__c === Visibility.REMOVED) {
-          temp.push(Errors.EVENT_REMOVED);
-        } else {
-          if (hidingStatus == Visibility.HIDDEN) {
-            if (isPresent.get(event).Visibility__c === Visibility.HIDDEN) {
-              temp.push(Errors.ALREADY_HIDDEN_EVENT);
-            } else {
-              await this.sfService.models.accounts.update(event, {
-                Visibility__c: Visibility.HIDDEN,
-              });
-              temp.push(Responses.EVENT_MADE_HIDDEN);
-            }
-          } else if (hidingStatus == Visibility.AVAILABLE) {
-            if (isPresent.get(event).Visibility__c == Visibility.AVAILABLE) {
-              temp.push(Errors.ALREADY_AVAILABLE_EVENT);
-            } else {
-              await this.sfService.models.accounts.update(event, {
-                Visibility__c: Visibility.AVAILABLE,
-              });
-              temp.push(Responses.EVENT_MADE_AVAILABLE);
+  }
+
+  // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> V2 APIS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+
+  // gets user global and discrete opportunities
+  async getSelfOpportunities(userId: string, instituteId): Promise<any> {
+    // gets listed by user global opportunities
+    const listedby = await this.sfService.models.accounts.get('*', {
+        Listed_by: userId,
+      },
+      { Created_at: -1 },
+      instituteId,
+    );
+
+    const allOpportunities = await this.sfService.models.opportunities.get('Contact, Account',
+      {},
+      {},
+      instituteId,
+    );
+
+    const allInterestedUsers = await this.sfService.models.recommendations.get('Assignee, Recommended_by, Event',
+      {},
+      {},
+      instituteId,
+    );
+
+    const allEnrolledUsers = await this.sfService.models.todos.get(
+      'Assignee, Opportunit_Id',
+      {},
+    );
+
+    const filteredData = [];
+    if (listedby.length !== 0) {
+      for (let i = 0; i < listedby.length; i++) {
+        const assigneesList = [];
+        if (listedby[i]['opportunityScope'] === 'Discrete') {
+          for (let j = 0; j < allOpportunities.length; j++) {
+            let curr_opportunity = allOpportunities[j];
+            if (curr_opportunity.Account === listedby[i]['Id']) {
+              assigneesList.push(curr_opportunity.Contact);
             }
           }
         }
-      } else {
-        temp.push(Errors.INVALID_CREDENTIALS);
-      }
-      Result.push(temp);
-    });
+        const interestedUsers = [];
+        const enrolledUsers = [];
 
-    return { statusCode: 201, message: 'Success', data: Result };
-  }
+        for (let j = 0; j < allInterestedUsers.length; j++) {
+          if (
+            allInterestedUsers[j].Recommended_by == userId &&
+            allInterestedUsers[j].Event == listedby[i]['Id']
+          ) {
+            interestedUsers.push(allInterestedUsers[j].Assignee);
+          }
+        }
 
-  async getOpportunityById(opportunityId: string) {
-    let res;
-    try {
-      res = await this.sfService.models.accounts.get('*', {
-        Id: opportunityId,
-      });
-      if (res.length === 0) {
-        throw new NotFoundException();
-      }
-      let filteredData;
-      if (res[0]['opportunityScope__c'] === 'Discrete') {
-        const assignees = await this.sfService.models.opportunities.get(
-          'Contact__r.Id, Contact__r.Name, Contact__r.Profile_Picture__c',
-          { Account__c: res[0]['Id'] },
-        );
-        const assigneesList = [];
-        assignees.map((ass) => {
-          const oppassignee = {
-            Id: ass.Contact__r.Id,
-            name: ass.Contact__r.Name,
-            profilePicture: ass.Contact__r.Profile_Picture__c,
-            isAssignee: true,
-          };
-          assigneesList.push(oppassignee);
-        });
-        const data = {
-          Id: res[0]['Id'],
-          eventName: res[0]['Name'],
-          description: res[0]['Description'],
-          venue: res[0]['Venue__c'],
-          website: res[0]['Website'],
-          eventDate: res[0]['Start_Date__c'],
-          phone: res[0]['Phone'],
-          type: res[0]['Type'] || 'Others',
-          visibility: res[0]['Visibility__c'],
-          expirationDate: res[0]['End_Date__c'],
-          status: res[0]['Approval_Status__c'],
-          assignees: assigneesList,
+        for (let j = 0; j < allEnrolledUsers.length; j++) {
+          if (allEnrolledUsers[j].Opportunit_Id == listedby[i]['Id']) {
+            enrolledUsers.push(allEnrolledUsers[j].Assignee);
+          }
+        }
+        const filterDataObj = {
+          Id: listedby[i]['Id'],
+          eventName: listedby[i]['Account_Name'],
+          description: listedby[i]['Description'],
+          venue: listedby[i]['Venue'],
+          website: listedby[i]['Website'],
+          eventDate: listedby[i]['Start_Date']
+            ? new Date(listedby[i]['Start_Date'])
+            : null,
+          phone: listedby[i]['Phone'],
+          type: listedby[i]['Category'] || 'Others',
+          visibility: listedby[i]['Visibility'],
+          expirationDate: listedby[i]['End_Date']
+            ? new Date(listedby[i]['End_Date'])
+            : null,
+          status: listedby[i]['Approval_Status'],
+          opportunityScope: listedby[i]['opportunityScope'],
+          assignees: assigneesList.length !== 0 ? assigneesList : null,
+          modificationId: listedby[i]['Modification'],
+          RemovalStatus: listedby[i]['Removal_Status'],
+          interestedUsers: interestedUsers,
+          enrolledUsers: enrolledUsers,
         };
-        filteredData = data;
-      } else if (res[0]['opportunityScope__c'] === 'Global') {
-        filteredData = {
-          Id: res[0]['Id'],
-          eventName: res[0]['Name'],
-          description: res[0]['Description'],
-          venue: res[0]['Venue__c'],
-          website: res[0]['Website'],
-          eventDate: res[0]['Start_Date__c'],
-          phone: res[0]['Phone'],
-          type: res[0]['Type'] || 'Others',
-          visibility: res[0]['Visibility__c'],
-          expirationDate: res[0]['End_Date__c'],
-          status: res[0]['Approval_Status__c'],
-          assignees: null,
-        };
+        filteredData.push(filterDataObj);
       }
       return {
         statusCode: 200,
-        message: 'OpportunityDetail',
+        message: 'Success',
         data: filteredData,
       };
-    } catch (err) {
-      throw new NotFoundException(Errors.OPPORTUNITY_NOT_FOUND);
+    } else {
+      throw new NotFoundException('CreationsDoesNotExists!');
     }
   }
+  
+  // adds opportunity to consideration
+  async addtoConsiderations(
+    userId: string,
+    opportunityId: string,
+    instituteId: string,
+  ): Promise<BasicResponse> {
+    const getCons = await this.sfService.models.recommendations.get('Id', {
+        Assignee: userId,
+        Event: opportunityId,
+      },
+      {},
+      instituteId,  
+    );
 
-  async getOpportunityWithUserId(userId: string) {
-    try {
-      const res = await this.sfService.models.accounts.get('*', {
-        Listed_by__c: userId,
-        RecordTypeId: '0124C0000008y1AQAQ',
-      });
-      const assignedOpportunities = await this.sfService.models.accounts.get(
-        '*',
-        {
-          Event_Assignee__c: userId,
-          RecordTypeId: '0124C0000008y1AQAQ',
-        },
-      );
+    if (getCons.length !== 0) {
+      return {
+        statusCode: 409,
+        message: 'Already added!',
+      }
+    }
 
-      const filteredData = [];
-
-      res
-        .filter(
-          (event) =>
-            event.Approval_Status__c == 'Approved' &&
-            (event.opportunityScope__c == 'Discrete' ||
-              event.opportunityScope__c == 'Global'),
-        )
-        .map((event) => {
-          const filterDataObj = {
-            Id: event.Id,
-            eventName: event.Name,
-            description: event.Description,
-            venue: event.Venue__c,
-            website: event.Website,
-            eventDate: event.Start_Date__c,
-            phone: event.phone,
-            Type: event.Category__c,
-            approvalStatus: event.Approval_Status__c,
-            expirationDate: event.End_Date__c,
-          };
-          filteredData.push(filterDataObj);
-        });
-
-      assignedOpportunities
-        .filter(
-          (event: any) =>
-            event.Approval_Status__c == 'Approved' &&
-            (event.opportunityScope__c == 'Discrete' ||
-              event.opportunityScope__c == 'Global'),
-        )
-        .map((event) => {
-          const filterDataObj = {
-            Id: event.Id,
-            eventName: event.Name,
-            description: event.Description,
-            venue: event.Venue__c,
-            website: event.Website,
-            eventDate: event.Start_Date__c,
-            phone: event.phone,
-            Type: event.Category__c,
-            approvalStatus: event.Approval_Status__c,
-            expirationDate: event.End_Date__c,
-          };
-          filteredData.push(filterDataObj);
-        });
-
+    const res = await this.sfService.models.recommendations.create({
+        Assignee: userId,
+        Event: opportunityId,
+      },
+      instituteId,
+    );
+    if (res.success == true) {
       return {
         statusCode: 201,
-        data: filteredData,
+        message: 'AddedToConsiderations',
       };
-    } catch (err) {
-      throw new NotFoundException(Errors.OPPORTUNITY_NOT_FOUND);
+    } else {
+      throw new BadRequestException('Something went wrong!',);      
     }
   }
 
-  async getOpportunityRecipients(userId: string, RecordTypeName: string) {
-    if (RecordTypeName === 'Student') {
-      const me = await this.sfService.generics.contacts.get(
-        'Primary_Educational_Institution__c',
-        { Id: userId },
-      );
-      const insId = me[0]['Primary_Educational_Institution__c'];
-      const filteredData = [];
-      const guardians = await this.sfService.models.relationships.get(
-        'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.Primary_Educational_Institution__c',
-        {
-          hed__Contact__c: userId,
-          hed__Type__c: 'Guardian',
-        },
-      );
-      guardians.map((event) => {
-        const filterDataObj = {
-          Id: event.hed__RelatedContact__r.Id,
-          name: event.hed__RelatedContact__r.Name,
-          profilePicture: event.hed__RelatedContact__r.Profile_Picture__c,
-          institute:
-            event.hed__RelatedContact__r.Primary_Educational_Institution__c,
-        };
-        if (
-          (event.dev_uuid__c && process.env.NODE_ENV !== 'prod') ||
-          (event.prod_uuid__c && process.env.NODE_ENV === 'prod')
-        ) {
-          filteredData.push(filterDataObj);
-        }
+  // adds opportunity to todo
+  async addtoTodo(userId: string, opportunityId: string, instituteId: string): Promise<BasicResponse> {
+    // fetching opportunity data
+    const res = await this.sfService.models.accounts.get('*', {
+        Id: opportunityId,
+        Approval_Status: 'Approved',
+      },
+      {},
+      instituteId,
+    );
+    // not found opportunity.
+    if (res.length === 0) {
+      throw new NotFoundException('Opportunity not found!');
+    }
+
+    // checking and removing considerations.
+    const cons = await this.sfService.models.recommendations.get('Id', {
+        Assignee: userId,
+        Event: opportunityId,
+      },
+      {},
+      instituteId,
+    );
+    if (cons.length > 0) {
+      cons.map(async recc => {
+        await this.sfService.models.recommendations.delete(recc.Id, instituteId);
       });
-      const advisors = await this.sfService.models.relationships.get(
-        'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.Primary_Educational_Institution__c',
-        {
-          hed__Contact__c: userId,
-          hed__Type__c: 'Mentor',
-        },
-      );
-      advisors.map((event) => {
-        const filterDataObj = {
-          Id: event.hed__RelatedContact__r.Id,
-          name: event.hed__RelatedContact__r.Name,
-          profilePicture: event.hed__RelatedContact__r.Profile_Picture__c,
-          institute:
-            event.hed__RelatedContact__r.Primary_Educational_Institution__c,
-        };
-        if (
-          (event.dev_uuid__c && process.env.NODE_ENV !== 'prod') ||
-          (event.prod_uuid__c && process.env.NODE_ENV === 'prod')
-        ) {
-          filteredData.push(filterDataObj);
-        }
-      });
-      const admins = await this.sfService.models.affiliations.get(
-        'Id, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.Primary_Educational_Institution__c',
-        {
-          hed__Account__c: insId,
-          hed__Role__c: 'Admin',
-        },
-      );
-      admins.map((event) => {
-        const filterDataObj = {
-          Id: event.Id,
-          name: event.hed__Contact__r.Name,
-          profilePicture: event.hed__Contact__r.Profile_Picture__c,
-          institute: event.hed__Contact__r.Primary_Educational_Institution__c,
-        };
-        if (
-          (event.dev_uuid__c && process.env.NODE_ENV !== 'prod') ||
-          (event.prod_uuid__c && process.env.NODE_ENV === 'prod')
-        ) {
-          filteredData.push(filterDataObj);
-        }
-      });
+    }
+
+    // check todo already exists
+    const check = await this.sfService.models.todos.get('Id', {
+        Assignee__c: userId,
+        Opportunity_Id__c: opportunityId,
+      },
+      {},
+      instituteId,
+    );
+    if (check.length !== 0) {
       return {
-        statusCode: 200,
-        message: 'Recipients',
-        // TODO confirm why this is hardcoded
-        InstituteID: '0014x00000D76KHAAZ',
-        data: filteredData,
+        statusCode: 403,
+        message: 'TodoAlreadyExists',
       };
-    } else if (
-      RecordTypeName === 'Advisor' ||
-      RecordTypeName === 'Faculty/Staff'
-    ) {
-      const advisor = await this.getAdvisorDetailsStudents(userId);
+    }
 
-      const advisorStudents = advisor.data.students;
-      const advisorStudentIds = advisorStudents.map((student) => {
-        return student.Id;
-      });
-
-      const advisorStudentDetails = await this.sfService.generics.contacts.get(
-        '*',
-        {
-          Id: [...advisorStudentIds],
+    // extracting fetched data.
+    const todo = await this.sfService.models.todos.create({
+        To_do: res[0]['Account_Name'],
+        Opportunity_Id: opportunityId,
+        Description: res[0]['Description'],
+        Complete_By: res[0]['End_Date']
+          ? new Date(res[0]['End_Date'])
+          : null,
+        Assignee: userId,
+        Task_Status: 'Open',
+        Created_at: new Date(),
+        Type: res[0]['Category'],
+        Event_Venue: res[0]['Venue'],
+        Event_At: res[0]['Start_Date']
+          ? new Date(res[0]['Start_Date'])
+          : null,
+        Status: 'Approved',
+      },
+      instituteId,
+    );
+    const notificatonTitle = `Task added to Todo`;
+    const notificatonMsg = `Task has been added to Todo`;
+    if (res.length !== 0) {
+      // try {
+      //   // create push notification
+      //   await this.firebaseService.sendNotification(
+      //     res[0]['Listed_by__c'],
+      //     notificatonTitle,
+      //     notificatonMsg,
+      //     {
+      //       data: res[0],
+      //       type: 'Todo',
+      //     },
+      //   );
+      // } catch (error) {
+      //   console.log('error', error);
+      // }
+      // create notification
+      await this.sfService.models.notifications.create({
+          Title__c: notificatonTitle,
+          Contact__c: res[0].Listed_by,
+          Notification_By__c: userId,
+          Created_at__c: new Date(),
+          Is_Read__c: false,
+          Event_type__c: res[0]['Category'],
+          Todo__c: todo.id,
+          Type__c: 'New To-Do',
         },
+        instituteId,
       );
-
-      const advisorContactsList = [];
-      for (let i = 0; i < advisorStudents.length; i++) {
-        if (process.env.NODE_ENV === 'prod') {
-          const obj = {
-            id: advisorStudentDetails[i].Id,
-            name: advisorStudentDetails[i].Name,
-            institute:
-              advisorStudentDetails[i].Primary_Educational_Institution__c,
-            isRegistered: advisorStudentDetails[i].IsRegisteredOnPalette__c,
-            profilePicture: advisorStudentDetails[i].Profile_Picture__c,
-            relationship: 'Student',
-            firebase_uuid: advisorStudentDetails[i].dev_uuid__c,
-          };
-          advisorContactsList.push(obj);
-        } else {
-          const obj = {
-            id: advisorStudentDetails[i].Id,
-            name: advisorStudentDetails[i].Name,
-            institute:
-              advisorStudentDetails[i].Primary_Educational_Institution__c,
-            isRegistered: advisorStudentDetails[i].IsRegisteredOnPalette__c,
-            profilePicture: advisorStudentDetails[i].Profile_Picture__c,
-            relationship: 'Student',
-            firebase_uuid: advisorStudentDetails[i].dev_uuid__c,
-          };
-          advisorContactsList.push(obj);
-        }
-      }
-
-      const guardians = await this.sfService.models.relationships.get(
-        'hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c',
-        {
-          hed__Contact__c: advisorStudentIds,
-          hed__Type__c: [
-            'Father',
-            'Stepfather',
-            'Mother',
-            'Stepmother',
-            'Parent',
-            'stepparent',
-            'Foster Parent',
-            'Guardian',
-          ],
-        },
-      );
-
-      const advisorGuardianIds = guardians.map((guardian) => {
-        return guardian.hed__RelatedContact__r.Id;
-      });
-
-      const advisorParentDetails = await this.sfService.generics.contacts.get(
-        'Name, Id, Profile_Picture__c',
-        {
-          Id: [...advisorGuardianIds],
-        },
-      );
-
-      for (let i = 0; i < guardians.length; i++) {
-        if (process.env.NODE_ENV === 'prod') {
-          const obj = {
-            id: advisorParentDetails[i].Id,
-            name: advisorParentDetails[i].Name,
-            institute:
-              advisorParentDetails[i].Primary_Educational_Institution__c,
-            isRegistered: advisorParentDetails[i].IsRegisteredOnPalette__c,
-            profilePicture: advisorParentDetails[i].Profile_Picture__c,
-            relationship: 'Guardian',
-            firebase_uuid: advisorParentDetails[i].dev_uuid__c,
-          };
-          advisorContactsList.push(obj);
-        } else {
-          const obj = {
-            id: advisorParentDetails[i].Id,
-            name: advisorParentDetails[i].Name,
-            institute:
-              advisorParentDetails[i].Primary_Educational_Institution__c,
-            isRegistered: advisorParentDetails[i].IsRegisteredOnPalette__c,
-            profilePicture: advisorParentDetails[i].Profile_Picture__c,
-            relationship: 'Guardian',
-            firebase_uuid: advisorParentDetails[i].dev_uuid__c,
-          };
-          advisorContactsList.push(obj);
-        }
-      }
-
-      const advisorInsti = await this.sfService.models.affiliations.get('*', {
-        hed__Account__c: advisor.data.mentor.instituteId,
-        hed__Role__c: ['Admin', 'Advisor', 'Observer'],
-      });
-
-      for (let i = 0; i < advisorInsti.length; i++) {
-        const temp = await this.sfService.models.contacts.get('*', {
-          Id: advisorInsti[i].hed__Contact__c,
-        });
-        if (process.env.NODE_ENV === 'prod') {
-          const obj = {
-            id: temp[0].Id,
-            name: temp[0].Name,
-            institute: temp[0].Primary_Educational_Institution__c,
-            isRegistered: temp[i].IsRegisteredOnPalette__c,
-            profilePicture: temp[i].Profile_Picture__c,
-            relationship: advisorInsti[i].hed__Role__c,
-            firebase_uuid: temp[i].prod_uuid__c,
-          };
-          advisorContactsList.push(obj);
-        } else {
-          const obj = {
-            id: temp[0].Id,
-            name: temp[0].Name,
-            institute: temp[0].Primary_Educational_Institution__c,
-            isRegistered: temp[i].IsRegisteredOnPalette__c,
-            profilePicture: temp[i].Profile_Picture__c,
-            relationship: advisorInsti[i].hed__Role__c,
-            firebase_uuid: temp[i].prod_uuid__c,
-          };
-          advisorContactsList.push(obj);
-        }
-      }
-
-      return {
-        statusCode: 200,
-        message: 'Recipients',
-        // TODO confirm why this is hardcoded
-        InstituteID: '0014x00000D76KHAAZ',
-        data: advisorContactsList,
-      };
-    } else if (RecordTypeName === 'Guardian') {
-      const pupils = (await this.getParent(userId)).pupils;
-      const pupilList = [];
-      for (const pupil of pupils) {
-        const pupilProfile = await this.getStudent(pupil.Id);
-        pupilList.push({
-          Id: pupilProfile.Id,
-          name: pupilProfile.name,
-          grade: pupilProfile.education[0].course,
-          profilePicture: pupilProfile.profilePicture,
-          institute: pupilProfile.education[0].instituteId,
-        });
-      }
-      // To get the list of advisors, instituteId is required
-      const instituteId = pupilList[0].institute;
-      const advisors = await this.sfService.models.affiliations.get('*', {
-        hed__Account__c: instituteId,
-        hed__Role__c: 'Advisor',
-      });
-      const advisorList = [];
-      for (const advisor of advisors) {
-        const advisorProfile = await this.getAdvisor(advisor.hed__Contact__c);
-        advisorList.push({
-          Id: advisorProfile.Id,
-          name: advisorProfile.name,
-          profilePicture: advisorProfile.profilePicture,
-          institute: advisorProfile.institute_name,
-        });
-      }
-      return {
-        statusCode: 200,
-        message: 'Recipients',
-        // TODO confirm why this is hardcoded
-        InstituteID: '0014x00000D76KHAAZ',
-        data: [...pupilList, ...advisorList],
-      };
-    } else if (RecordTypeName === 'Administrator') {
-      const adminStudents = await this.getAdminInstituteDetails(userId);
-
-      const adminStudentsList = adminStudents.data.students;
-      const adminMentors = adminStudents.data.mentors;
-      const adminParents = adminStudents.data.parents;
-      const adminAdmins = adminStudents.data.admins;
-
-      const finalList = [
-        ...adminStudentsList,
-        ...adminMentors,
-        ...adminParents,
-        ...adminAdmins,
-      ];
-      return {
-        statusCode: 200,
-        message: Responses.RECEPIENT,
-        // TODO confirm why this is hardcoded
-        InstituteID: '0014x00000D76KHAAZ',
-        data: finalList,
-      };
     }
-  }
-  async getAdminInstituteDetails(userId: string) {
-    const studentIds = [];
-    const filteredAdmins = [];
-
-    // getting the institute of the admin
-    const institute = await this.sfService.models.affiliations.get(
-      'Id, Name,  hed__Account__c, hed__Account__r.Name',
-      {
-        hed__Contact__c: userId,
-        hed__Role__c: 'Admin',
-      },
-    );
-
-    if (institute.length === 0) {
-      throw new BadRequestException(Errors.NO_INSTITUTES_ASSIGNED_TO_ADMIN);
-    }
-
-    // getting all the admin inside the institute
-    const Admins = await this.sfService.models.affiliations.get(
-      'hed__Contact__c, hed__Contact__r.Name, hed__Role__c, hed__Contact__r.Profile_Picture__c, hed__Contact__r.IsRegisteredOnPalette__c, hed__Contact__r.Is_Deactive__c',
-      {
-        hed__Account__c: institute[0].hed__Account__c,
-        hed__Role__c: 'Admin',
-      },
-    );
-
-    Admins.filter(
-      (admin) =>
-        // checking this to exclude the user that are deactivated
-        // and also excluding the user requesting
-        admin.hed__Contact__c !== userId &&
-        admin.hed__Contact__r.Is_Deactive__c === false,
-    ).map((admin) => {
-      const adminObj = {
-        Id: admin.hed__Contact__c,
-        name: admin.hed__Contact__r.Name,
-        profilePicture: admin.hed__Contact__r.Profile_Picture__c || null,
-        isRegistered: admin.hed__Contact__r.IsRegisteredOnPalette__c,
-      };
-      filteredAdmins.push(adminObj);
-    });
-
-    // getting all the students inside the institute
-    const students = await this.sfService.generics.contacts.get(
-      'Id, Name, Grade__c, Primary_Educational_Institution__r.Name, Profile_Picture__c, Is_Deactive__c',
-      {
-        Primary_Educational_Institution__c: institute[0].hed__Account__c,
-      },
-    );
-
-    // getting all the mentors inside the institute
-    const mentors = await this.sfService.models.affiliations.get(
-      'Id, Name,  hed__Account__c, hed__Affiliation_Type__c, hed__Contact__c, hed__Description__c, hed__Role__c, hed__Contact__r.Id, hed__Contact__r.Name, hed__Contact__r.Designation__c, hed__Contact__r.Profile_Picture__c, hed__Contact__r.IsRegisteredOnPalette__c, hed__Contact__r.Palette_Email__c, hed__Contact__r.Is_Deactive__c',
-      {
-        hed__Account__c: institute[0].hed__Account__c,
-        hed__Role__c: 'Advisor',
-      },
-    );
-
-    // filtering the data
-    const filteredStudents = [];
-    if (students.length > 0) {
-      students.map((student) => {
-        // checking this to exclude the user that are deactivated
-        if (student.Is_Deactive__c === false) {
-          const filteredObj = {
-            Id: student.Id,
-            name: student.Name,
-            profilePicture: student.Profile_Picture__c,
-            institute: student.Primary_Educational_Institution__r
-              ? student.Primary_Educational_Institution__r.Name
-              : null,
-            grade: student.Grade__c,
-          };
-          filteredStudents.push(filteredObj);
-          studentIds.push(student.Id);
-        }
-      });
-    }
-
-    const filteredMentor = [];
-    if (mentors.length > 0) {
-      mentors.map((mentor) => {
-        // checking this to exclude the user that are deactivated
-        if (
-          mentor.hed__Contact__r &&
-          mentor.hed__Contact__r.Is_Deactive__c === false
-        ) {
-          const filteredObj = {
-            Id: mentor.hed__Contact__r.Id,
-            name: mentor.hed__Contact__r.Name,
-            profilePicture: mentor.hed__Contact__r.Profile_Picture__c,
-            instituteName: institute[0].hed__Account__r.Name,
-            designation: mentor.hed__Contact__r.Designation__c,
-            isRegistered: mentor.hed__Contact__r.IsRegisteredOnPalette__c,
-          };
-          filteredMentor.push(filteredObj);
-        }
-      });
-    }
-
-    // getting all the guardians of the students
-    const studentConnection = await this.sfService.models.relationships.get(
-      'hed__Contact__r.Primary_Educational_Institution__c, hed__RelatedContact__c, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.Name, hed__RelatedContact__r.Palette_Email__c, hed__Type__c, hed__RelatedContact__r.Is_Deactive__c',
-      {
-        hed__Contact__c: studentIds,
-        hed__Type__c: GuardianObserverSubRoles,
-      },
-    );
-
-    const filteredParent = [];
-    const filteredObserver = [];
-
-    if (studentConnection.length > 0) {
-      studentConnection.map((user) => {
-        // checking this to exclude the user that are deactivated
-        if (user.hed__RelatedContact__r.Is_Deactive__c === false) {
-          const filteredObj = {
-            Id: user.hed__RelatedContact__c,
-            name: user.hed__RelatedContact__r.Name,
-            profilePicture: user.hed__RelatedContact__r.Profile_Picture__c,
-            instituteName: institute[0].hed__Account__r.Name,
-            designation: user.hed__Contact__r.Designation__c,
-          };
-          if (user.hed__Type__c === 'Observer')
-            filteredObserver.push(filteredObj);
-          if (user.hed__Type__c === 'Guardian')
-            filteredParent.push(filteredObj);
-        }
-      });
-    }
-
-    // removing duplicates
-    const uniqueParents = filteredParent.filter(
-      (v, i, a) =>
-        a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
-    );
-
-    const uniqueObserver = filteredObserver.filter(
-      (v, i, a) =>
-        a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
-    );
-
-    const response = {
-      statusCode: 200,
-      data: {
-        students: filteredStudents,
-        mentors: filteredMentor,
-        parents: uniqueParents,
-        observers: uniqueObserver,
-        admins: filteredAdmins,
-      },
-    };
-    return response;
-  }
-  async getAdvisor(id: string) {
-    const responseData = await this.sfService.generics.contacts.get(
-      'Id, Name, Phone, Palette_Email__c, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook__c, Whatsapp__c, Instagram__c, Website__c, WebsiteTitle__c, Github__c, LinkedIn_URL__c, Designation__c, AccountId, Profile_Picture__c',
-      {
-        Id: id,
-      },
-    );
-
-    const {
-      Id,
-      Name,
-      Phone,
-      Palette_Email__c,
-      MailingCity,
-      MailingCountry,
-      MailingState,
-      MailingPostalCode,
-      MailingStreet,
-      Facebook__c,
-      Whatsapp__c,
-      Instagram__c,
-      Website__c,
-      WebsiteTitle__c,
-      Github__c,
-      LinkedIn_URL__c,
-      Designation__c,
-      AccountId,
-      Profile_Picture__c,
-    } = responseData[0];
-
-    if (!responseData) {
-      throw new NotFoundException(`Advisor with ID "${id}" not found`);
-    }
-
-    const institute = await this.sfService.models.accounts.get('Id, Name', {
-      Id: AccountId,
-    });
-
-    const instituteName: string | null =
-      institute === null ? null : institute.map((c) => c.Name).toString();
-
-    const advisorData = {
-      Id: Id,
-      name: Name,
-      phone: Phone,
-      email: Palette_Email__c,
-      profilePicture: Profile_Picture__c,
-      instituteId: institute[0].Id,
-      institute_name: instituteName,
-      designation: Designation__c,
-      mailingCity: MailingCity,
-      mailingCountry: MailingCountry,
-      mailingState: MailingState,
-      mailingStreet: MailingStreet,
-      mailingPostalCode: MailingPostalCode,
-      facebook_link: Facebook__c,
-      whatsapp_link: Whatsapp__c,
-      instagram_link: Instagram__c,
-      website_link: Website__c,
-      website_Title: WebsiteTitle__c,
-      github_link: Github__c,
-      linkedin_link: LinkedIn_URL__c,
-    };
-
-    return advisorData;
-  }
-  async getStudent(id: string) {
-    const responseData = await this.sfService.generics.contacts.get(
-      'Id, Name, Birthdate, hed__Gender__c, Grade__c, k12kit__Student_ID__c, Phone, Palette_Email__c, Interests__c, skills__c, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook__c, Whatsapp__c, Instagram__c, Website__c, WebsiteTitle__c, Github__c, LinkedIn_URL__c, Primary_Educational_Institution__c, Profile_Picture__c',
-      {
-        Id: id,
-      },
-    );
-    const {
-      Id,
-      Name,
-      Birthdate,
-      hed__Gender__c,
-      Grade__c,
-      k12kit__Student_ID__c,
-      Phone,
-      Palette_Email__c,
-      Interests__c,
-      skills__c,
-      MailingCity,
-      MailingCountry,
-      MailingState,
-      MailingPostalCode,
-      MailingStreet,
-      Facebook__c,
-      Whatsapp__c,
-      Instagram__c,
-      Website__c,
-      WebsiteTitle__c,
-      Github__c,
-      LinkedIn_URL__c,
-      Primary_Educational_Institution__c,
-      Profile_Picture__c,
-    } = responseData[0];
-
-    if (!responseData) {
-      throw new NotFoundException(`student with ID "${id}" not found`);
-    }
-
-    const institute =
-      Primary_Educational_Institution__c === null
-        ? null
-        : await this.sfService.models.accounts.get('Id, Name', {
-            Id: Primary_Educational_Institution__c,
-          });
-
-    const instituteName: string | null =
-      institute === null ? null : institute.map((c) => c.Name).toString();
-
-    const workExp = await this.sfService.models.affiliations.get(
-      'Id, Name, hed__Account__c, hed__Affiliation_Type__c, hed__Contact__c, hed__EndDate__c, hed__StartDate__c, hed__Role__c, Tenure__c,  hed__Description__c, Job_Type__c, Designation__c',
-      {
-        hed__Contact__c: Id,
-        hed__Affiliation_Type__c: 'Business Organization',
-      },
-    );
-    const studentWorkExperience = await this.studentWorkExpMapping(workExp);
-
-    const studentInterests: string[] =
-      Interests__c === null ? null : Interests__c.split(',');
-    const studentSkills: string[] =
-      skills__c === null ? null : skills__c.split(',');
-
-    const studentData = {
-      Id: Id,
-      name: Name,
-      DOB: Birthdate,
-      gender: hed__Gender__c,
-      education: [
-        {
-          instituteId: institute[0].Id,
-          institute_name: instituteName,
-          course: Grade__c,
-          roll_no: k12kit__Student_ID__c,
-        },
-      ],
-      phone: Phone,
-      email: Palette_Email__c,
-      profilePicture: Profile_Picture__c,
-      work_experience: studentWorkExperience,
-      interests: studentInterests,
-      mailingCity: MailingCity,
-      mailingCountry: MailingCountry,
-      mailingState: MailingState,
-      mailingStreet: MailingStreet,
-      mailingPostalCode: MailingPostalCode,
-      facebook_link: Facebook__c,
-      whatsapp_link: Whatsapp__c,
-      instagram_link: Instagram__c,
-      website_link: Website__c,
-      website_Title: WebsiteTitle__c,
-      github_link: Github__c,
-      linkedin_link: LinkedIn_URL__c,
-      skills: studentSkills,
-      projects: [],
-      activities: [],
-    };
-
-    return studentData;
-  }
-  async studentWorkExpMapping(workExp: any) {
-    return await Promise.all(
-      workExp.map(async (c) => {
-        const orgName = await this.sfService.models.accounts.get('Name', {
-          Id: c.hed__Account__c,
-        });
-        const workObj = {
-          organizationName: orgName[0].Name,
-          role: c.hed__Role__c,
-          startDate: c.hed__StartDate__c,
-          endDate: c.hed__EndDate__c,
-        };
-        return workObj;
-      }),
-    );
-  }
-
-  async getParent(id: string) {
-    const responseData = await this.sfService.generics.contacts.get(
-      'Id, Name, Phone, Palette_Email__c, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook__c, Whatsapp__c, Instagram__c, Website__c, WebsiteTitle__c, Github__c, LinkedIn_URL__c, Profile_Picture__c',
-      {
-        Id: id,
-      },
-    );
-    const {
-      Id,
-      Name,
-      Phone,
-      Palette_Email__c,
-      MailingCity,
-      MailingCountry,
-      MailingState,
-      MailingPostalCode,
-      MailingStreet,
-      Facebook__c,
-      Whatsapp__c,
-      Instagram__c,
-      Website__c,
-      WebsiteTitle__c,
-      Github__c,
-      LinkedIn_URL__c,
-      Profile_Picture__c,
-    } = responseData[0];
-
-    if (!responseData) {
-      throw new NotFoundException(`parent with ID "${id}" not found`);
-    }
-
-    const studentList = await this.sfService.models.relationships.get(
-      'Id, Name, hed__Contact__c, hed__Type__c, hed__Relationship_Explanation__c, hed__RelatedContact__c, hed__Description__c, hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.Is_Deactive__c',
-      {
-        hed__RelatedContact__c: Id,
-        hed__Type__c: GuardianSubRoles,
-      },
-    );
-
-    const students: Array<{
-      Id: string;
-      Name: string;
-      profilePicture: string;
-    }> = [];
-
-    studentList.map((student) => {
-      if (student.hed__Contact__r.Is_Deactive__c === false) {
-        const filterObj = {
-          Id: student.hed__Contact__c,
-          Name: student.hed__Contact__r.Name,
-          profilePicture: student.hed__Contact__r.Profile_Picture__c,
-        };
-        students.push(filterObj);
-      }
-    });
-
-    const parentData = {
-      Id: Id,
-      name: Name,
-      phone: Phone,
-      email: Palette_Email__c,
-      profilePicture: Profile_Picture__c,
-      pupils: students,
-      mailingCity: MailingCity,
-      mailingCountry: MailingCountry,
-      mailingState: MailingState,
-      mailingStreet: MailingStreet,
-      mailingPostalCode: MailingPostalCode,
-      facebook_link: Facebook__c,
-      whatsapp_link: Whatsapp__c,
-      instagram_link: Instagram__c,
-      website_link: Website__c,
-      website_Title: WebsiteTitle__c,
-      github_link: Github__c,
-      linkedin_link: LinkedIn_URL__c,
-    };
-
-    return parentData;
-  }
-  async getAdvisorDetailsStudents(mentorId: string) {
-    const filteredStudents = await this.getFilteredStudents(mentorId);
-
-    const advisor = await this.getAdvisor(mentorId);
     return {
-      statusCode: 200,
-      data: { mentor: advisor, students: filteredStudents },
+      statusCode: 201,
+      message: 'AddedToToDo',
     };
   }
-  async getFilteredStudents(mentorId: string) {
-    const students = await this.sfService.models.relationships.get(
-      'Id, Name, hed__Contact__c, hed__Contact__r.Name, hed__Contact__r.Grade__c, hed__RelatedContact__r.Id, hed__RelatedContact__r.Name, hed__Type__c, hed__RelatedContact__r.Primary_Educational_Institution__c, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.IsRegisteredOnPalette__c, hed__RelatedContact__r.Is_Deactive__c',
-      {
-        hed__Contact__c: mentorId,
-        hed__Type__c: MentorSubRoles, // Mentor ==> Advisor
-      },
-    );
 
-    if (students.length === 0) {
-      throw new NotFoundException(Errors.NO_STUDENT);
-    }
-
-    // filtering data
-    const filteredStudents = [];
-    students.map((c) => {
-      if (c.hed__RelatedContact__r.Is_Deactive__c === false) {
-        const filteredObj = {
-          Id: c.hed__RelatedContact__r.Id,
-          name: c.hed__RelatedContact__r.Name,
-          grade: c.hed__RelatedContact__r.Grade__c || null,
-          profilePicture: c.hed__RelatedContact__r.Profile_Picture__c || null,
-          institute:
-            c.hed__RelatedContact__r.Primary_Educational_Institution__c || null,
-          isRegistered: c.hed__RelatedContact__r.IsRegisteredOnPalette__c,
-        };
-        filteredStudents.push(filteredObj);
-      }
-    });
-
-    return filteredStudents;
-  }
 }

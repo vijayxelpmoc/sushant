@@ -25,3 +25,7 @@ export const Responses = {
   USERS_FOUND_SUCCESS: 'User exists on Palette',
   OTP_VALIDATION_SUCCESS: 'Otp validated',
 };
+
+export const EnvKeys = {
+  PASSWORD_HASHING_KEY: "$2b$10$yDjv.HvX6K5mY.9ZPYAs5O",
+}
