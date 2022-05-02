@@ -20,7 +20,7 @@ import {
   RolesGuard,
   Role,
 } from '@gowebknot/palette-wrapper';
-import { CachingService } from '@gowebknot/palette-salesforce-service';
+// import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { UpdateSfObserverDto } from './dtos';
 import { ObserverService } from './observer.service';
 
@@ -30,7 +30,7 @@ import { ObserverService } from './observer.service';
 export class ObserverController {
   constructor(
     private observerService: ObserverService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   /** returns the observer profile details
