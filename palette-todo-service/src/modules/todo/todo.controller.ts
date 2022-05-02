@@ -76,7 +76,7 @@ export class TodoController {
   // done
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('/')
+  @Get('/') //1
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
@@ -109,7 +109,7 @@ export class TodoController {
     description: 'Adds a discrete or global todo draft',
     type: CreateTodoV2Dto,
   })
-  @Post('draft')
+  @Post('draft') //5
   async createTodoDraft(
     @Body() createTodoDto: CreateTodoV2Dto,
     @Request() req,
@@ -133,7 +133,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/accept/:id')
+  @Post('requested/accept/:id') //7
   @ApiBearerAuth()
   @ApiParam({
     name: 'id',
@@ -165,7 +165,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/reject/:id')
+  @Post('requested/reject/:id')//8
   @ApiBearerAuth()
   @ApiParam({
     name: 'id',
@@ -186,7 +186,7 @@ export class TodoController {
   }
 
   // done
-  @Get('/:id')
+  @Get('/:id') //3
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
@@ -208,7 +208,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('todo/requested/bulk/accept')
+  @Post('todo/requested/bulk/accept') //9
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
@@ -272,7 +272,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('todo/requested/bulk/reject')
+  @Post('todo/requested/bulk/reject') //10
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
@@ -302,7 +302,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('recepients')
+  @Get('recepients') //11
   @ApiBearerAuth()
   @ApiBearerAuth()
   @ApiResponse({
@@ -378,7 +378,7 @@ export class TodoController {
    */
   @hasRoles(Role.Student, Role.Parent, Role.Advisor, Role.Faculty)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch('/update/:id')
+  @Patch('/update/status/:id') //12
   @ApiOkResponse({ description: 'Todo Updated successfully' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBody({ type: UpdateTodoDto })
@@ -400,7 +400,7 @@ export class TodoController {
   @ApiOkResponse({ description: 'Todo Updated successfully' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBody({ type: BulkUpdateTodoStatusDto })
-  @Patch('bulk/status/update')
+  @Patch('update/bulk/status') //13
   bulkUpdate(
     @Request() req,
     @Body('todoIds') todoIds: string[],
