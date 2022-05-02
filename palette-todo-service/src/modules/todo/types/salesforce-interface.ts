@@ -71,7 +71,9 @@ export interface SFTodo {
   Todo_Scope?: string;
   Status?: string;
   Parentid?: string;
+  Reminder_at?: string;
   Assignee_accepted_status?: string;
+  Opportunity_Id?: string;
 }
 
 interface Attributes {
