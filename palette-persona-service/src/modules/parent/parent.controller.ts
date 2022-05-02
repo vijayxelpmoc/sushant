@@ -44,25 +44,6 @@ export class ParentController {
     return parent;
   }
 
-  /** updates parent profile details
-   *  @param {UpdateSfAdvisorDto} updateSfAdvisorDto contains attributes that needs to be updated in the advisor profile data
-   * @returns {Object} status code and message
-   */
-  @hasRoles(Role.Parent)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch('profile/update')
-  update(
-    @Request() req, 
-    @Body() updateSfParentDto: UpdateSfParentDto,
-    @Body('instituteId') instituteId: string,
-  ) {
-    return this.parentService.update(
-      req.user.id, 
-      updateSfParentDto,
-      instituteId,
-    );
-  }
-
   /**
    * Function to get the details of the parent by ID
    * @param id id of the parent
@@ -85,5 +66,22 @@ export class ParentController {
     return this.parentService.getParent(id, instituteId);
   }
 
-  
+  /** updates parent profile details
+   *  @param {UpdateSfAdvisorDto} updateSfAdvisorDto contains attributes that needs to be updated in the advisor profile data
+   * @returns {Object} status code and message
+   */
+  @hasRoles(Role.Parent)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('profile/update')
+  update(
+    @Request() req, 
+    @Body() updateSfParentDto: UpdateSfParentDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.parentService.update(
+      req.user.id, 
+      updateSfParentDto,
+      instituteId,
+    );
+  }
 }

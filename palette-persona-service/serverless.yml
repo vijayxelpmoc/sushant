@@ -38,16 +38,20 @@ functions:
           path: admin/profile
           cors: true
       - http:  
+          method: GET
+          path: admin/details/{id}
+          cors: true
+      - http:  
           method: PATCH
           path: admin/profile/update
           cors: true
       - http:  
           method: GET
-          path: admin/:id
+          path: advisor/profile
           cors: true
       - http:  
           method: GET
-          path: advisor/profile
+          path: advisor/details/{id}
           cors: true
       - http:  
           method: PATCH
@@ -55,11 +59,11 @@ functions:
           cors: true
       - http:  
           method: GET
-          path: advisor/:id
+          path: observer/profile
           cors: true
       - http:  
           method: GET
-          path: observer/profile
+          path: observer/details/{id}
           cors: true
       - http:  
           method: PATCH
@@ -67,19 +71,15 @@ functions:
           cors: true
       - http:  
           method: GET
-          path: observer/:id
+          path: parent/profile
           cors: true
       - http:  
           method: GET
-          path: parent/profile
+          path: parent/details/{id}
           cors: true
       - http:  
           method: PATCH
           path: parent/profile/update
-          cors: true
-      - http:  
-          method: GET
-          path: parent/:id
           cors: true
       - http:  
           method: GET
@@ -91,5 +91,5 @@ functions:
           cors: true
       - http:  
           method: GET
-          path: student/:id
+          path: student/details/{id}
           cors: true

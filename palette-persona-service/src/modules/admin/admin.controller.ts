@@ -78,7 +78,7 @@ export class AdminController {
     Role.Faculty,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('/:id')
+  @Get('details/:id')
   async getAdminDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,

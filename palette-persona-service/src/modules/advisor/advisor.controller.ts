@@ -80,7 +80,7 @@ export class AdvisorController {
     Role.Faculty,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('/:id')
+  @Get('details/:id')
   async getAdvisorDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
