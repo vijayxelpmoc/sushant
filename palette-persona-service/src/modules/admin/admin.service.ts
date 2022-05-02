@@ -185,15 +185,4 @@ export class AdminService {
       );
     }
   }
-
-  /**
-   * Function to get the details of the admin by ID
-   * @param adminId id of the admin
-   * object Array of admin details
-   */
-   async adminDetailsDashboard(adminId: string): Promise<AdminBEResponse> {
-    const userDetails: AdminBEResponse = await this.getAdmin(adminId);
-    const response: AdminBEResponse = userDetails;
-    return response;
-  }
 }

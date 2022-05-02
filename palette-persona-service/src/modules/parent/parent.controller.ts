@@ -6,6 +6,7 @@ import {
   Patch,
   Body,
   Query,
+  Param,
 } from '@nestjs/common';
 
 import {
@@ -71,14 +72,17 @@ export class ParentController {
     Role.Administrator,
     Role.Parent,
     Role.Student,
-    Role.advisor,
+    Role.Advisor,
     Role.Observer,
-    Role.faculty,
+    Role.Faculty,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('details/:id')
-  getParentDetails(@Param('id') id: string) {
-    return this.parentService.parentDetailsDashboard(id);
+  getParentDetails(
+    @Param('id') id: string,
+    @Query('instituteId') instituteId: string,
+  ) {
+    return this.parentService.getParent(id, instituteId);
   }
 
   
