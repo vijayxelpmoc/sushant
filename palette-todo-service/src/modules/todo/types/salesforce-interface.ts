@@ -60,7 +60,7 @@ export interface SFMentors {
 export interface SFTodo {
   Name: string;
   Description: string;
-  Task_status: string;
+  Task_Status: string;
   Type: string;
   Complete_By: string;
   Listed_by: string;
@@ -73,7 +73,7 @@ export interface SFTodo {
   Parentid?: string;
   Reminder_at?: string;
   Assignee_accepted_status?: string;
-  Opportunity_Id?: string;
+  Opportunit_Id?: string;
 }
 
 interface Attributes {
@@ -95,7 +95,7 @@ export interface SFTask {
   Complete_By: string;
   Description: string;
   Listed_by: string;
-  Task_status: string;
+  Task_Status: string;
   Created_at: string;
   Created_By: string;
   Type: string;

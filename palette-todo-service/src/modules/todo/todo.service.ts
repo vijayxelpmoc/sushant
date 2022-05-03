@@ -23,7 +23,7 @@ import {
   ApprovedStatus,
   CreateTodoV2Dto,
 } from './dtos';
-import uuid from "uuid-random"
+import uuid from 'uuid-random';
 import {
   SFActivityActivityDetail,
   SFAdmins,
@@ -51,10 +51,9 @@ import { FilteredTasks, Task } from './types/task-interface';
 @Injectable()
 export class TodoService {
   private notifier: Notifier;
-  constructor(private sfService: SfService,) {
+  constructor(private sfService: SfService) {
     this.notifier = new Notifier();
   }
-
 
   // doubt
   /**
@@ -63,38 +62,52 @@ export class TodoService {
    * @param EventTodoDto id of the event and who listed the the event
    * statusCode and errors.
    */
-  async createTodoWithEvent(userId: string, eventTodoDto: EventTodoDto) {
+  async createTodoWithEvent(
+    userId: string,
+    eventTodoDto: EventTodoDto,
+    instituteId: string,
+  ) {
     const { eventId, listedBy } = eventTodoDto;
     // checking if the user is already enrolled in the event
     const getEventInstance: SFEventEnrollment[] =
-      await this.sfService.models.activities.get('Contact, Event', {
-        Contact: userId,
-        Event: eventId,
-      });
+      await this.sfService.models.todos.get(
+        '*',
+        {
+          Contact: userId,
+          Event: eventId,
+        },
+        {},
+        instituteId,
+      );
     if (getEventInstance.length >= 1) {
       throw new BadRequestException(Errors.USER_EXIST);
     }
     // if the user isnt enrolled then we will create a instance of paletteActivity to enroll him in the event
-    await this.sfService.models.activities.create({
-      Contact: userId,
-      Event: eventId,
-    });
+    await this.sfService.models.todos.create(
+      {
+        Contact: userId,
+        Event: eventId,
+      },
+      instituteId,
+    );
 
     // getting all the event details by id
     const activityDetails: SFActivityActivityDetail[] =
-      await this.sfService.models.activities.get(
-        'Id, Name, Description, Start_Date, End_Date, Category, Venue , Shipping_Address, Phone, Website, Created_By, Listed_by, Record_Type_Name',
+      await this.sfService.models.todos.get(
+        'Id, To_do, Description, Start_Date, End_Date, Category, Venue , Shipping_Address, Phone, Website, Created_By, Listed_by, Record_Type_Name',
         {
           Id: eventId,
           Record_Type_Name: ['Activity', 'Activities'], // Activities
         },
+        {},
+        instituteId,
       );
 
     // getting the resources id for the event to update the task id ahead.
     const EventId = [eventId];
     const eventResourceIds: string[] = await this.getResourcesByActivityId(
       EventId,
-      true,
+      instituteId,
     );
 
     // setting the todo type as per the event type
@@ -112,7 +125,7 @@ export class TodoService {
       Group_Id: activityDetails[0].Id,
       Name: activityDetails[0].Name,
       Description: activityDetails[0].Description,
-      Task_status: 'Open',
+      Task_Status: 'Open',
       Type: activityType ? activityType : 'Other',
       Event_At: activityDetails[0].End_Date,
       Event_Venue: activityDetails[0].Venue,
@@ -123,14 +136,19 @@ export class TodoService {
     // creating the todo
     const createTodoResponse = await this.sfService.models.todos.create(
       eventToDoDetails,
+      instituteId,
     );
 
     // updating the resource with the todo id to connect the todo with the resources
     if (eventResourceIds.length >= 1) {
       for (const connection of eventResourceIds) {
-        await this.sfService.models.resourceConnections.update(connection, {
-          Todo: createTodoResponse.id,
-        });
+        await this.sfService.models.resourceConnections.update(
+          {
+            Todo: createTodoResponse.id,
+          },
+          connection,
+          instituteId,
+        );
       }
     }
 
@@ -143,6 +161,7 @@ export class TodoService {
    */
   async getResourcesByActivityId(
     activitiesIds: string[],
+    instituteId: string,
     resourceIds?: boolean,
   ): Promise<any> {
     const resources: SFEventResource[] =
@@ -151,6 +170,8 @@ export class TodoService {
         {
           Event: activitiesIds,
         },
+        {},
+        instituteId,
       );
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
     const allResource = {};
@@ -182,11 +203,16 @@ export class TodoService {
   // sendTodo scope as well
 
   async getTodos(userId: string, instituteId: string) {
-    const todos = await this.sfService.models.todos.get('*', {
-      Assignee: userId,
-    },
+    const todos = await this.sfService.models.todos.get(
+      '*',
+      {
+        Assignee: userId,
+      },
       {},
-      instituteId);
+      instituteId,
+    );
+
+    console.log(todos);
 
     if (!todos || todos.length === 0) {
       throw new NotFoundException(Errors.TODOS_NOT_FOUND);
@@ -201,6 +227,8 @@ export class TodoService {
     const assignee = await this.sfService.generics.contacts.get(
       'Id, Name, Profile_Picture',
       { Id: userId },
+      {},
+      instituteId,
     );
 
     const listedByDetails = await this.sfService.generics.contacts.get(
@@ -208,6 +236,8 @@ export class TodoService {
       {
         Id: listedBy,
       },
+      {},
+      instituteId,
     );
 
     const listedByMap = new Map(
@@ -221,7 +251,7 @@ export class TodoService {
           id: todoObj.Id,
           name: todoObj.To_do,
           description: todoObj.Description,
-          taskStatus: todoObj.Task_status,
+          taskStatus: todoObj.Task_Status,
           acceptedStatus: todoObj.Assignee_accepted_status,
           type: todoObj.Type,
           completeBy: todoObj.Complete_By,
@@ -265,14 +295,18 @@ export class TodoService {
     };
   }
 
-
-  async createTodoV2(todo: CreateTodoV2Dto, userId: string, recordType: Role) {
+  async createTodoV2(
+    todo: CreateTodoV2Dto,
+    userId: string,
+    recordType: Role,
+    instituteId: string,
+  ) {
     const groupId = uuid();
     // creating todo obj.
     const todoObj: SFTodo = {
       Name: todo.name,
       Description: todo.description,
-      Task_status: todo.status,
+      Task_Status: todo.status,
       Type: todo.type,
       Complete_By: todo.completeBy !== '' ? todo.completeBy : null,
       Listed_by: todo.listedBy,
@@ -280,7 +314,7 @@ export class TodoService {
       Reminder_at: todo.reminderAt !== '' ? todo.reminderAt : null,
       Event_At: todo.eventAt !== '' ? todo.eventAt : null,
       Event_Venue: todo.venue !== '' ? todo.venue : null,
-      Opportunity_Id: null,
+      Opportunit_Id: null,
     };
 
     const alltodoIds = [];
@@ -299,7 +333,11 @@ export class TodoService {
             userId === assignee ? 'Accepted' : 'Requested',
         };
         // Todo created.
-        const createdTodo = await this.sfService.models.todos.create(newtodoObj);
+        // error
+        const createdTodo = await this.sfService.models.todos.create(
+          newtodoObj,
+          instituteId
+        );
         // storting todo ids.
         alltodoIds.push(createdTodo.id);
         // Notification created.
@@ -312,7 +350,8 @@ export class TodoService {
           Todo: createdTodo.id,
           Notification_Todo_Type: todo.type,
           Notification_By: userId,
-        });
+        },
+        instituteId);
       }
       return {
         statusCode: 200,
@@ -333,20 +372,25 @@ export class TodoService {
         Parentid: todo.instituteId,
         Assignee_accepted_status: 'Accepted',
         Is_Admin_Reviewed: 'No',
-      });
+      }, instituteId);
 
       if (!isAdmin) {
-        const admins = await this.sfService.models.affiliations.get('Contact__r.Id', {
-          hed__Account: todo.instituteId,
-          hed__Role: 'Admin',
-        });
+        const admins = await this.sfService.models.affiliations.get(
+          'Id',
+          {
+            Account: todo.instituteId,
+            Role: 'Admin',
+          },
+          {},
+          instituteId,
+        );
         const notificationTitle = `New todo`;
         const notificationMsg = `New todo requested for approval`;
-        admins.map(async admin => {
+        admins.map(async (admin) => {
           // create push notification
           // try {
           //   await this.firebaseService.sendNotification(
-          //     admin.hed__Contact__r.Id,
+          //     admin.Contact__r.Id,
           //     notificationTitle,
           //     notificationMsg,
           //     {
@@ -360,16 +404,19 @@ export class TodoService {
           //   // console.log('err',err);
           // }
           // create notification
-          await this.sfService.models.notification.create({
-            Title: todo.name,
-            Contact: admin.Contact.Id,
-            Type: 'To-Do Approval Request',
-            Created_at: new Date(),
-            Is_Read: false,
-            Todo: response.id,
-            Notification_Todo_Type: todo.type,
-            Notification_By: userId,
-          });
+          await this.sfService.models.notification.create(
+            {
+              Title: todo.name,
+              Contact: admin.Contact.Id,
+              Type: 'To-Do Approval Request',
+              Created_at: new Date(),
+              Is_Read: false,
+              Todo: response.id,
+              Notification_Todo_Type: todo.type,
+              Notification_By: userId,
+            },
+            instituteId,
+          );
         });
       }
       if (response.success) {
@@ -388,23 +435,31 @@ export class TodoService {
     }
   }
 
-  async getTodo(userId: string, todoId: string) {
-    const todo = (
-      await this.sfService.models.todos.get('*', {
+  async getTodo(userId: string, todoId: string, instituteId: string) {
+    const todo = await this.sfService.models.todos.get(
+      '*',
+      {
         Id: todoId,
-        // Assignee: userId,
-      })
-    )[0];
+        // Assignee: userId
+      },
+      {},
+      instituteId,
+    );
+
+    // console.log(todo);
+
     if (!todo) {
       throw new BadRequestException(Errors.INVALID_TODO_ID);
     }
 
-    const todoResources = await this.getResourcesById([todo.Id]);
+    // const todoResources = await this.getResourcesById([todo.Id],instituteId);
     const assignees = await this.sfService.generics.contacts.get(
       'Name, Profile_Picture, Id',
       {
         Id: todo.Assignee,
       },
+      {},
+      instituteId,
     );
 
     return {
@@ -414,7 +469,7 @@ export class TodoService {
         id: todo.Id,
         name: todo.Name,
         description: todo.Description,
-        taskStatus: todo.Task_status,
+        taskStatus: todo.Task_Status,
         type: todo.Type,
         completedBy: todo.Complete_By,
         listedBy: todo.Listed_by,
@@ -422,16 +477,23 @@ export class TodoService {
         status: todo.Status,
         eventAt: todo.Event_At || null,
         venue: todo.Event_Venue || null,
-        resources: todoResources[todo.Id] || [],
+        // resources: todoResources[todo.Id] || [],
         Assignee: assignees,
       },
     };
   }
 
-  async notifyOnTaskStatusChange(taskId: string, currentStatus) {
+  // error
+  async notifyOnTaskStatusChange(
+    taskId: string,
+    currentStatus,
+    instituteId: string,
+  ) {
     const tasks = await this.sfService.models.todos.get(
-      'Id, Archived, Name, Group_Id, Assignee, Assignee__r.Name, Complete_By, Description, Listed_by, Task_status, Created_at, Created_By, Type, Event_At, Event_Venue',
+      'Id, Archived, Name, Group_Id, Assignee, Assignee__r.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
       { Id: taskId },
+      {},
+      instituteId,
     );
 
     let response;
@@ -441,15 +503,18 @@ export class TodoService {
       const notificationTitle = `${task.Assignee__r.Name} has ${currentStatus} your task`;
 
       if (task.Listed_by !== task.Assignee) {
-        response = await this.sendTodoNotification({
-          title: notificationTitle,
-          message: task.Name,
-          notifyTo: 'listedBy',
-          groupId: task.Group_Id,
-          assigneeId: task.Assignee,
-          listedById: task.Listed_by,
-          todoId: task.Id,
-        });
+        response = await this.sendTodoNotification(
+          {
+            title: notificationTitle,
+            message: task.Name,
+            notifyTo: 'listedBy',
+            groupId: task.Group_Id,
+            assigneeId: task.Assignee,
+            listedById: task.Listed_by,
+            todoId: task.Id,
+          },
+          instituteId,
+        );
       }
     }
     return response;
@@ -462,12 +527,19 @@ export class TodoService {
     todoId: string,
     status: string,
     role: string,
+    instituteId: string,
     note?: string,
   ) {
-    const requestedTodo = await this.sfService.models.todos.get('*', {
-      Id: todoId,
-      // Assignee: userId,
-    });
+    const requestedTodo = await this.sfService.models.todos.get(
+      '*',
+      {
+        Id: todoId,
+      },
+      {},
+      instituteId,
+    );
+
+    console.log(requestedTodo);
 
     // if todo is invalid
     if (!requestedTodo || requestedTodo.length === 0) {
@@ -488,34 +560,60 @@ export class TodoService {
 
     // if this person has listed the todo, then update the status for all the assignees
 
+    console.log(userId);
+
     if (requestedTodo[0].Listed_by === userId) {
       const todoGroupId = requestedTodo[0].Group_Id;
       // Try to get all the todo's with same group Id
-      const sameGroupTodos = await this.sfService.models.todos.get('*', {
-        Group_Id: todoGroupId,
-        Listed_by: userId,
-      });
+      const sameGroupTodos = await this.sfService.models.todos.get(
+        '*',
+        {
+          Group_Id: todoGroupId,
+          Listed_by: userId,
+        },
+        {},
+        instituteId,
+      );
 
       // Update all the todo's in the response
       for (const todo of sameGroupTodos) {
-        const response = await this.sfService.models.todos.update(todo.Id, {
-          Task_status: status,
-          Note: note !== '' ? note : null,
-        });
+        const response = await this.sfService.models.todos.update(
+          {
+            Task_Status: status,
+            Note: note !== '' ? note : null,
+          },
+          todoId,
+          instituteId,
+        );
+        console.log(response);
+
         // Send Notification that creator has updated the status of todo.
         // The assignee can also revert back the status
         if (response.success === true) {
-          this.notifyOnTaskStatusChange(todo.Id, status.toUpperCase());
+          // error
+          this.notifyOnTaskStatusChange(
+            todo.Id,
+            status.toUpperCase(),
+            instituteId,
+          );
         }
       }
     } else {
       // Update the status of current todo only
-      const response = await this.sfService.models.todos.update(todoId, {
-        Task_status: status,
-        Note: note !== '' ? note : null,
-      });
+      const response = await this.sfService.models.todos.update(
+        {
+          Task_Status: status,
+          Note: note !== '' ? note : null,
+        },
+        todoId,
+        instituteId,
+      );
       if (response.success === true) {
-        this.notifyOnTaskStatusChange(todoId, status.toUpperCase());
+        this.notifyOnTaskStatusChange(
+          todoId,
+          status.toUpperCase(),
+          instituteId,
+        );
       }
     }
 
@@ -541,12 +639,13 @@ export class TodoService {
     todoIds: string[],
     status: string,
     role: string,
+    instituteId: string,
   ) {
     // Can be used as check to report any update failure
     let hasErrors = false;
-    todoIds.map(async todo => {
+    todoIds.map(async (todo) => {
       try {
-        await this.updateToDoStatus(userId, todo, status, role);
+        await this.updateToDoStatus(userId, todo, status, role, instituteId);
       } catch (err) {
         console.log(`[ERROR] Updating Todo [${todo}] : `, err);
         hasErrors = true;
@@ -564,12 +663,13 @@ export class TodoService {
     draft: CreateTodoV2Dto,
     userId: string,
     role: string,
+    instituteId: string,
   ): Promise<any> {
     const groupId = uuid();
     const todoObj: SFTodo = {
       Name: draft.name,
       Description: draft.description,
-      Task_status: draft.status,
+      Task_Status: draft.status,
       Type: draft.type,
       Complete_By: draft.completeBy,
       Listed_by: draft.listedBy,
@@ -601,9 +701,15 @@ export class TodoService {
         });
       }
 
+      console.log(assigneeTodos);
+
+      // error
       const createResponse = await this.sfService.models.todos.create(
         assigneeTodos,
+        instituteId,
       );
+
+      console.log(createResponse);
 
       if (
         createResponse.every(
@@ -622,11 +728,14 @@ export class TodoService {
         throw new InternalServerErrorException(Errors.TODO_CRAFT_CREATE_ERROR);
       }
     } else if (draft.instituteId) {
-      const response = await this.sfService.models.todos.create({
-        ...todoObj,
-        Todo_Scope: 'Global',
-        Parent_Account: draft.instituteId,
-      });
+      const response = await this.sfService.models.todos.create(
+        {
+          ...todoObj,
+          Todo_Scope: 'Global',
+          Parent_Account: draft.instituteId,
+        },
+        instituteId,
+      );
       if (response.success) {
         return {
           statusCode: 201,
@@ -650,12 +759,18 @@ export class TodoService {
     userId: string,
     todoId: string,
     status: string,
+    instituteId: string,
   ) {
-    const requestedTodo = await this.sfService.models.todos.get('*', {
-      Id: todoId,
-      Assignee: userId,
-      Assignee_accepted_status: 'Requested',
-    });
+    const requestedTodo = await this.sfService.models.todos.get(
+      '*',
+      {
+        Id: todoId,
+        Assignee: userId,
+        Assignee_accepted_status: 'Requested',
+      },
+      {},
+      instituteId,
+    );
 
     if (requestedTodo.length === 0) {
       throw new BadRequestException(Errors.INVALID_TODO_ID);
@@ -666,6 +781,7 @@ export class TodoService {
           Assignee_accepted_status: status,
         },
         todoId,
+        instituteId,
       );
     } catch (e) {
       throw new InternalServerErrorException(e.message);
@@ -684,6 +800,7 @@ export class TodoService {
     userId: string,
     todoIds: string[],
     status: string,
+    instituteId: string,
   ) {
     let hasErrors = false;
     todoIds.map(async (id) => {
@@ -693,6 +810,7 @@ export class TodoService {
             Assignee_accepted_status: status,
           },
           id,
+          instituteId,
         );
       } catch (err) {
         hasErrors = true;
@@ -701,14 +819,16 @@ export class TodoService {
     return {
       statusCode: 201,
       message: hasErrors
-        ? `There were some errors in ${status === 'Accepted' ? 'Accepting' : 'Rejecting'
-        } all the todos`
-        : `All of the todos were ${status === 'Accepted' ? 'Accepted' : 'Rejected'
-        } successfully.`,
+        ? `There were some errors in ${
+            status === 'Accepted' ? 'Accepting' : 'Rejecting'
+          } all the todos`
+        : `All of the todos were ${
+            status === 'Accepted' ? 'Accepted' : 'Rejected'
+          } successfully.`,
     };
   }
 
-  async getAdminInstituteDetails(userId: string) {
+  async getAdminInstituteDetails(userId: string, instituteId: string) {
     const studentIds = [];
     const filteredAdmins = [];
 
@@ -720,6 +840,8 @@ export class TodoService {
           Contact: userId,
           Role: 'Admin',
         },
+        {},
+        instituteId,
       );
 
     if (institute.length === 0) {
@@ -733,15 +855,14 @@ export class TodoService {
         Account: institute[0].Account,
         Role: 'Admin',
       },
+      {},
+      instituteId,
     );
 
     Admins.map((admin) => {
       // checking this to exclude the user that are deactivated
       // and also excluding the user requesting
-      if (
-        admin.Contact !== userId &&
-        admin.Contact__r.Is_Deactive === false
-      ) {
+      if (admin.Contact !== userId && admin.Contact__r.Is_Deactive === false) {
         const adminObj = {
           Id: admin.Contact,
           name: admin.Contact__r.Name,
@@ -758,6 +879,8 @@ export class TodoService {
       {
         Primary_Educational_Institution: institute[0].Account,
       },
+      {},
+      instituteId,
     );
 
     // getting all the mentors inside the institute
@@ -767,6 +890,8 @@ export class TodoService {
         Account: institute[0].Account,
         Role: 'Advisor',
       },
+      {},
+      instituteId,
     );
 
     // filtering the data
@@ -794,10 +919,7 @@ export class TodoService {
     if (mentors.length > 0) {
       mentors.map((mentor) => {
         // checking this to exclude the user that are deactivated
-        if (
-          mentor.Contact__r &&
-          mentor.Contact__r.Is_Deactive === false
-        ) {
+        if (mentor.Contact__r && mentor.Contact__r.Is_Deactive === false) {
           const filteredObj = {
             Id: mentor.Contact__r.Id,
             name: mentor.Contact__r.Name,
@@ -819,6 +941,8 @@ export class TodoService {
           Contact: studentIds,
           Type: GuardianObserverSubRoles,
         },
+        {},
+        instituteId,
       );
 
     const filteredParent: MentorParentResponse[] = [];
@@ -835,10 +959,8 @@ export class TodoService {
             instituteName: institute[0].Account__r.Name,
             designation: user.Contact__r.Designation,
           };
-          if (user.Type === 'Observer')
-            filteredObserver.push(filteredObj);
-          if (user.Type === 'Guardian')
-            filteredParent.push(filteredObj);
+          if (user.Type === 'Observer') filteredObserver.push(filteredObj);
+          if (user.Type === 'Guardian') filteredParent.push(filteredObj);
         }
       });
     }
@@ -863,10 +985,19 @@ export class TodoService {
     };
   }
 
-  async getTodoRecepients(userId: string, recordType: string) {
+  async getTodoRecepients(
+    userId: string,
+    recordType: string,
+    instituteId: string,
+  ) {
+    console.log(recordType);
+
     switch (recordType) {
       case 'Administrator':
-        const adminData = await this.getAdminInstituteDetails(userId);
+        const adminData = await this.getAdminInstituteDetails(
+          userId,
+          instituteId,
+        );
         const adminRecepients = [
           ...adminData.students,
           ...adminData.mentors,
@@ -886,46 +1017,49 @@ export class TodoService {
             {
               Id: userId,
             },
+            {},
+            instituteId,
           )
         )[0].Primary_Educational_Institution;
+        console.log(institute);
+
         const studentRecepients = [];
         const relations = ['Guardian', 'Mentor'];
         for (const relation of relations) {
           const relationRecepients =
             await this.sfService.models.relationships.get(
-              'RelatedContact__r.Id, RelatedContact__r.Name, RelatedContact__r.Profile_Picture, RelatedContact__r.Primary_Educational_Institution',
+              'Id, Relationship_Number',
               {
                 Contact: userId,
                 Type: relation,
               },
+              {},
+              instituteId,
             );
           relationRecepients.map((recepient) => {
             studentRecepients.push({
-              Id: recepient.RelatedContact__r.Id,
-              name: recepient.RelatedContact__r.Name,
-              profilePicture:
-                recepient.RelatedContact__r.Profile_Picture,
-              institute:
-                recepient.RelatedContact__r
-                  .Primary_Educational_Institution,
+              Id: recepient.Id,
+              name: recepient.Relationship_Number,
+              institute,
             });
           });
         }
 
         // doubt
         const admins = await this.sfService.models.affiliations.get(
-          'Id, Affiliation_Name, Contact__r.Profile_Picture, Contact__r.Primary_Educational_Institution',
+          'Id, Affiliation_Name',
           {
-            Account: institute,
+            Organization: institute,
             Role: 'Admin',
           },
+          {},
+          instituteId,
         );
         admins.map((admin) => {
           studentRecepients.push({
             Id: admin.Id,
             name: admin.Affiliation_Name,
-            profilePicture: admin.Contact__r.Profile_Picture,
-            institute: admin.Contact__r.Primary_Educational_Institution,
+            institute: admin.Organization,
           });
         });
 
@@ -941,14 +1075,22 @@ export class TodoService {
     updateTodoDto: UpdateTodoDto,
     userId: string,
     todoId: string,
+    instituteId: string,
   ) {
-    const todoIds = todoId;
+    console.log(updateTodoDto);
+    
     const updateObj: any = {};
 
-    const filteredTasks = await this.sfService.models.todos.get('*', {
-      Id: todoIds,
-    });
-    if (filteredTasks.length === 0) {
+    // error
+    const filteredTasks = await this.sfService.models.todos.get(
+      '*',
+      {
+        Id: updateTodoDto.Id,
+      },
+      {},
+      instituteId,
+    );
+    if (!filteredTasks) {
       throw new NotFoundException(Errors.TODO_NOT_FOUND);
     }
 
@@ -994,12 +1136,15 @@ export class TodoService {
       updateObj.Complete_By = completeBy;
     }
 
-    const updateObjArray = [todoIds].map((Id) => ({
+    const updateObjArray = [todoId].map((Id) => ({
       Id,
       ...updateObj,
     }));
 
-    const response = await this.sfService.models.todos.update(updateObjArray);
+    const response = await this.sfService.models.todos.update(
+      updateObjArray,
+      instituteId,
+    );
 
     const success = response.every((res) => res.success);
 
@@ -1009,13 +1154,18 @@ export class TodoService {
       // Adds new Resources to the Todo
       if (updateTodoDto.hasOwnProperty('newResources')) {
         const { newResources } = updateTodoDto;
-        await this.addTodoResources(newResources, [todoIds], userId);
+        await this.addTodoResources(
+          newResources,
+          [todoId],
+          userId,
+          instituteId,
+        );
       }
 
       // Deletes Specified Resources from Todo and Deletes Resource if its not linked with any other Todo
       if (updateTodoDto.hasOwnProperty('deletedResources')) {
         const { deletedResources } = updateTodoDto;
-        await this.deleteTodoResource(deletedResources, [todoIds]);
+        await this.deleteTodoResource(deletedResources, [todoId], instituteId);
       }
     }
     return { statusCode: 200, message: Responses.TODO_UPDATE_SUCCESS };
@@ -1024,17 +1174,21 @@ export class TodoService {
   async bulkUpdateStatus(
     userId: string,
     bulkUpdateTodoStatusDto: BulkUpdateTodoStatusDto,
+    instituteId: string,
   ) {
     const { todoIds, todoStatus } = bulkUpdateTodoStatusDto;
 
     const updateArray = todoIds.map((todo) => {
       return {
         Id: todo,
-        Task_status: todoStatus,
+        Task_Status: todoStatus,
       };
     });
 
-    const response = await this.sfService.models.todos.update(updateArray);
+    const response = await this.sfService.models.todos.update(
+      updateArray,
+      instituteId,
+    );
     const success = response.every((res) => res.success);
     if (success) {
       return {
@@ -1057,15 +1211,23 @@ export class TodoService {
   //   }
   // }
 
-  async deleteAllTodos(Id: string, role: string) {
+  async deleteAllTodos(Id: string, role: string, instituteId: string) {
     try {
-      const allTodos = await this.sfService.models.todos.get(Id, role);
+      const allTodos = await this.sfService.models.todos.get(
+        '*',
+        { Id, role },
+        {},
+        instituteId,
+      );
 
-      const allTodoIds = allTodos.data.map(todo => {
+      const allTodoIds = allTodos.data.map((todo) => {
         return todo.todo.Id;
       });
 
-      const deleteResponse = await this.sfService.models.todos.delete(allTodoIds);
+      const deleteResponse = await this.sfService.models.todos.delete(
+        allTodoIds,
+        instituteId,
+      );
 
       return deleteResponse;
     } catch (error) {
@@ -1073,7 +1235,7 @@ export class TodoService {
     }
   }
 
-  async createTodo(todo: CreateTodoV2Dto) {
+  async createTodo(todo: CreateTodoV2Dto, instituteId: string) {
     const groupId = uuid();
 
     const todoObj = [];
@@ -1082,7 +1244,7 @@ export class TodoService {
         Assignee: assignee,
         Name: todo.name,
         Description: todo.description,
-        Task_status: todo.status,
+        Task_Status: todo.status,
         Type: todo.type,
         Complete_By: todo.completeBy,
         Listed_by: todo.listedBy,
@@ -1100,7 +1262,10 @@ export class TodoService {
       todoObj.push(obj);
     }
 
-    const createResponse = await this.sfService.models.accounts.create(todoObj);
+    const createResponse = await this.sfService.models.accounts.create(
+      todoObj,
+      instituteId,
+    );
     // return createResponse;
 
     if (createResponse.every((response) => response.success)) {
@@ -1127,16 +1292,19 @@ export class TodoService {
     createTodoResourcesDto: CreateTodoResourcesDto,
     listedById: string,
     isNewTodo = false,
+    instituteId: string,
   ) {
     const todoIds = createTodoResourcesDto.todoId;
 
     const resourceCon: TodoResourceConnection[] = [];
 
     const todoList: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived, To_do, Group_Id, Assignee, Assignee__r.Name, Complete_By, Description, Listed_by, Task_status, Created_at, Created_By, Type, Event_At, Event_Venue',
+      'Id, Archived, To_do, Group_Id, Assignee, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
       {
         Id: todoIds,
       },
+      {},
+      instituteId,
     );
 
     if (todoList.length == 0) {
@@ -1165,7 +1333,14 @@ export class TodoService {
       resources.push(resObj);
     }
 
-    const resourceRes = await this.sfService.models.resources.create(resources);
+    console.log(resources);
+    
+
+    // error
+    const resourceRes = await this.sfService.models.resources.create(
+      resources.keys,
+      instituteId,
+    );
 
     for (const resource of resourceRes) {
       for (const todoId of todoIds) {
@@ -1177,28 +1352,39 @@ export class TodoService {
       }
     }
 
-    await this.sfService.models.resourceConnections.create(resourceCon);
+    // await this.sfService.models.resourceConnections.create(
+    //   resourceCon,
+    //   instituteId,
+    // );
 
-    if (isNewTodo) {
-      for (const todo of todoList) {
-        if (todo.Assignee !== todo.Listed_by) {
-          const user = await this.sfService.generics.contacts.get('Id, Name', {
-            Id: todo.Listed_by,
-          });
-          const message = 'New Task by ' + user[0].Name;
+    // if (isNewTodo) {
+    //   for (const todo of todoList) {
+    //     if (todo.Assignee !== todo.Listed_by) {
+    //       const user = await this.sfService.generics.contacts.get(
+    //         'Id, Name',
+    //         {
+    //           Id: todo.Listed_by,
+    //         },
+    //         {},
+    //         instituteId,
+    //       );
+          // const message = 'New Task by ' + user[0].Name;
 
-          this.sendTodoNotification({
-            title: message,
-            message: todo.Name,
-            notifyTo: 'assignee',
-            groupId: todo.Group_Id,
-            assigneeId: todo.Assignee,
-            listedById: todo.Listed_by,
-            todoId: todo.Id,
-          });
-        }
-      }
-    }
+          // this.sendTodoNotification(
+          //   {
+          //     title: message,
+          //     message: todo.Name,
+          //     notifyTo: 'assignee',
+          //     groupId: todo.Group_Id,
+          //     assigneeId: todo.Assignee,
+          //     listedById: todo.Listed_by,
+          //     todoId: todo.Id,
+          //   },
+          //   instituteId,
+          // );
+        // }
+      // }
+    // }
 
     return {
       status: 201,
@@ -1211,13 +1397,19 @@ export class TodoService {
     newResources: TodoResourceDto[],
     todoId: string[],
     listedById: string,
+    instituteId: string,
   ) {
     const createTodoResourcesDto: CreateTodoResourcesDto = {
       todoId,
       resources: newResources,
     };
 
-    return await this.createTodoResources(createTodoResourcesDto, listedById);
+    return await this.createTodoResources(
+      createTodoResourcesDto,
+      listedById,
+      true,
+      instituteId,
+    );
   }
 
   /**
@@ -1225,7 +1417,11 @@ export class TodoService {
    *@param deletedResources Array of IDs of resources to be removed from Todo
    *@param todoId Id of the Todo
    */
-  async deleteTodoResource(deletedResources: string[], todoId: string[]) {
+  async deleteTodoResource(
+    deletedResources: string[],
+    todoId: string[],
+    instituteId: string,
+  ) {
     deletedResources;
     todoId;
 
@@ -1237,6 +1433,8 @@ export class TodoService {
           {
             Resource: resourceId,
           },
+          {},
+          instituteId,
         );
 
         if (resourceCon.length > 0) {
@@ -1270,7 +1468,10 @@ export class TodoService {
               await this.sendDeleteFileExceptionMail(error, url, resourceCon);
             }
             // Deletes resource from salesforce
-            await this.sfService.models.resources.delete(resourceId);
+            await this.sfService.models.resources.delete(
+              resourceId,
+              instituteId,
+            );
           }
         }
       }),
@@ -1282,10 +1483,12 @@ export class TodoService {
    * @param filters sf filter
    * array of tasks assigned to the student.
    */
-  async getTasks(filters) {
+  async getTasks(filters, instituteId: string) {
     const allToDo: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived, Assignee, Assignee__r.Name, Assignee__r.Profile_Picture, Complete_By, Created_at, Description, Task_status, Name, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
+      'Id, Archived, Assignee, Assignee__r.Name, Assignee__r.Profile_Picture, Complete_By, Created_at, Description, Task_Status, Name, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
       filters,
+      {},
+      instituteId,
     );
     // not getting the Created_By name so getting the names of the user by the ids
     const createdUserIds = [];
@@ -1302,15 +1505,25 @@ export class TodoService {
     let listedByContact: SFUser[] = [];
 
     if (createdUserIds.length > 0) {
-      createdByUser = await this.sfService.models.users.get('Id, Name', {
-        Id: createdUserIds,
-      });
+      createdByUser = await this.sfService.models.users.get(
+        'Id, Name',
+        {
+          Id: createdUserIds,
+        },
+        {},
+        instituteId,
+      );
     }
 
     if (listedByContactIds.length > 0) {
-      listedByContact = await this.sfService.generics.contacts.get('Id, Name', {
-        Id: listedByContactIds,
-      });
+      listedByContact = await this.sfService.generics.contacts.get(
+        'Id, Name',
+        {
+          Id: listedByContactIds,
+        },
+        {},
+        instituteId,
+      );
     }
 
     // creating a hash to access the user faster rather than doing to for loops
@@ -1344,7 +1557,7 @@ export class TodoService {
         Archived: todo.Archived,
         name: todo.Name,
         description: todo.Description,
-        status: todo.Task_status,
+        status: todo.Task_Status,
         type: todo.Type,
         eventAt: todo.Event_At,
         venue: todo.Event_Venue,
@@ -1366,12 +1579,17 @@ export class TodoService {
    * @param tasksId ids of the tasks for whom we want the resources.
    * array of resources assigned to the tasks.
    */
-  async getResourcesById(tasksId: string[]) {
+  async getResourcesById(tasksId: string[], instituteId: string) {
     const resources: SFResource[] =
       await this.sfService.models.resourceConnections.get(
         'Name, Todo, Resource, Resource__r.Id, Resource__r.Resource_Name, Resource__r.URL, Resource__r.Resource_Type',
         { Todo: tasksId },
+        {},
+        instituteId,
       );
+
+    console.log(resources);
+
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
     const allResource = {};
     resources.map((resource) => {
@@ -1397,7 +1615,7 @@ export class TodoService {
     return allResource;
   }
 
-  async getTasksAndResource(tasks: FilteredTasks) {
+  async getTasksAndResource(tasks: FilteredTasks, instituteId: string) {
     const mp: any = {
       default: [],
     };
@@ -1425,7 +1643,7 @@ export class TodoService {
     }
 
     // getting all the resources on the basis the task ids
-    const resources = await this.getResourcesById(taskIds);
+    const resources = await this.getResourcesById(taskIds, instituteId);
 
     const responseTodos = [];
 
@@ -1516,18 +1734,27 @@ export class TodoService {
    * @param message Message of the notification
    * @param todo todo
    */
-  async sendTodoNotification(todoNotificationData: TodoNotificationData) {
+  async sendTodoNotification(
+    todoNotificationData: TodoNotificationData,
+    instituteId: string,
+  ) {
     let userToBeNotified;
     let data;
 
     switch (todoNotificationData.notifyTo) {
       case 'assignee': {
         userToBeNotified = todoNotificationData.assigneeId;
-        const tasks = await this.getTasks({
-          Id: todoNotificationData.todoId,
-          Assignee: todoNotificationData.assigneeId,
-        });
-        const tasksAndResources = await this.getTasksAndResource(tasks);
+        const tasks = await this.getTasks(
+          {
+            Id: todoNotificationData.todoId,
+            Assignee: todoNotificationData.assigneeId,
+          },
+          instituteId,
+        );
+        const tasksAndResources = await this.getTasksAndResource(
+          tasks,
+          instituteId,
+        );
         data = tasksAndResources.data[0];
         break;
       }
@@ -1535,17 +1762,26 @@ export class TodoService {
         userToBeNotified = todoNotificationData.listedById;
         let tasks;
         if (todoNotificationData.groupId) {
-          tasks = await this.getTasks({
-            Group_Id: todoNotificationData.groupId,
-            Listed_by: todoNotificationData.listedById,
-          });
+          tasks = await this.getTasks(
+            {
+              Group_Id: todoNotificationData.groupId,
+              Listed_by: todoNotificationData.listedById,
+            },
+            instituteId,
+          );
         } else {
-          tasks = await this.getTasks({
-            Id: todoNotificationData.todoId,
-            Assignee: todoNotificationData.assigneeId,
-          });
+          tasks = await this.getTasks(
+            {
+              Id: todoNotificationData.todoId,
+              Assignee: todoNotificationData.assigneeId,
+            },
+            instituteId,
+          );
         }
-        const tasksAndResources = await this.getTasksAndResource(tasks);
+        const tasksAndResources = await this.getTasksAndResource(
+          tasks,
+          instituteId,
+        );
         data = tasksAndResources.data[0];
         break;
       }
@@ -1564,11 +1800,16 @@ export class TodoService {
     return await this.notifier.send(NotificationType.PUSH, notificationConfig);
   }
 
-  async getRequestedTodosV2(userId: string) {
-    const requestedTodos = await this.sfService.models.todos.get('*', {
-      Assignee: userId,
-      // Assignee_accepted_status: 'Requested',
-    });
+  async getRequestedTodosV2(userId: string, instituteId: string) {
+    const requestedTodos = await this.sfService.models.todos.get(
+      '*',
+      {
+        Assignee: userId,
+        // Assignee_accepted_status: 'Requested',
+      },
+      {},
+      instituteId,
+    );
 
     const haveTodos = requestedTodos.length !== 0;
     return {
@@ -1576,18 +1817,18 @@ export class TodoService {
       message: haveTodos ? 'Todo Requests' : 'No Todo Requests for you',
       count: requestedTodos.length,
       data: haveTodos
-        ? requestedTodos.map(todo => ({
-          id: todo.Id,
-          name: todo.Name,
-          description: todo.Description,
-          taskStatus: todo.Task_status,
-          type: todo.Type,
-          completeBy: todo.Complete_By,
-          listedBy: todo.Listed_by,
-          status: todo.Status,
-          eventVenue: todo.Event_Venue || null,
-          eventAt: todo.Event_At || null,
-        }))
+        ? requestedTodos.map((todo) => ({
+            id: todo.Id,
+            name: todo.Name,
+            description: todo.Description,
+            taskStatus: todo.Task_Status,
+            type: todo.Type,
+            completeBy: todo.Complete_By,
+            listedBy: todo.Listed_by,
+            status: todo.Status,
+            eventVenue: todo.Event_Venue || null,
+            eventAt: todo.Event_At || null,
+          }))
         : [],
     };
   }
@@ -1598,11 +1839,18 @@ export class TodoService {
    * @param archived boolean denotes the archival status of tasks to be fetched.
    * array of tasks assigned to the student.
    */
-  async getTasksByStudentId(studentId: string, archived: boolean) {
-    return await this.getTasks({
-      Assignee: studentId,
-      Archived: archived,
-    });
+  async getTasksByStudentId(
+    studentId: string,
+    archived: boolean,
+    instituteId: string,
+  ) {
+    return await this.getTasks(
+      {
+        Assignee: studentId,
+        Archived: archived,
+      },
+      instituteId,
+    );
   }
 
   /**
@@ -1611,31 +1859,46 @@ export class TodoService {
    * @param archived boolean, denotes whether to fetch archived or not.
    * array of tasks assigned to the student.
    */
-  async getTasksByListedById(listedById: string, archived: boolean) {
-    return await this.getTasks({
-      Listed_by: listedById,
-      Archived: archived,
-    });
+  async getTasksByListedById(
+    listedById: string,
+    archived: boolean,
+    instituteId: string,
+  ) {
+    return await this.getTasks(
+      {
+        Listed_by: listedById,
+        Archived: archived,
+      },
+      instituteId,
+    );
   }
 
-  async getInstituteId(Id: string) {
-    const institute = await this.sfService.models.affiliations.get('*', {
-      hed__Contact: Id,
-      hed__Affiliation_Type: 'Educational Institution',
-    });
+  async getInstituteId(Id: string, instituteId: string) {
+    const institute = await this.sfService.models.affiliations.get(
+      '*',
+      {
+        Contact: Id,
+        Affiliation_Type: 'Educational Institution',
+      },
+      {},
+      instituteId,
+    );
 
-    return institute[0].hed__Account;
+    return institute[0].Account;
   }
 
-  async getGlobalTasks(Id: string) {
-    return await this.getTasks({
-      Todo_Scope: 'Global',
-      ParentId: Id,
-      Status: 'Approved',
-    });
+  async getGlobalTasks(Id: string, instituteId: string) {
+    return await this.getTasks(
+      {
+        Todo_Scope: 'Global',
+        ParentId: Id,
+        Status: 'Approved',
+      },
+      instituteId,
+    );
   }
 
-  async getTodoAndResource(tasks: getTodoResponse) {
+  async getTodoAndResource(tasks: getTodoResponse, instituteId: string) {
     const mp: any = {
       default: [],
     };
@@ -1663,7 +1926,7 @@ export class TodoService {
     }
 
     // getting all the resources on the basis the task ids
-    const resources = await this.getResourcesById(taskIds);
+    const resources = await this.getResourcesById(taskIds, instituteId);
 
     const responseTodos = [];
 
@@ -1748,7 +2011,7 @@ export class TodoService {
           const _value = JSON.stringify(value);
           return (
             index ===
-            todoObj.Assignee.findIndex(obj => {
+            todoObj.Assignee.findIndex((obj) => {
               return JSON.stringify(obj) === _value;
             })
           );
@@ -1762,7 +2025,7 @@ export class TodoService {
       }
     }
 
-    const listedByResponse = _.uniqBy(listedBy, listedBy => listedBy.Id);
+    const listedByResponse = _.uniqBy(listedBy, (listedBy) => listedBy.Id);
     const response = {
       statusCode: 200,
       data: responseTodos,
@@ -1771,11 +2034,11 @@ export class TodoService {
     return response;
   }
 
-  async getTodosV2(Id: string, role: string) {
-    const tasks = await this.getTasksByStudentId(Id, false);
-    const listedTasks = await this.getTasksByListedById(Id, false);
-    const instiId = await this.getInstituteId(Id);
-    const globalTasks = await this.getGlobalTasks(instiId);
+  async getTodosV2(Id: string, role: string, instituteId: string) {
+    const tasks = await this.getTasksByStudentId(Id, false, instituteId);
+    const listedTasks = await this.getTasksByListedById(Id, false, instituteId);
+    const instiId = await this.getInstituteId(Id, instituteId);
+    const globalTasks = await this.getGlobalTasks(instiId, instituteId);
 
     let i = 0;
     let tasksLen = tasks.filteredTasks.length;
@@ -1796,13 +2059,13 @@ export class TodoService {
     }
     console.log(`tasks`, tasks);
 
-    return this.getTodoAndResource(tasks);
+    return this.getTodoAndResource(tasks, instituteId);
   }
 
-  async getThirdPartyTodosV2(Id: string, role: string) {
-    const allTodos = await (await this.getTodosV2(Id, role)).data;
+  async getThirdPartyTodosV2(Id: string, role: string, instituteId: string) {
+    const allTodos = await (await this.getTodos(Id, instituteId)).data.todoList;
     const response = [];
-    allTodos.map(async current_todo => {
+    allTodos.map(async (current_todo) => {
       if (
         current_todo.todo.todoScope == 'Discrete' &&
         current_todo.todo.status != 'Draft' &&
