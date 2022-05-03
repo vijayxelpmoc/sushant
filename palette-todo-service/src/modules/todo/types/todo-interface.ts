@@ -1,4 +1,5 @@
 import { ApprovedStatus, Status, TodoType } from "../dtos";
+import { Task } from "./task-interface";
 
 interface Attributes {
   type: string;
@@ -10,6 +11,11 @@ export interface StudentResponse {
   name: string;
   institute: string;
   grade: string;
+}
+
+export interface getTodoResponse {
+  filteredTasks: Task[];
+  taskIds: any[];
 }
 
 export interface CreateTodo {

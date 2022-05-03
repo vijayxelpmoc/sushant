@@ -43,6 +43,7 @@ import {
   TodoNotificationData,
   TodoResourceConnection,
   GuardianObserverSubRoles,
+  getTodoResponse,
 } from './types';
 import _ from 'lodash';
 import { FilteredTasks, Task } from './types/task-interface';
@@ -50,7 +51,7 @@ import { FilteredTasks, Task } from './types/task-interface';
 @Injectable()
 export class TodoService {
   private notifier: Notifier;
-  constructor(private sfService: SfService) {
+  constructor(private sfService: SfService,) {
     this.notifier = new Notifier();
   }
 
@@ -180,10 +181,12 @@ export class TodoService {
   // get all todos for a given assignee
   // sendTodo scope as well
 
-  async getTodos(userId: string) {
+  async getTodos(userId: string, instituteId: string) {
     const todos = await this.sfService.models.todos.get('*', {
       Assignee: userId,
-    });
+    },
+      {},
+      instituteId);
 
     if (!todos || todos.length === 0) {
       throw new NotFoundException(Errors.TODOS_NOT_FOUND);
@@ -260,6 +263,129 @@ export class TodoService {
         todoList,
       },
     };
+  }
+
+
+  async createTodoV2(todo: CreateTodoV2Dto, userId: string, recordType: Role) {
+    const groupId = uuid();
+    // creating todo obj.
+    const todoObj: SFTodo = {
+      Name: todo.name,
+      Description: todo.description,
+      Task_status: todo.status,
+      Type: todo.type,
+      Complete_By: todo.completeBy !== '' ? todo.completeBy : null,
+      Listed_by: todo.listedBy,
+      Group_Id: groupId,
+      Reminder_at: todo.reminderAt !== '' ? todo.reminderAt : null,
+      Event_At: todo.eventAt !== '' ? todo.eventAt : null,
+      Event_Venue: todo.venue !== '' ? todo.venue : null,
+      Opportunity_Id: null,
+    };
+
+    const alltodoIds = [];
+    // Create a discrete Todo
+    if (todo.assignee.length) {
+      const assigneeTodos: SFTodo[] = [];
+      // Create a todo for all the assignees
+      for (const assignee of todo.assignee) {
+        const newtodoObj = {
+          ...todoObj,
+          Assignee: assignee,
+          Todo_Scope: 'Discrete',
+          Status: 'In Review',
+          // If the assignee is the creator of the todo, then the status is accepted
+          Assignee_accepted_status:
+            userId === assignee ? 'Accepted' : 'Requested',
+        };
+        // Todo created.
+        const createdTodo = await this.sfService.models.todos.create(newtodoObj);
+        // storting todo ids.
+        alltodoIds.push(createdTodo.id);
+        // Notification created.
+        await this.sfService.models.notification.create({
+          Title: todo.name,
+          Type: 'New To-Do',
+          Contact: assignee,
+          Created_at: new Date(),
+          Is_Read: false,
+          Todo: createdTodo.id,
+          Notification_Todo_Type: todo.type,
+          Notification_By: userId,
+        });
+      }
+      return {
+        statusCode: 200,
+        message: 'Todo created successfully',
+        groupId,
+        ids: alltodoIds,
+      };
+    } else if (todo.instituteId) {
+      // creating global todo.
+      const isAdmin = recordType === Role.Administrator;
+
+      // A Global Todo, needs Approval from Admin
+      const response = await this.sfService.models.todos.create({
+        ...todoObj,
+        Todo_Scope: 'Global',
+        // If Admin is creating a global todo, then the status is Approved
+        Status: isAdmin ? 'Approved' : 'In Review',
+        Parentid: todo.instituteId,
+        Assignee_accepted_status: 'Accepted',
+        Is_Admin_Reviewed: 'No',
+      });
+
+      if (!isAdmin) {
+        const admins = await this.sfService.models.affiliations.get('Contact__r.Id', {
+          hed__Account: todo.instituteId,
+          hed__Role: 'Admin',
+        });
+        const notificationTitle = `New todo`;
+        const notificationMsg = `New todo requested for approval`;
+        admins.map(async admin => {
+          // create push notification
+          // try {
+          //   await this.firebaseService.sendNotification(
+          //     admin.hed__Contact__r.Id,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetTodoNotificationData(
+          //         response.id,
+          //       ),
+          //       type: 'Create Todo',
+          //     },
+          //   );
+          // } catch (err) {
+          //   // console.log('err',err);
+          // }
+          // create notification
+          await this.sfService.models.notification.create({
+            Title: todo.name,
+            Contact: admin.Contact.Id,
+            Type: 'To-Do Approval Request',
+            Created_at: new Date(),
+            Is_Read: false,
+            Todo: response.id,
+            Notification_Todo_Type: todo.type,
+            Notification_By: userId,
+          });
+        });
+      }
+      if (response.success) {
+        const message = isAdmin
+          ? 'Todo created successfully'
+          : 'Todo creation request sent to admin';
+        return {
+          statusCode: 200,
+          message,
+          groupId,
+          ids: [response.id],
+        };
+      } else {
+        throw new InternalServerErrorException('Error creating todo');
+      }
+    }
   }
 
   async getTodo(userId: string, todoId: string) {
@@ -449,6 +575,7 @@ export class TodoService {
       Listed_by: draft.listedBy,
       Status: 'Draft',
       Group_Id: groupId,
+      Reminder_at: draft.reminderAt,
     };
 
     if (draft.eventAt) {
@@ -574,12 +701,10 @@ export class TodoService {
     return {
       statusCode: 201,
       message: hasErrors
-        ? `There were some errors in ${
-            status === 'Accepted' ? 'Accepting' : 'Rejecting'
-          } all the todos`
-        : `All of the todos were ${
-            status === 'Accepted' ? 'Accepted' : 'Rejected'
-          } successfully.`,
+        ? `There were some errors in ${status === 'Accepted' ? 'Accepting' : 'Rejecting'
+        } all the todos`
+        : `All of the todos were ${status === 'Accepted' ? 'Accepted' : 'Rejected'
+        } successfully.`,
     };
   }
 
@@ -1437,6 +1562,266 @@ export class TodoService {
     };
 
     return await this.notifier.send(NotificationType.PUSH, notificationConfig);
+  }
+
+  async getRequestedTodosV2(userId: string) {
+    const requestedTodos = await this.sfService.models.todos.get('*', {
+      Assignee: userId,
+      // Assignee_accepted_status: 'Requested',
+    });
+
+    const haveTodos = requestedTodos.length !== 0;
+    return {
+      statusCode: 200,
+      message: haveTodos ? 'Todo Requests' : 'No Todo Requests for you',
+      count: requestedTodos.length,
+      data: haveTodos
+        ? requestedTodos.map(todo => ({
+          id: todo.Id,
+          name: todo.Name,
+          description: todo.Description,
+          taskStatus: todo.Task_status,
+          type: todo.Type,
+          completeBy: todo.Complete_By,
+          listedBy: todo.Listed_by,
+          status: todo.Status,
+          eventVenue: todo.Event_Venue || null,
+          eventAt: todo.Event_At || null,
+        }))
+        : [],
+    };
+  }
+
+  /**
+   * get tasks for the student by id.
+   * @param studentId id of the student.
+   * @param archived boolean denotes the archival status of tasks to be fetched.
+   * array of tasks assigned to the student.
+   */
+  async getTasksByStudentId(studentId: string, archived: boolean) {
+    return await this.getTasks({
+      Assignee: studentId,
+      Archived: archived,
+    });
+  }
+
+  /**
+   * get tasks for the listedBy by id.
+   * @param listedById id of the task creator.
+   * @param archived boolean, denotes whether to fetch archived or not.
+   * array of tasks assigned to the student.
+   */
+  async getTasksByListedById(listedById: string, archived: boolean) {
+    return await this.getTasks({
+      Listed_by: listedById,
+      Archived: archived,
+    });
+  }
+
+  async getInstituteId(Id: string) {
+    const institute = await this.sfService.models.affiliations.get('*', {
+      hed__Contact: Id,
+      hed__Affiliation_Type: 'Educational Institution',
+    });
+
+    return institute[0].hed__Account;
+  }
+
+  async getGlobalTasks(Id: string) {
+    return await this.getTasks({
+      Todo_Scope: 'Global',
+      ParentId: Id,
+      Status: 'Approved',
+    });
+  }
+
+  async getTodoAndResource(tasks: getTodoResponse) {
+    const mp: any = {
+      default: [],
+    };
+
+    for (const task of tasks.filteredTasks) {
+      const groupId = task.groupId;
+      if (!groupId) {
+        mp['default'].push(task);
+      } else if (!mp[groupId]) {
+        mp[groupId] = [task];
+      } else {
+        mp[groupId].push(task);
+      }
+    }
+
+    const taskIds = [];
+    for (const key of Object.keys(mp)) {
+      if (key === 'default') {
+        for (const task of mp[key]) {
+          taskIds.push(task.Id);
+        }
+      } else {
+        taskIds.push(mp[key][0].Id);
+      }
+    }
+
+    // getting all the resources on the basis the task ids
+    const resources = await this.getResourcesById(taskIds);
+
+    const responseTodos = [];
+
+    const listedBy = [];
+    // adding them into task and structuring the response
+    for (const key of Object.keys(mp)) {
+      if (key === 'default') {
+        for (const todo of mp[key]) {
+          const todoObj = {
+            Id: todo.Id,
+            groupId: todo.groupId,
+            name: todo.name,
+            description: todo.description,
+            reminderAt: todo.reminderAt,
+            taskStatus: todo.taskStatus,
+            status: todo.status,
+            todoScope: todo.todoScope,
+            type: todo.type,
+            eventAt: todo.eventAt,
+            venue: todo.venue,
+            completeBy: todo.completeBy ? todo.completeBy : '',
+            createdAt: todo.createdAt,
+            listedBy: todo.listedBy,
+            Assignee: [
+              {
+                Id: todo.Assignee,
+                todoId: todo.Id,
+                Archived: todo.Archived,
+                status: todo.todoStatus,
+                name: todo.AssigneeName,
+                profilePicture: todo.profilePicture,
+                acceptedStatus: todo.acceptedStatus,
+              },
+            ],
+            opportunity: todo.opportunity,
+          };
+          const obj = {
+            todo: todoObj,
+            resources: resources[`${todo.Id}`] || [],
+          };
+          responseTodos.push(obj);
+          listedBy.push(todoObj.listedBy);
+        }
+      } else {
+        const todo = mp[key][0];
+        const todoObj = {
+          Id: todo.Id,
+          groupId: todo.groupId,
+          name: todo.name,
+          description: todo.description,
+          reminderAt: todo.reminderAt,
+          taskStatus: todo.taskStatus,
+          status: todo.status,
+          acceptedStatus: todo.acceptedStatus,
+          todoScope: todo.todoScope,
+          type: todo.type,
+          eventAt: todo.eventAt,
+          venue: todo.venue,
+          completeBy: todo.completeBy ? todo.completeBy : '',
+          createdAt: todo.createdAt,
+          listedBy: todo.listedBy,
+          Assignee: [],
+          opportunity: todo.opportunity,
+        };
+
+        const tempAssignees = new Set();
+        for (const todo of mp[key]) {
+          const assignee = {
+            Id: todo.Assignee,
+            todoId: todo.Id,
+            Archived: todo.Archived,
+            status: todo.taskStatus,
+            name: todo.AssigneeName,
+            profilePicture: todo.profilePicture,
+            acceptedStatus: todo.acceptedStatus,
+          };
+
+          todoObj.Assignee.push(assignee);
+          tempAssignees.add(assignee);
+        }
+        todoObj.Assignee = todoObj.Assignee.filter((value, index) => {
+          const _value = JSON.stringify(value);
+          return (
+            index ===
+            todoObj.Assignee.findIndex(obj => {
+              return JSON.stringify(obj) === _value;
+            })
+          );
+        });
+        const obj = {
+          todo: todoObj,
+          resources: resources[`${todo.Id}`] || [],
+        };
+        responseTodos.push(obj);
+        listedBy.push(todoObj.listedBy);
+      }
+    }
+
+    const listedByResponse = _.uniqBy(listedBy, listedBy => listedBy.Id);
+    const response = {
+      statusCode: 200,
+      data: responseTodos,
+      listedBy: listedByResponse,
+    };
+    return response;
+  }
+
+  async getTodosV2(Id: string, role: string) {
+    const tasks = await this.getTasksByStudentId(Id, false);
+    const listedTasks = await this.getTasksByListedById(Id, false);
+    const instiId = await this.getInstituteId(Id);
+    const globalTasks = await this.getGlobalTasks(instiId);
+
+    let i = 0;
+    let tasksLen = tasks.filteredTasks.length;
+
+    while (i < listedTasks.filteredTasks.length) {
+      tasks.filteredTasks[tasksLen] = listedTasks.filteredTasks[i];
+      tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
+      i += 1;
+      tasksLen += 1;
+    }
+
+    i = 0;
+    while (i < globalTasks.filteredTasks.length) {
+      tasks.filteredTasks[tasksLen] = globalTasks.filteredTasks[i];
+      tasks.taskIds[tasksLen] = globalTasks.taskIds[i];
+      i += 1;
+      tasksLen += 1;
+    }
+    console.log(`tasks`, tasks);
+
+    return this.getTodoAndResource(tasks);
+  }
+
+  async getThirdPartyTodosV2(Id: string, role: string) {
+    const allTodos = await (await this.getTodosV2(Id, role)).data;
+    const response = [];
+    allTodos.map(async current_todo => {
+      if (
+        current_todo.todo.todoScope == 'Discrete' &&
+        current_todo.todo.status != 'Draft' &&
+        current_todo.todo.acceptedStatus == 'Accepted'
+      ) {
+        response.push(current_todo);
+      } else if (
+        current_todo.todo.todoScope == 'Global' &&
+        current_todo.todo.status == 'Approved' &&
+        current_todo.todo.acceptedStatus == 'Accepted'
+      ) {
+        response.push(current_todo);
+      }
+    });
+    return {
+      statusCode: 200,
+      message: 'Success',
+      data: response,
+    };
   }
 
   async isValidAssignee(
