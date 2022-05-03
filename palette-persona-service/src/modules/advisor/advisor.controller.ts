@@ -16,7 +16,7 @@ import {
   hasRoles,
   Role,
 } from '@gowebknot/palette-wrapper';
-import { CachingService } from '@gowebknot/palette-salesforce-service';
+// import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { AdvisorService } from './advisor.service';
 import { UpdateSfAdvisorDto } from './dto/advisor-update-profile.dto';
 
@@ -26,25 +26,25 @@ import { UpdateSfAdvisorDto } from './dto/advisor-update-profile.dto';
 export class AdvisorController {
   constructor(
     private advisorService: AdvisorService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Advisor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getAdmin(@Request() req, @Query('instituteId') instituteId: string) {
-    // Cache the user profile as it's accessed multiple
-    // times throughout the application
-    const cacheKey = `advisor_${req.user.id}`;
-    const cachedAdvisor = await this.cachingService.get(cacheKey);
-    if (cachedAdvisor) {
-      return cachedAdvisor;
-    }
+    // // Cache the user profile as it's accessed multiple
+    // // times throughout the application
+    // const cacheKey = `advisor_${req.user.id}`;
+    // const cachedAdvisor = await this.cachingService.get(cacheKey);
+    // if (cachedAdvisor) {
+    //   return cachedAdvisor;
+    // }
     const advisor = await this.advisorService.getAdvisor(
       req.user.id,
       instituteId,
     );
-    await this.cachingService.set(cacheKey, advisor);
+    // await this.cachingService.set(cacheKey, advisor);
     return advisor;
   }
 
@@ -80,7 +80,7 @@ export class AdvisorController {
     Role.Faculty,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('/:id')
+  @Get('details/:id')
   async getAdvisorDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,

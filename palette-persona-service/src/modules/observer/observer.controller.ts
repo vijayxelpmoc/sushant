@@ -9,18 +9,12 @@ import {
   Param,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiResponse,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import {
   hasRoles,
   JwtAuthGuard,
   RolesGuard,
   Role,
 } from '@gowebknot/palette-wrapper';
-import { CachingService } from '@gowebknot/palette-salesforce-service';
+// import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { UpdateSfObserverDto } from './dtos';
 import { ObserverService } from './observer.service';
 
@@ -30,7 +24,7 @@ import { ObserverService } from './observer.service';
 export class ObserverController {
   constructor(
     private observerService: ObserverService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   /** returns the observer profile details
@@ -39,11 +33,6 @@ export class ObserverController {
    */
   @hasRoles(Role.Observer)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiResponse({
-    description: 'Fetched observer Data',
-  })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @ApiBearerAuth()
   @Get('profile')
   async getObserver(@Request() req, @Query('instituteId') instituteId: string) {
     return await this.observerService.getObserver(req.user.id, instituteId);

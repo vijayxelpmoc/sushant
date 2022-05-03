@@ -6,6 +6,7 @@ import {
   Patch,
   Body,
   Query,
+  Param,
 } from '@nestjs/common';
 
 import {
@@ -14,7 +15,7 @@ import {
   RolesGuard,
   Role,
 } from '@gowebknot/palette-wrapper';
-import { CachingService } from '@gowebknot/palette-salesforce-service';
+// import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { ParentService } from './parent.service';
 import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 
@@ -24,23 +25,45 @@ import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 export class ParentController {
   constructor(
     private parentService: ParentService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Parent)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getParent(@Request() req, @Query('instituteId') instituteId: string) {
-    // Cache the user profile as it's accessed multiple
-    // times throughout the application
-    const cacheKey = `parent_${req.user.id}`;
-    const cachedParent = await this.cachingService.get(cacheKey);
-    if (cachedParent) {      
-      return cachedParent;
-    }
+    // // Cache the user profile as it's accessed multiple
+    // // times throughout the application
+    // const cacheKey = `parent_${req.user.id}`;
+    // const cachedParent = await this.cachingService.get(cacheKey);
+    // if (cachedParent) {      
+    //   return cachedParent;
+    // }
     const parent = await this.parentService.getParent(req.user.id, instituteId);
-    await this.cachingService.set(cacheKey, parent);
+    // await this.cachingService.set(cacheKey, parent);
     return parent;
+  }
+
+  /**
+   * Function to get the details of the parent by ID
+   * @param id id of the parent
+   * object Array of parent details
+   */
+   @hasRoles(
+    Role.Administrator,
+    Role.Parent,
+    Role.Student,
+    Role.Advisor,
+    Role.Observer,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('details/:id')
+  getParentDetails(
+    @Param('id') id: string,
+    @Query('instituteId') instituteId: string,
+  ) {
+    return this.parentService.getParent(id, instituteId);
   }
 
   /** updates parent profile details
@@ -61,25 +84,4 @@ export class ParentController {
       instituteId,
     );
   }
-
-  /**
-   * Function to get the details of the parent by ID
-   * @param id id of the parent
-   * object Array of parent details
-   */
-   @hasRoles(
-    Role.Administrator,
-    Role.Parent,
-    Role.Student,
-    Role.advisor,
-    Role.Observer,
-    Role.faculty,
-  )
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('details/:id')
-  getParentDetails(@Param('id') id: string) {
-    return this.parentService.parentDetailsDashboard(id);
-  }
-
-  
 }
