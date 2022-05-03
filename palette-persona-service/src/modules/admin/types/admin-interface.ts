@@ -1,58 +1,33 @@
-import { ApiProperty } from '@nestjs/swagger';
 
 export class AdminData {
-  @ApiProperty()
   Id: string;
-  @ApiProperty()
   name: string;
-  @ApiProperty()
   phone: string;
-  @ApiProperty()
   email: string;
-  @ApiProperty()
   profilePicture: string;
-  @ApiProperty()
   instituteId: string;
-  @ApiProperty()
   institute_name: string;
-  @ApiProperty()
   instituteLogo: string;
-  @ApiProperty()
   designation: string;
-  @ApiProperty()
   mailingCity: string;
-  @ApiProperty()
   mailingCountry: string;
-  @ApiProperty()
   mailingState: string;
-  @ApiProperty()
   mailingStreet: string;
-  @ApiProperty()
   mailingPostalCode: string;
-  @ApiProperty()
   facebook_link: string;
-  @ApiProperty()
   whatsapp_link: string;
-  @ApiProperty()
   instagram_link: string;
-  @ApiProperty()
   website_link: string;
-  @ApiProperty()
   website_Title: string;
-  @ApiProperty()
   github_link: string;
-  @ApiProperty()
   linkedin_link: string;
 }
 
 export class AdminBEResponse {
-  @ApiProperty()
   statusCode: number;
 
-  @ApiProperty()
   message: string;
 
-  @ApiProperty()
   data: AdminData;
 }
 
@@ -103,10 +78,8 @@ export interface AdminUpdateBEResponse {
 }
 
 export class AdminUpdateBEResponseDto {
-  @ApiProperty()
   statusCode: number;
 
-  @ApiProperty()
   message: string;
 }
 
@@ -237,13 +210,10 @@ export interface ApprovalsDataResponse {
 }
 
 export class ApprovalsDataResponseDto {
-  @ApiProperty()
   statusCode: number;
 
-  @ApiProperty()
   message: string;
 
-  @ApiProperty()
   data: ApprovalOpportunity[];
 }
 
@@ -280,11 +250,7 @@ export interface ApprovalsTodoResponse {
 }
 
 export class ApprovalsTodoResponseDto {
-  @ApiProperty()
   statusCode: number;
-  @ApiProperty()
   message: string;
-
-  @ApiProperty()
   data: ApprovalTodo[];
 }

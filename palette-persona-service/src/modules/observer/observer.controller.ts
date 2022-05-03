@@ -9,12 +9,6 @@ import {
   Param,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiResponse,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import {
   hasRoles,
   JwtAuthGuard,
   RolesGuard,
@@ -39,11 +33,6 @@ export class ObserverController {
    */
   @hasRoles(Role.Observer)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiResponse({
-    description: 'Fetched observer Data',
-  })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @ApiBearerAuth()
   @Get('profile')
   async getObserver(@Request() req, @Query('instituteId') instituteId: string) {
     return await this.observerService.getObserver(req.user.id, instituteId);
