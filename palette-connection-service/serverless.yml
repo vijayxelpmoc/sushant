@@ -137,3 +137,7 @@ functions:
           method: POST
           path: con/service/executor
           cors: true
+      - http:
+          method: POST
+          path: con/service/executor/refresh
+          cors: true

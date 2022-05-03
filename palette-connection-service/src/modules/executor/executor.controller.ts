@@ -13,4 +13,9 @@ export class ExecutorController {
   async execute(@Body() executorRequestDto: ExecutorRequestDto) {
     return await this.executorService.execute(executorRequestDto);
   }
+
+  @Post('refresh')
+  async refresh() {
+    return await this.executorService.refresh();
+  }
 }

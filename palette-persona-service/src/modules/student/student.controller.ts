@@ -26,26 +26,43 @@ import { CachingService } from '@gowebknot/palette-salesforce-service';
 export class StudentController {
   constructor(
     private studentService: StudentService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getStudent(@Request() req, @Query('instituteId') instituteId: string) {
-    // Cache the user profile as it's accessed multiple
-    // times throughout the application
-    const cacheKey = `student_${req.user.id}`;
-    const cachedStudent = await this.cachingService.get(cacheKey);
-    if (cachedStudent) {
-      return cachedStudent;
-    }
+    // // Cache the user profile as it's accessed multiple
+    // // times throughout the application
+    // const cacheKey = `student_${req.user.id}`;
+    // const cachedStudent = await this.cachingService.get(cacheKey);
+    // if (cachedStudent) {
+    //   return cachedStudent;
+    // }
     const student = await this.studentService.getStudent(
       req.user.id,
       instituteId,
     );
-    await this.cachingService.set(cacheKey, student);
+    // await this.cachingService.set(cacheKey, student);
     return student;
+  }
+
+  @hasRoles(
+    Role.Parent,
+    Role.Administrator,
+    Role.Advisor,
+    Role.Observer,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('details/:id')
+  async getStudentDetails(
+    @Param('id') id: string,
+    @Query('instituteId') instituteId: string,
+  ) {
+    // return 'ok';
+    return await this.studentService.getStudent(id, instituteId);
   }
 
   @hasRoles(Role.Student)
@@ -61,21 +78,5 @@ export class StudentController {
       updateProfileDto,
       instituteId,
     );
-  }
-
-  @hasRoles(
-    Role.Parent,
-    Role.Administrator,
-    Role.Advisor,
-    Role.Observer,
-    Role.Faculty,
-  )
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get(':id?')
-  async getStudentDetails(
-    @Param('id') id: string,
-    @Query('instituteId') instituteId: string,
-  ) {
-    return await this.studentService.getStudent(id, instituteId);
   }
 }

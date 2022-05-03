@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Notifier } from '@gowebknot/palette-wrapper';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { Errors, Responses } from '@src/constants';
@@ -7,6 +7,8 @@ import {
   AdminInstituteName,
   AdminBEResponse,
 } from '@src/types';
+import { UpdateSfAdminDto } from './dto/admin-update-profile.dto';
+import { AdminUpdateResponse } from './types/admin-interface';
 
 @Injectable()
 export class AdminService {
@@ -25,6 +27,10 @@ export class AdminService {
         {},
         instituteId,
       );
+
+    if (!responseData) {
+      throw new NotFoundException(`Admin with ID "${id}" not found`);
+    }
 
     const {
       Id,
@@ -50,9 +56,7 @@ export class AdminService {
       Profile_Picture,
     } = responseData[0];
 
-    if (!responseData) {
-      throw new NotFoundException(`Admin with ID "${id}" not found`);
-    }
+    
     const getInstitute = await this.sfService.models.affiliations.get(
       'Organization',
       {
@@ -105,5 +109,80 @@ export class AdminService {
       message: Responses.PROFILE_FETCHED,
       data: adminData,
     };
+  }
+
+  /** updates admin profile details
+   *  @param {UpdateSfAdminDto} updateSfAdminDto - contains all the attributes that needs to be updated
+   * @returns {Object} status code and message
+   */
+  async update(
+    id: string,
+    updateSfAdminDto: UpdateSfAdminDto,
+    instituteId: string,
+  ) {
+    const responseData: any = this.sfService.generics.contacts.get(
+      'Name, Palette_Email',
+      {
+        Id: id,
+      },
+      {},
+      instituteId,
+    );
+    if (!responseData) {
+      throw new NotFoundException(`parent with ID "${id}" not found`);
+    }
+
+    const updateObj: any = {};
+    if (updateSfAdminDto.hasOwnProperty('facebook')) {
+      const { facebook } = updateSfAdminDto;
+      updateObj.Facebook = facebook;
+    }
+
+    if (updateSfAdminDto.hasOwnProperty('whatsapp')) {
+      const { whatsapp } = updateSfAdminDto;
+      updateObj.Whatsapp = whatsapp;
+    }
+
+    if (updateSfAdminDto.hasOwnProperty('instagram')) {
+      const { instagram } = updateSfAdminDto;
+      updateObj.Instagram = instagram;
+    }
+
+    if (updateSfAdminDto.hasOwnProperty('website')) {
+      const { website } = updateSfAdminDto;
+      updateObj.Website = website;
+    }
+
+    if (updateSfAdminDto.hasOwnProperty('websiteTitle')) {
+      const { websiteTitle } = updateSfAdminDto;
+      updateObj.Website_Title = websiteTitle;
+    }
+
+    if (updateSfAdminDto.hasOwnProperty('github')) {
+      const { github } = updateSfAdminDto;
+      updateObj.Github = github;
+    }
+
+    if (updateSfAdminDto.hasOwnProperty('linkedin')) {
+      const { linkedin } = updateSfAdminDto;
+      updateObj.LinkedIn_URL = linkedin;
+    }
+
+    const updateUser: AdminUpdateResponse = await this.sfService.generics.contacts.update(
+      id,
+      updateObj,
+      instituteId,
+    );
+
+    if (updateUser.id && updateUser.success) {
+      return {
+        statusCode: 200,
+        message: Responses.PROFILE_UPDATED,
+      };
+    } else {
+      throw new BadRequestException(
+        'Exception occured unable save the changes',
+      );
+    }
   }
 }

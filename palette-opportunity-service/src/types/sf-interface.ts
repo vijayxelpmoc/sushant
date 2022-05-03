@@ -1,22 +1,27 @@
+export interface Attributes {
+  type: string;
+  url: string;
+}
+
 export interface SFALlAccountFields {
   attributes: Attributes;
   Id: string;
-  IsDeleted: boolean;
-  MasterRecordId: null;
-  Name: string;
+  // IsDeleted: boolean;
+  // MasterRecordId: null;
+  Account_Name: string;
   Type: string;
-  RecordTypeId: string;
-  ParentId: string;
-  BillingStreet: string;
-  BillingCity: string;
-  BillingState: string;
-  BillingPostalCode: string;
-  BillingCountry: string;
-  BillingLatitude: string;
-  BillingLongitude: string;
-  BillingGeocodeAccuracy: string;
-  BillingAddress: string;
-  ShippingStreet: string;
+  Account_Record_Type: string;
+  Parent_Account: string;
+  // BillingStreet: string;
+  // BillingCity: string;
+  // BillingState: string;
+  // BillingPostalCode: string;
+  // BillingCountry: string;
+  // BillingLatitude: string;
+  // BillingLongitude: string;
+  // BillingGeocodeAccuracy: string;
+  Billing_Address: string;
+  // ShippingStreet: string;
   ShippingCity: string;
   ShippingState: string;
   ShippingPostalCode: string;
@@ -78,7 +83,4 @@ export interface SFALlAccountFields {
   Removal_Status__c: string;
 }
 
-export interface Attributes {
-  type: string;
-  url: string;
-}
+

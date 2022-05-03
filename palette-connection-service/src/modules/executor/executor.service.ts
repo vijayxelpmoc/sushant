@@ -52,4 +52,8 @@ export class ExecutorService {
       `Invalid service or method execution attempted`,
     );
   }
+
+  async refresh() {
+    return await this.dataProcessorService.process();
+  }
 }

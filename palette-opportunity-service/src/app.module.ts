@@ -21,6 +21,7 @@ import { SfModule } from '@gowebknot/palette-salesforce-service';
       }),
       envFilePath: '.env',
     }),
+    SfModule.forRoot(),
     WrapperModule,
     OpportunityModule,
     SfModule.forRoot(),

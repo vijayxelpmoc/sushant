@@ -6,6 +6,7 @@ import {
   Patch,
   Body,
   Query,
+  Param,
 } from '@nestjs/common';
 
 import {
@@ -14,8 +15,9 @@ import {
   RolesGuard,
   Role,
 } from '@gowebknot/palette-wrapper';
-import { CachingService } from '@gowebknot/palette-salesforce-service';
+// import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { ParentService } from './parent.service';
+import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 
 @Controller({
   path: 'parent',
@@ -23,42 +25,63 @@ import { ParentService } from './parent.service';
 export class ParentController {
   constructor(
     private parentService: ParentService,
-    private cachingService: CachingService,
+    // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Parent)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getParent(@Request() req, @Query('instituteId') instituteId: string) {
-    // Cache the user profile as it's accessed multiple
-    // times throughout the application
-    const cacheKey = `parent_${req.user.id}`;
-    const cachedParent = await this.cachingService.get(cacheKey);
-    if (cachedParent) {      
-      return cachedParent;
-    }
+    // // Cache the user profile as it's accessed multiple
+    // // times throughout the application
+    // const cacheKey = `parent_${req.user.id}`;
+    // const cachedParent = await this.cachingService.get(cacheKey);
+    // if (cachedParent) {      
+    //   return cachedParent;
+    // }
     const parent = await this.parentService.getParent(req.user.id, instituteId);
-    await this.cachingService.set(cacheKey, parent);
+    // await this.cachingService.set(cacheKey, parent);
     return parent;
   }
 
-  // @hasRoles(Role.Parent)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Patch('profile/update')
-  // async updateParentProfile(
-  //   @Request() req,
-  //   // @Body() updateSfParentDto: UpdateSfParentDto,
-  // ) {
-  //   return await this.parentService.updateParentProfile(
-  //     req.user.id,
-  //     updateSfParentDto,
-  //   );
-  // }
+  /**
+   * Function to get the details of the parent by ID
+   * @param id id of the parent
+   * object Array of parent details
+   */
+   @hasRoles(
+    Role.Administrator,
+    Role.Parent,
+    Role.Student,
+    Role.Advisor,
+    Role.Observer,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('details/:id')
+  getParentDetails(
+    @Param('id') id: string,
+    @Query('instituteId') instituteId: string,
+  ) {
+    return this.parentService.getParent(id, instituteId);
+  }
 
-  // @hasRoles(Role.Parent)
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('dependents/institutes')
-  // async getAvailableInstitutes(@Request() req) {
-  //   return await this.parentService.getDependentInstitutes(req.user.id);
-  // }
+  /** updates parent profile details
+   *  @param {UpdateSfAdvisorDto} updateSfAdvisorDto contains attributes that needs to be updated in the advisor profile data
+   * @returns {Object} status code and message
+   */
+  @hasRoles(Role.Parent)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('profile/update')
+  update(
+    @Request() req, 
+    @Body() updateSfParentDto: UpdateSfParentDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.parentService.update(
+      req.user.id, 
+      updateSfParentDto,
+      instituteId,
+    );
+  }
 }
