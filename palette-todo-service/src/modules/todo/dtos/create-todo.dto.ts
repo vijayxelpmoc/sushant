@@ -99,6 +99,64 @@ export class CreateTodoDto {
   instituteId: string;
 }
 
+export class CreateTodoV2Dto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  name: string;
+
+  @ApiProperty()
+  @IsOptional() 
+  description: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsEnum(Status)
+  @IsString()
+  status: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsEnum(TodoType)
+  @IsString()
+  type: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  venue: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  eventAt: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  completeBy: string;
+
+  @ApiProperty()
+  @IsString()
+  listedBy: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  assignee: string[];
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  instituteId: string;
+
+  @ApiProperty()
+  @IsOptional()
+  @IsString()
+  reminderAt: string;
+}
+
 export class CreateTodoResponse {
   @ApiProperty()
   statusCode: number;
@@ -131,4 +189,27 @@ export class AssigneeInfoDto {
 
   @ApiProperty()
   todoId: string;
+}
+
+export class AssigneeInfoDtoV2 {
+  @ApiProperty()
+  Id: string;
+
+  @ApiProperty()
+  name: string;
+
+  @ApiProperty()
+  profilePicture: string;
+
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty()
+  Archived: boolean;
+
+  @ApiProperty()
+  todoId: string;
+
+  @ApiProperty()
+  acceptedStatus: string;
 }

@@ -5,7 +5,9 @@ import {
 } from '@nestjs/common';
 import { Date } from 'jsforce';
 
-import { SfService } from '@gowebknot/palette-wrapper';
+// import { SfService } from '@gowebknot/palette-wrapper';
+
+import { SfService } from '@gowebknot/palette-salesforce-service';
 import {
   ActivitiesResponse,
   Activity,
@@ -40,11 +42,11 @@ export class ActivitiesService {
   async getStudentActivities(studentId: string): Promise<ActivitiesResponse> {
     const paletteActivitiesDetail: SFPaletteActivityOrganization[] =
       await this.sfService.models.activities.get(
-        'Event__r.Id, Event__r.Name, Event__r.Venue__c, Event__r.Description, Event__r.Category__c, Event__r.Start_Date__c, Event__r.End_Date__c, Event__r.ShippingAddress, Event__r.Phone, Event__r.Website',
+        'Event__r.Id, Event__r.Name, Event__r.Venue, Event__r.Description, Event__r.Category, Event__r.Start_Date, Event__r.End_Date, Event__r.ShippingAddress, Event__r.Phone, Event__r.Website',
         {
-          Contact__c: studentId,
-          HasOptOut__c: false,
-          'Event__r.Start_Date__c': { $lt: Date.TODAY },
+          Contact: studentId,
+          HasOptOut: false,
+          'Event__r.Start_Date': { $lt: Date.TODAY },
         },
       );
 
@@ -66,15 +68,15 @@ export class ActivitiesService {
    */
   async getEnrolledInActivities(activitiesIds: string[], userId: string) {
     const paletteActivities = await this.sfService.models.activities.get(
-      'Event__c',
+      'Event',
       {
-        Contact__c: userId,
-        Event__c: activitiesIds,
+        Contact: userId,
+        Event: activitiesIds,
       },
     );
     const paletteActivitiesResponse = [];
     paletteActivities.map((activityId) => {
-      paletteActivitiesResponse[activityId.Event__c] = true;
+      paletteActivitiesResponse[activityId.Event] = true;
     });
     return paletteActivitiesResponse;
   }
@@ -82,19 +84,19 @@ export class ActivitiesService {
   async getRecommendedActivities(activitiesIds: string[], userId: string) {
     const recommendedActivities: SFRecommendations[] =
       await this.sfService.models.recommendations.get(
-        'Id, Name, Assignee__c, Recommended_by__c, Recommended_by__r.Name, Recommended_by__r.Record_Type_Name__c, Event__c, Event__r.Name, Event__r.Description, Event__r.Start_Date__c, Event__r.End_Date__c, Event__r.Category__c, Event__r.Venue__c, Accepted__c',
+        'Id, Name, Assignee, Recommended_by, Recommended_by__r.Name, Recommended_by__r.Record_Type_Name, Event, Event__r.Name, Event__r.Description, Event__r.Start_Date, Event__r.End_Date, Event__r.Category, Event__r.Venue, Accepted',
         {
-          Assignee__c: userId,
-          Event__c: activitiesIds,
-          Accepted__c: 'Pending',
+          Assignee: userId,
+          Event: activitiesIds,
+          Accepted: 'Pending',
         },
       );
 
     const recommendedActivitiesResponse = {};
     recommendedActivities.map((activityId) => {
-      // recommendedActivitiesResponse[activityId.Event__c] = false;
-      if (activityId.Recommended_by__c !== userId) {
-        recommendedActivitiesResponse[activityId.Event__c] = true;
+      // recommendedActivitiesResponse[activityId.Event] = false;
+      if (activityId.Recommended_by !== userId) {
+        recommendedActivitiesResponse[activityId.Event] = true;
       }
     });
     return recommendedActivitiesResponse;
@@ -107,18 +109,18 @@ export class ActivitiesService {
   async getWishListedActivities(activitiesIds: string[], userId: string) {
     const wishListedActivities: SFRecommendations[] =
       await this.sfService.models.recommendations.get(
-        'Id, Name, Assignee__c, Recommended_by__c, Recommended_by__r.Name, Recommended_by__r.Record_Type_Name__c, Event__c, Event__r.Name, Event__r.Description, Event__r.Start_Date__c, Event__r.End_Date__c, Event__r.Category__c, Event__r.Venue__c, Accepted__c',
+        'Id, Name, Assignee, Recommended_by, Recommended_by__r.Name, Recommended_by__r.Record_Type_Name, Event, Event__r.Name, Event__r.Description, Event__r.Start_Date, Event__r.End_Date, Event__r.Category, Event__r.Venue, Accepted',
         {
-          Assignee__c: userId,
-          Event__c: activitiesIds,
-          Accepted__c: 'Pending',
-          Recommended_by__c: userId,
+          Assignee: userId,
+          Event: activitiesIds,
+          Accepted: 'Pending',
+          Recommended_by: userId,
         },
       );
 
     const wishListedActivitiesResponse = {};
     wishListedActivities.map((activityId) => {
-      wishListedActivitiesResponse[activityId.Event__c] = true;
+      wishListedActivitiesResponse[activityId.Event] = true;
     });
     return wishListedActivitiesResponse;
   }
@@ -133,9 +135,9 @@ export class ActivitiesService {
   ): Promise<any> {
     const resources: SFEventResource[] =
       await this.sfService.models.resourceConnections.get(
-        'Id, Name, Event__c, Resource__c, Resource__r.Name, Resource__r.URL__c, Resource__r.Resource_Type__c',
+        'Id, Name, Event, Resource, Resource__r.Name, Resource__r.URL, Resource__r.Resource_Type',
         {
-          Event__c: activitiesIds,
+          Event: activitiesIds,
         },
       );
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
@@ -143,19 +145,19 @@ export class ActivitiesService {
     const resourceConnectionsId = [];
     resources.map((resource) => {
       const resourcesObj = {
-        name: resource.Resource__r.Name,
-        url: resource.Resource__r.URL__c,
-        type: resource.Resource__r.Resource_Type__c,
+        name: resource.Resource__r.Resource_Name,
+        url: resource.Resource__r.URL,
+        type: resource.Resource__r.Resource_Type,
       };
       // if a record with a todo task is present then add the object into it or if not create one
-      const hashResource = allResource[`${resource.Event__c}`];
+      const hashResource = allResource[`${resource.Event}`];
       if (hashResource) {
         hashResource.push(resourcesObj);
-        allResource[`${resource.Event__c}`] = hashResource;
+        allResource[`${resource.Event}`] = hashResource;
       } else {
         const allResources = [];
         allResources.push(resourcesObj);
-        allResource[`${resource.Event__c}`] = allResources;
+        allResource[`${resource.Event}`] = allResources;
       }
       resourceConnectionsId.push(resource.Id);
     });
@@ -171,20 +173,20 @@ export class ActivitiesService {
   ): Promise<ResponseInstituteEvents> {
     // Getting all the Account(RecordTypeName-Activity) with ParentId === instituteId
     const queryFilter = {
-      Record_Type_Name__c: ['Activity', 'Activities'],
-      Removal_Status__c: [null, 'In Review', 'Not Approved'],
+      Record_Type_Name: ['Activity', 'Activities'],
+      Removal_Status: [null, 'In Review', 'Not Approved'],
     };
 
     const allAccountsDetail = await this.sfService.models.accounts.get(
-      'Id, Name, ParentId, Description, Start_Date__c, End_Date__c, Category__c, Venue__c , ShippingAddress, Phone, Website, Listed_by__c, Record_Type_Name__c,Status__c,opportunityScope__c, Removal_Status__c',
+      'Id, Name, ParentId, Description, Start_Date, End_Date, Category, Venue , ShippingAddress, Phone, Website, Listed_by, Record_Type_Name,Status,opportunityScope, Removal_Status',
       queryFilter,
     );
 
     const accountsDetail = [];
     allAccountsDetail.map((event) => {
       if (
-        event.opportunityScope__c == 'Discrete' ||
-        event.Status__c == 'Approved'
+        event.opportunityScope == 'Discrete' ||
+        event.Status == 'Approved'
       ) {
         accountsDetail.push(event);
       }
@@ -300,19 +302,19 @@ export class ActivitiesService {
   ): Promise<AllActivityResponse> {
     const contactDetail: SFContactDetailInstitute[] =
       await this.sfService.generics.contacts.get(
-        'Id, Primary_Educational_Institution__c',
+        'Id, Primary_Educational_Institution',
         {
           Id: studentId,
         },
       );
     if (
       contactDetail.length === 0 ||
-      !contactDetail[0].Primary_Educational_Institution__c
+      !contactDetail[0].Primary_Educational_Institution
     ) {
       throw new BadRequestException();
     }
 
-    const instituteId = contactDetail[0].Primary_Educational_Institution__c;
+    const instituteId = contactDetail[0].Primary_Educational_Institution;
     const responseActivities = await this.getInstituteActivities(
       instituteId,
       studentId,
@@ -335,7 +337,7 @@ export class ActivitiesService {
   ): Promise<ActivityDetailResponse> {
     const accountsDetail: SFActivityAccountDetail[] =
       await this.sfService.models.accounts.get(
-        'Id, Name, Description, Start_Date__c, End_Date__c, ShippingAddress, Phone, Category__c, Venue__c, Website',
+        'Id, Name, Description, Start_Date, End_Date, ShippingAddress, Phone, Category, Venue, Website',
         {
           Id: activityId,
         },
@@ -352,17 +354,17 @@ export class ActivitiesService {
       await this.sfService.models.activities.get(
         'Contact__r.Id, Contact__r.Name',
         {
-          Event__c: activityId,
-          HasOptOut__c: false,
+          Event: activityId,
+          HasOptOut: false,
         },
       );
 
     // To check student is OptIn or not
     const paletteActivityDetailIsOptIn: SFPaletteActivityIsOptIn[] =
-      await this.sfService.models.activities.get('HasOptOut__c', {
-        Contact__c: studentId,
-        Event__c: activityId,
-        HasOptOut__c: false,
+      await this.sfService.models.activities.get('HasOptOut', {
+        Contact: studentId,
+        Event: activityId,
+        HasOptOut: false,
       });
 
     const isStudentOptIn = paletteActivityDetailIsOptIn.length > 0;

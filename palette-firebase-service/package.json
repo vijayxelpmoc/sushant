@@ -15,7 +15,9 @@
     "sls": "npm run build && serverless offline"
   },
   "dependencies": {
-    "@gowebknot/palette-wrapper": "^1.0.6",
+    "@google-cloud/storage": "^5.19.4",
+    "@gowebknot/palette-salesforce-service": "^1.0.10-stable",
+    "@gowebknot/palette-wrapper": "^1.0.9",
     "@nestjs/common": "^8.1.1",
     "@nestjs/config": "^1.1.6",
     "@nestjs/core": "^8.1.1",

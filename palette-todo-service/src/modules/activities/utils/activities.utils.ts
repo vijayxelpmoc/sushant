@@ -6,15 +6,15 @@ export const getMappedActivityObject = (
   activity_id: sfActivityDetail.Id,
   name: sfActivityDetail.Name,
   category:
-    sfActivityDetail.Category__c === 'Event - Social'
+    sfActivityDetail.Category === 'Event - Social'
       ? 'Event - Social'
-      : sfActivityDetail.Category__c === null
+      : sfActivityDetail.Category === null
       ? 'Other'
-      : sfActivityDetail.Category__c,
-  start_date: sfActivityDetail.Start_Date__c,
-  end_date: sfActivityDetail.End_Date__c,
+      : sfActivityDetail.Category,
+  start_date: sfActivityDetail.Start_Date,
+  end_date: sfActivityDetail.End_Date,
   description: sfActivityDetail.Description,
-  venue: sfActivityDetail.Venue__c,
+  venue: sfActivityDetail.Venue,
   phone: sfActivityDetail.Phone,
   shipping_address: sfActivityDetail.ShippingAddress
     ? {
@@ -32,7 +32,7 @@ export const getMappedActivityObject = (
         street: null,
       },
   website: sfActivityDetail.Website,
-  ListedBy: sfActivityDetail.Listed_by__c,
+  ListedBy: sfActivityDetail.Listed_by,
 });
 
 export const getActivityFilteredObject = (activities: Activity[]) => ({
