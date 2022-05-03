@@ -301,6 +301,8 @@ export class TodoService {
     recordType: Role,
     instituteId: string,
   ) {
+    // console.log(todo);
+    
     const groupId = uuid();
     // creating todo obj.
     const todoObj: SFTodo = {
@@ -332,8 +334,9 @@ export class TodoService {
           Assignee_accepted_status:
             userId === assignee ? 'Accepted' : 'Requested',
         };
+        console.log(newtodoObj);
+        
         // Todo created.
-        // error
         const createdTodo = await this.sfService.models.todos.create(
           newtodoObj,
           instituteId
@@ -341,13 +344,13 @@ export class TodoService {
         // storting todo ids.
         alltodoIds.push(createdTodo.id);
         // Notification created.
-        await this.sfService.models.notification.create({
+        await this.sfService.models.notifications.create({
           Title: todo.name,
           Type: 'New To-Do',
           Contact: assignee,
           Created_at: new Date(),
           Is_Read: false,
-          Todo: createdTodo.id,
+          To_Do: createdTodo.id,
           Notification_Todo_Type: todo.type,
           Notification_By: userId,
         },
@@ -359,7 +362,7 @@ export class TodoService {
         groupId,
         ids: alltodoIds,
       };
-    } else if (todo.instituteId) {
+    } else if (instituteId) {
       // creating global todo.
       const isAdmin = recordType === Role.Administrator;
 
@@ -404,14 +407,14 @@ export class TodoService {
           //   // console.log('err',err);
           // }
           // create notification
-          await this.sfService.models.notification.create(
+          await this.sfService.models.notifications.create(
             {
               Title: todo.name,
               Contact: admin.Contact.Id,
               Type: 'To-Do Approval Request',
               Created_at: new Date(),
               Is_Read: false,
-              Todo: response.id,
+              To_Do: response.id,
               Notification_Todo_Type: todo.type,
               Notification_By: userId,
             },
