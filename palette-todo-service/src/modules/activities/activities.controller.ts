@@ -6,7 +6,6 @@ import {
   Request,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiParam, ApiResponse } from '@nestjs/swagger';
 import {
   Role,
   hasRoles,
@@ -31,11 +30,6 @@ export class ActivitiesController {
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/')
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'Fetch all activities assigned to the logged in user',
-  })
   async getStudentActivities(@Request() req) {
     const studentId = req.user.id;
     return await this.activitiesService.getStudentActivities(studentId);
@@ -48,12 +42,6 @@ export class ActivitiesController {
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('institute')
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description:
-      'Fetch all institute activities assigned to the logged in user',
-  })
   async getInstituteActivitiesByStudentId(@Request() req) {
     const studentId = req.user.id;
     return await this.activitiesService.getStudentInstituteActivities(
@@ -75,18 +63,6 @@ export class ActivitiesController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('institute/:studentId')
-  @ApiBearerAuth()
-  @ApiParam({
-    name: 'studentId',
-    required: true,
-    description: 'student id',
-    schema: { type: 'string' },
-  })
-  @ApiResponse({
-    status: 200,
-    description:
-      'Fetch all institute activities assigned to the logged in user for other roles',
-  })
   async getEventsOfStudentInstitute(@Param('studentId') studentId: string) {
     return await this.activitiesService.getStudentInstituteActivities(
       studentId,
@@ -101,11 +77,6 @@ export class ActivitiesController {
   @hasRoles(Role.Parent, Role.Advisor, Role.Faculty, Role.Parent)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('explore/institute')
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'Fetch all institute activities from passed instituteId',
-  })
   async getExploreViewInstituteActivities(
     @Body('instituteId') instituteId: string,
   ): Promise<ResponseInstituteEvents> {
@@ -127,11 +98,6 @@ export class ActivitiesController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('explore/activities')
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'Fetch all activities based on logged in user role',
-  })
   async getExploreViewActivities(
     @Request() req,
   ): Promise<ResponseInstituteEvents> {
@@ -152,17 +118,6 @@ export class ActivitiesController {
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('activities/:activityId')
-  @ApiBearerAuth()
-  @ApiParam({
-    name: 'activityId',
-    required: true,
-    description: 'activity id',
-    schema: { type: 'string' },
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'Fetch details of activity',
-  })
   async getActivityDetailUsingId(
     @Request() req,
     @Param('activityId') activityId: string,

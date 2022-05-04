@@ -39,12 +39,8 @@ functions:
     handler: dist/lambda.handler
     events:
       - http:
-          method: ANY
-          path: /
-          cors: true
-      - http:
           method: GET
-          path: /todo/{instituteId}
+          path: /todo
           cors: true
       - http:
           method: POST
@@ -56,15 +52,27 @@ functions:
           cors: true
       - http:
           method: POST
-          path: /todo/requested/accept/{id}
+          path: /todo/requested/accept/{id} 
+          request: 
+            parameters:
+              paths: 
+                id: true
           cors: true
       - http:
           method: POST
           path: /todo/requested/reject/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
           cors: true
       - http:
           method: GET
-          path: /todo/{instituteId}/{id}
+          path: /todo/detail/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
           cors: true
       - http:
           method: POST
@@ -73,6 +81,10 @@ functions:
       - http:
           method: PATCH
           path: /todo/update/status/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
           cors: true
       - http:
           method: POST
@@ -80,7 +92,7 @@ functions:
           cors: true
       - http:
           method: GET
-          path: /todo/{instituteId}/recepients/get
+          path: /todo/recepients/get
           cors: true
       - http:
           method: POST
@@ -92,7 +104,11 @@ functions:
           cors: true
       - http:
           method: PATCH
-          path: /todo/update/status/{id}
+          path: /todo/update/todo/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
           cors: true
       - http:
           method: PATCH
@@ -104,12 +120,13 @@ functions:
           cors: true
       - http:
           method: GET
-          path: /todo/{instituteId}/requested/pending
+          path: /todo/requested/pending
           cors: true
       - http:
           method: GET
-          path: /todo/task/:studentid
+          path: /todo/task/{studentid}
+          request: 
+            parameters:
+              paths: 
+                studentid: true
           cors: true
-      - http:
-          method: ANY
-          path: '{proxy+}'
