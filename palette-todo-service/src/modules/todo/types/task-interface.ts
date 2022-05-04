@@ -1,7 +1,7 @@
 export interface Task {
   Id: string;
   groupId: string;
-  Assignee: string;
+  Assignee: object;
   AssigneeName: string;
   profilePicture: string;
   Archived: boolean;
