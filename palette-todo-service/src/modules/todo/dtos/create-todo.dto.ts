@@ -127,7 +127,7 @@ export class CreateTodoV2Dto {
 
   @IsOptional()
   @IsString()
-  instituteId: string;
+  InstituteId: string;
 
   @IsOptional()
   @IsString()

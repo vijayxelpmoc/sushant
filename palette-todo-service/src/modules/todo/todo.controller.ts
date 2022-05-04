@@ -102,14 +102,13 @@ export class TodoController {
   async createTodoDraft(
     @Body() createTodoDto: CreateTodoV2Dto,
     @Body('instituteId') instituteId: string,
-
     @Request() req,
   ) {
     // error
     return await this.todoService.createDraftToDo(
       createTodoDto,
       req.user.id,
-      req.user.RecordTypeName,
+      req.user.recordTypeName,
       instituteId,
     );
   }
@@ -236,7 +235,7 @@ export class TodoController {
       req.user.id,
       id,
       status,
-      req.user.RecordTypeName,
+      req.user.recordTypeName,
       instituteId,
       note,
     );
@@ -338,7 +337,7 @@ export class TodoController {
   ) {
     return this.todoService.deleteAllTodos(
       req.user.id,
-      req.user.RecordTypeName,
+      req.user.recordTypeName,
       instituteId,
     );
   }
@@ -352,15 +351,15 @@ export class TodoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('/update/todo/:id') //12
   async updateTodo(
-    @Body('updatedTodo') updateTodoDto: UpdateTodoDto,
-    @Param() params,
+    @Body() updateTodoDto: UpdateTodoDto,
+    @Param('id') id,
     @Request() req,
     @Body('instituteId') instituteId: string,
   ) {
     return await this.todoService.updateTodo(
       updateTodoDto,
       req.user.id,
-      params.id,
+      id,
       instituteId,
     );
   }
@@ -380,7 +379,7 @@ export class TodoController {
       req.user.id,
       todoIds,
       status,
-      req.user.RecordTypeName,
+      req.user.recordTypeName,
       instituteId,
     );
   }
@@ -398,7 +397,7 @@ export class TodoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('/create') //4 // not
   async createTodo(
-    @Body('todo') createTodoDto: CreateTodoV2Dto,
+    @Body() createTodoDto: CreateTodoV2Dto,
     @Body('instituteId') instituteId: string,
     @Request() req,
   ) {
@@ -407,7 +406,7 @@ export class TodoController {
     return await this.todoService.createTodoV2(
       createTodoDto,
       req.user.id,
-      req.user.RecordTypeName,
+      req.user.recordTypeName,
       instituteId,
     );
   }
