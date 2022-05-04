@@ -369,13 +369,13 @@ export class TodoController {
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('update/bulk/status') //13
-  bulkUpdate(
+  async bulkUpdate(
     @Request() req,
     @Body('todoIds') todoIds: string[],
     @Body('status') status: string,
     @Body('instituteId') instituteId: string,
   ) {
-    return this.todoService.updateTodoStatusBulk(
+    return await this.todoService.updateTodoStatusBulk(
       req.user.id,
       todoIds,
       status,
