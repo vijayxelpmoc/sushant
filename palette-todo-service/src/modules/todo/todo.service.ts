@@ -372,7 +372,7 @@ export class TodoService {
         Todo_Scope: 'Global',
         // If Admin is creating a global todo, then the status is Approved
         Status: isAdmin ? 'Approved' : 'In Review',
-        Parentid: todo.instituteId,
+        Parentid: todo.InstituteId,
         Assignee_accepted_status: 'Accepted',
         Is_Admin_Reviewed: 'No',
       }, instituteId);
@@ -381,7 +381,7 @@ export class TodoService {
         const admins = await this.sfService.models.affiliations.get(
           'Id',
           {
-            Account: todo.instituteId,
+            Account: todo.InstituteId,
             Role: 'Admin',
           },
           {},
@@ -730,12 +730,12 @@ export class TodoService {
       } else {
         throw new InternalServerErrorException(Errors.TODO_CRAFT_CREATE_ERROR);
       }
-    } else if (draft.instituteId) {
+    } else if (draft.InstituteId) {
       const response = await this.sfService.models.todos.create(
         {
           ...todoObj,
           Todo_Scope: 'Global',
-          Parent_Account: draft.instituteId,
+          Parent_Account: draft.InstituteId,
         },
         instituteId,
       );

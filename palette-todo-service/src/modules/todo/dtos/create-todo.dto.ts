@@ -1,4 +1,3 @@
-import { ApiProperty } from '@nestjs/swagger';
 import {
   IsArray,
   IsEnum,
@@ -39,177 +38,138 @@ export enum TodoType {
 }
 
 export class CreateTodoDto {
-  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   description: string;
 
-  @ApiProperty()
   @IsEnum(Status)
   @IsNotEmpty()
   @IsString()
   status: Status;
 
-  @ApiProperty()
   @IsEnum(ApprovedStatus)
   @IsNotEmpty()
   @IsString()
   approved_status: ApprovedStatus;
 
-  @ApiProperty()
   @IsEnum(TodoType)
   @IsNotEmpty()
   @IsString()
   type: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsNotEmpty()
   @IsString()
   venue: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsNotEmpty()
   @IsString()
   eventAt: string;
 
-  @ApiProperty()
   @IsString()
   completeBy: string;
 
-  @ApiProperty()
   @IsString()
   listedBy: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   assignee: string[];
 
-  @ApiProperty()
   @IsOptional()
   @IsString()
   instituteId: string;
 }
 
 export class CreateTodoV2Dto {
-  @ApiProperty()
   @IsNotEmpty()
   @IsString()
   name: string;
 
-  @ApiProperty()
   @IsOptional() 
   description: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsEnum(Status)
   @IsString()
   status: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsEnum(TodoType)
   @IsString()
   type: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsString()
   venue: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsString()
   eventAt: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsString()
   completeBy: string;
 
-  @ApiProperty()
   @IsString()
   listedBy: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsArray()
   @IsString({ each: true })
   assignee: string[];
 
-  @ApiProperty()
   @IsOptional()
   @IsString()
-  instituteId: string;
+  InstituteId: string;
 
-  @ApiProperty()
   @IsOptional()
   @IsString()
   reminderAt: string;
 }
 
 export class CreateTodoResponse {
-  @ApiProperty()
   statusCode: number;
 
-  @ApiProperty()
   message: string;
 
-  @ApiProperty()
   groupId: string;
 
-  @ApiProperty()
   ids: [string];
 }
 
 export class AssigneeInfoDto {
-  @ApiProperty()
   Id: string;
 
-  @ApiProperty()
   name: string;
 
-  @ApiProperty()
   profilePicture: string;
 
-  @ApiProperty()
   status: string;
 
-  @ApiProperty()
   Archived: boolean;
 
-  @ApiProperty()
   todoId: string;
 }
 
 export class AssigneeInfoDtoV2 {
-  @ApiProperty()
   Id: string;
 
-  @ApiProperty()
   name: string;
 
-  @ApiProperty()
   profilePicture: string;
 
-  @ApiProperty()
   status: string;
 
-  @ApiProperty()
   Archived: boolean;
 
-  @ApiProperty()
   todoId: string;
 
-  @ApiProperty()
   acceptedStatus: string;
 }
