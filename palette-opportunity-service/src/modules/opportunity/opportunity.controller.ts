@@ -315,54 +315,56 @@ export class OpportunityController {
     );
   }
 
-  // /* PATCH API for editing to allow bulk hiding/unhiding opportunities */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Patch('/visibility')
-  // async hideAndUnhideBulkOpportunites(
-  //   @Request() req,
-  //   @Body('hidingStatus') hidingStatus: string,
-  //   @Body('opportunityIds') opportunityIds: string[],
-  //   @Body('instituteId') instituteId: string,
-  // ) {
-  //   return await this.opportunityService.changeHidingStatus(
-  //     req.user.id,
-  //     opportunityIds,
-  //     hidingStatus,
-  //     instituteId
-  //   );
-  // }
+  /* PATCH API for editing to allow bulk hiding/unhiding opportunities */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/visibility')
+  async hideAndUnhideBulkOpportunites(
+    @Request() req,
+    @Body('hidingStatus') hidingStatus: string,
+    @Body('opportunityIds') opportunityIds: string[],
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.changeHidingStatus(
+      req.user.id,
+      opportunityIds,
+      hidingStatus,
+      instituteId
+    );
+  }
 
-  // /* Delete API for editing a student opportunity */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Patch('/delete') // Soft delete
-  // async deleteOpportunites(
-  //   @Request() req,
-  //   @Body('opportunityIds') opportunityIds: string[],
-  //   @Body('message') message: string,
-  // ) {
-  //   return await this.opportunityService.deleteOpportunity(
-  //     req.user.id,
-  //     opportunityIds,
-  //     message,
-  //     req.user.RecordTypeName,
-  //   );
-  // }
+  /* Delete API for editing a student opportunity */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/delete') // Soft delete
+  async deleteOpportunites(
+    @Request() req,
+    @Body('opportunityIds') opportunityIds: string[],
+    @Body('message') message: string,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.deleteOpportunity(
+      req.user.id,
+      req.user.recordTypeName,
+      opportunityIds,
+      message,
+      instituteId
+    );
+  }
 
   // /* API for suggesting edit of a Global Student Opportunity */
   // @hasRoles(
@@ -797,30 +799,30 @@ export class OpportunityController {
   //   );
   // }
 
-  // /** gets enrolled and interested opportunity users
-  //  *  @param {opportunityId} string opportunity id
-  //  * @returns {Object} status code, message, enrolledUsers & interestedUsers
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  //   Role.Observer,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('opportunity-users/:opportunityId')
-  // async getOpportunityUsers(
-  //   @Request() req,
-  //   @Param('opportunityId') opportunityId: string,
-  //   @Query('instituteId') instituteId: string,  
-  // ): Promise<any> {
-  //   return await this.opportunityService.getOpportunityUsers(
-  //     req.user.id,
-  //     req.user.recordTypeName,
-  //     opportunityId,
-  //     instituteId
-  //   );
-  // }
+  /** gets enrolled and interested opportunity users
+   *  @param {opportunityId} string opportunity id
+   * @returns {Object} status code, message, enrolledUsers & interestedUsers
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Observer,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('opportunity-users/:opportunityId')
+  async getOpportunityUsers(
+    @Request() req,
+    @Param('opportunityId') opportunityId: string,
+    @Query('instituteId') instituteId: string,  
+  ): Promise<any> {
+    return await this.opportunityService.getOpportunityUsers(
+      req.user.id,
+      req.user.recordTypeName,
+      opportunityId,
+      instituteId
+    );
+  }
 }
