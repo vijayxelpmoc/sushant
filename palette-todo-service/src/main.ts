@@ -3,7 +3,6 @@ require('module-alias/register');
 
 import { NestFactory, Reflector } from '@nestjs/core';
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
-import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { Request, Response, NextFunction } from 'express';
 
 import { AppModule } from './app.module';
@@ -43,19 +42,6 @@ return app;
 
 async function bootstrap() {
   const app = await preBuildApp();
-
-  /*
-   * Setup swagger only for dev, won't work as lambda
-  */
-  const config = new DocumentBuilder()
-    .setTitle('Palette')
-    .setDescription('Palette Todo Service')
-    .setVersion('1.0')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
   await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

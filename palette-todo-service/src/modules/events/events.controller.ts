@@ -8,12 +8,6 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiOkResponse,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
-import {
   Role,
   hasRoles,
   JwtAuthGuard,
@@ -42,9 +36,6 @@ export class EventsController {
    */
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOkResponse({ description: 'Event Recommendation Data' })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @Get('recommend')
   async getRecommendedEvents(@Request() req) {
     return await this.eventsService.getRecommendedEvents(req.user.id);
@@ -57,10 +48,6 @@ export class EventsController {
    */
   @hasRoles(Role.Parent, Role.Advisor, Role.Faculty)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOkResponse({ description: 'Event Recommendation Created ' })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @ApiBody({ type: RecommendEventDto })
   @Post('recommend')
   async recommendEvent(
     @Body() recommendEventDto: RecommendEventDto,
@@ -79,10 +66,6 @@ export class EventsController {
    */
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOkResponse({ description: 'Event Recommendation Accepted ' })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @ApiBody({ type: AcceptRecommendationDto })
   @Post('accept')
   async acceptRecommendation(
     @Body() acceptRecommendationDto: AcceptRecommendationDto,
@@ -101,10 +84,6 @@ export class EventsController {
    */
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @ApiBearerAuth()
-  @ApiOkResponse({ description: 'Event Recommendation Declined ' })
-  @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @ApiBody({ type: DeclineRecommendationDto })
   @Post('decline')
   async declineRecommendation(
     @Body() declineRecommendationDto: DeclineRecommendationDto,

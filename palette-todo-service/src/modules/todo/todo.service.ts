@@ -375,7 +375,7 @@ export class TodoService {
           Todo_Scope: 'Global',
           // If Admin is creating a global todo, then the status is Approved
           Status: isAdmin ? 'Approved' : 'In Review',
-          Parentid: todo.instituteId,
+          Parentid: todo.InstituteId,
           Assignee_accepted_status: 'Accepted',
           Is_Admin_Reviewed: 'No',
         },
@@ -386,7 +386,7 @@ export class TodoService {
         const admins = await this.sfService.models.affiliations.get(
           'Id',
           {
-            Account: todo.instituteId,
+            Account: todo.InstituteId,
             Role: 'Admin',
           },
           {},
@@ -737,12 +737,12 @@ export class TodoService {
       } else {
         throw new InternalServerErrorException(Errors.TODO_CRAFT_CREATE_ERROR);
       }
-    } else if (draft.instituteId) {
+    } else if (draft.InstituteId) {
       const response = await this.sfService.models.todos.create(
         {
           ...todoObj,
           Todo_Scope: 'Global',
-          Parent_Account: draft.instituteId,
+          Parent_Account: draft.InstituteId,
         },
         instituteId,
       );
@@ -1012,7 +1012,7 @@ export class TodoService {
           instituteId,
         );
         console.log(adminData);
-        
+
         const adminRecepients = [
           ...adminData.students,
           ...adminData.mentors,
@@ -1059,11 +1059,9 @@ export class TodoService {
               institute,
             });
           });
-          
-        console.log("relationRecepients",relationRecepients);
-        }
 
-        
+          console.log('relationRecepients', relationRecepients);
+        }
 
         // doubt
         // hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.Primary_Educational_Institution__c
@@ -1083,8 +1081,7 @@ export class TodoService {
             institute: admin.Organization,
           });
         });
-        console.log("admins",admins);
-        
+        console.log('admins', admins);
 
         return {
           statusCode: 200,

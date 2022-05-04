@@ -193,6 +193,7 @@ export interface SFRecommendations {
   Assignee: string;
   Recommended_by: {
     attributes: Attributes;
+    Id: string;
     Name: string;
     Record_Type_Name: string;
   };
