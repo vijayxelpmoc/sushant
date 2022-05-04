@@ -10,7 +10,7 @@ import PDFDocument from 'pdfkit';
 import { v4 as uuidv4 } from 'uuid';
 import * as fs from 'fs';
 import * as path from 'path';
-import { SfService } from '@gowebknot/palette-wrapper';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import {
   ChatMessage,

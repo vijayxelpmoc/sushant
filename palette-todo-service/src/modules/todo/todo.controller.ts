@@ -9,6 +9,9 @@ import {
   Delete,
   Patch,
   BadRequestException,
+  UseInterceptors,
+  CacheInterceptor,
+  InternalServerErrorException,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
@@ -33,49 +36,71 @@ import {
   BulkUpdateTodoStatusDto,
   UpdateTaskStatusDto,
   EventTodoDto,
+  CreateTodoV2Dto,
+  AssigneeInfoDtoV2,
 } from './dtos';
 
 import { TodoService } from './todo.service';
 import { Errors } from '@src/constants';
+import { CreateTodo, SFTodo } from './types';
+import { randomUUID } from 'crypto';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 @Controller({
   path: 'todo',
-  version: '1',
+  // version: '1',
 })
 export class TodoController {
-  constructor(private readonly todoService: TodoService) {}
+  constructor(
+    private readonly todoService: TodoService,
+    private sfService: SfService,
+  ) {}
   /**
    * function to create todo from events
    *@param EventTodoDto contains eventId and listedBy
    * return status code and errors
    */
+
+   // activites
+  // @hasRoles(Role.Student)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @ApiBearerAuth()
+  // @ApiResponse({
+  //   status: 200,
+  //   description: 'Fetch all todos assigned to the logged in user',
+  // })
+  // @ApiBody({ type: EventTodoDto })
+  // @Post('event')
+  // async createTodoFromEvent(
+  //   @Body() eventTodoDto: EventTodoDto,
+  //   @Body('instituteId') instituteId: string,
+  //   @Request() req,
+  // ) {
+  //   return await this.todoService.createTodoWithEvent(
+  //     req.user.id,
+  //     eventTodoDto,
+  //     instituteId,
+  //   );
+  // }
+
+  // reviewed
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('/:instituteId') //1
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
-    description: 'Fetch all todos assigned to the logged in user',
+    description: 'Returns list of todos.',
+    // type: getTodosResponseBodyDto,
+    isArray: true,
   })
-  @ApiBody({ type: EventTodoDto })
-  @Post('event')
-  async createTodoFromEvent(
-    @Body() eventTodoDto: EventTodoDto,
-    @Request() req,
-  ) {
-    return await this.todoService.createTodoWithEvent(
+  async getTodos(@Request() req, @Param('instituteId') instituteId: string) {
+    // console.log(instituteId);
+    
+    return await this.todoService.getTodos(
       req.user.id,
-      eventTodoDto,
+      instituteId,
     );
-  }
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('/')
-  @ApiBearerAuth()
-  @ApiResponse({
-    status: 200,
-    description: 'Fetch all todos assigned to the logged in user',
-  })
-  async getTodos(@Request() req) {
-    return await this.todoService.getTodos(req.user.id);
   }
 
   /*
@@ -91,22 +116,31 @@ export class TodoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiBody({
-    type: CreateTodoDto,
+    type: CreateTodoV2Dto,
   })
   @ApiResponse({
     status: 200,
     description: 'Adds a discrete or global todo draft',
-    type: CreateTodoResponse,
+    type: CreateTodoV2Dto,
   })
-  @Post('draft')
-  async createTodoDraft(@Body() createTodoDto: CreateTodoDto, @Request() req) {
+  @Post('draft') //5
+  async createTodoDraft(
+    @Body() createTodoDto: CreateTodoV2Dto,
+    @Body('instituteId') instituteId: string,
+
+    @Request() req,
+  ) {
+    // error
     return await this.todoService.createDraftToDo(
       createTodoDto,
       req.user.id,
       req.user.RecordTypeName,
+      instituteId,
     );
   }
 
+
+  // reviewed
   /*
    * Accept a Todo Request
    */
@@ -118,7 +152,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/accept/:id')
+  @Post('requested/accept/:id') //7
   @ApiBearerAuth()
   @ApiParam({
     name: 'id',
@@ -130,14 +164,20 @@ export class TodoController {
     status: 200,
     description: 'Accepted requested todo with ID.',
   })
-  async acceptRequestedTodo(@Request() req, @Param('id') id) {
+  async acceptRequestedTodo(
+    @Request() req,
+    @Param('id') id,
+    @Body('instituteId') instituteId: string,
+  ) {
     return await this.todoService.acceptOrRejectRequestedTodo(
       req.user.id,
       id,
-      'Accepted',
+      'Approved',
+      instituteId,
     );
   }
 
+  // reviewed
   /*
    * Reject a Todo Request
    */
@@ -149,7 +189,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/reject/:id')
+  @Post('requested/reject/:id') //8
   @ApiBearerAuth()
   @ApiParam({
     name: 'id',
@@ -161,24 +201,47 @@ export class TodoController {
     status: 200,
     description: 'Rejects requested todo with ID.',
   })
-  async rejectRequestedTodo(@Request() req, @Param('id') id) {
+  async rejectRequestedTodo(
+    @Request() req,
+    @Param('id') id,
+    @Body('instituteId') instituteId: string,
+  ) {
     return await this.todoService.acceptOrRejectRequestedTodo(
       req.user.id,
       id,
       'Rejected',
+      instituteId,
     );
   }
 
-  @Get('/:id')
+
+  // reviewed
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+  )  
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('/:instituteId/:id') //3
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Fetch a single todo',
   })
-  async getTodo(@Request() req, @Param('id') id: string) {
-    return await this.todoService.getTodo(req.user.id, id);
+  async getTodo(
+    @Request() req,
+    @Param('instituteId') instituteId: string,
+    @Param('id') id: string,
+  ) {
+    console.log(req.user);
+    
+    return await this.todoService.getTodo(req.user.id, id, instituteId);
   }
 
+
+  // reviewed
   /*
    * Bulk Accept Todo
    */
@@ -190,45 +253,67 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/bulk/accept')
+  @Post('requested/bulk/accept') //9
   @ApiBearerAuth()
-  @ApiBody({
-    schema: {
-      properties: {
-        todoIds: { type: 'array', items: { type: 'string' } },
-      },
-    },
-  })
   @ApiResponse({
     status: 200,
-    description: 'Accepts requested todos.',
+    description: 'Accept requested todos.',
   })
   async acceptRequestedTodoBulk(
     @Request() req,
     @Body('todoIds') todoIds: string[],
+    @Body('instituteId') instituteId: string,
   ) {
     return await this.todoService.acceptOrRejectRequestedTodoBulk(
       req.user.id,
       todoIds,
       'Accepted',
+      instituteId,
     );
   }
 
-  @Post('/update/:id')
+
+  // reviewed
+  /**
+   * function to update the todo
+   * @param updateTodoDto
+   * fields with values that has to be updated
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/update/status/:id')
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
-    description: 'Fetch a single todo',
+    description: 'Updates a Todo',
   })
-  @ApiBody({ type: UpdateTaskStatusDto })
-  async updateToDoStatus(
+  async updateTodoStatus(
     @Request() req,
     @Param('id') id,
     @Body('status') status,
-  ) {
-    return await this.todoService.updateToDoStatus(req.user.id, id, status);
+    @Body('note') note,
+    @Body('instituteId') instituteId: string,
+  ) {    
+    console.log(instituteId);
+    
+    return await this.todoService.updateToDoStatus(
+      req.user.id,
+      id,
+      status,
+      req.user.RecordTypeName,
+      instituteId,
+      note,
+    );
   }
 
+
+  // reviewed
   /*
    * Bulk Reject Todo
    */
@@ -240,30 +325,27 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/bulk/reject')
+  @Post('requested/bulk/reject') //10
   @ApiBearerAuth()
-  @ApiBody({
-    schema: {
-      properties: {
-        todoIds: { type: 'array', items: { type: 'string' } },
-      },
-    },
-  })
   @ApiResponse({
     status: 200,
-    description: 'Rejects requested todos.',
+    description: 'Reject requested todos in bulk.',
   })
   async rejectRequestedTodoBulk(
     @Request() req,
     @Body('todoIds') todoIds: string[],
+    @Body('instituteId') instituteId: string,
   ) {
     return await this.todoService.acceptOrRejectRequestedTodoBulk(
       req.user.id,
       todoIds,
       'Rejected',
+      instituteId,
     );
   }
 
+
+  // reviewed
   /*
    * Get Todo Recepient List
    */
@@ -275,19 +357,25 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get('recepients')
+  @Get('/:instituteId/recepients/get') //11
   @ApiBearerAuth()
   @ApiBearerAuth()
   @ApiResponse({
     status: 200,
     description: 'Gets Todo recipients',
-    type: AssigneeInfoDto,
+    type: AssigneeInfoDtoV2,
     isArray: true,
   })
-  async getTodoRecepients(@Request() req) {
+  async getTodoRecepients(
+    @Request() req,
+    @Param('instituteId') instituteId: string
+  ) {   
+    console.log(req.user);
+    
     return await this.todoService.getTodoRecepients(
       req.user.id,
-      req.user.RecordTypeName,
+      req.user.recordTypeName,
+      instituteId,
     );
   }
 
@@ -310,31 +398,41 @@ export class TodoController {
     status: 200,
     description: 'Creates todo resources and connects them to todos.',
   })
-  @Post('add/resources')
+  @Post('todoresources') // route
   async createTodoResources(
     @Body() createTodoResourcesDto: CreateTodoResourcesDto,
     @Request() req,
+    @Body('instituteId') instituteId: string,
   ) {
     return await this.todoService.createTodoResources(
       createTodoResourcesDto,
       req.user.id,
       true, // isNewTodo - True
+      instituteId,
     );
   }
 
+  // doubt
   /**
    * function to update the todo
    * @param todoID
    * fields with values that has to be updated
    */
   @hasRoles(Role.Student, Role.Parent, Role.Advisor, Role.Faculty)
-  @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
   @ApiOkResponse({ description: 'Todo Deleted successfully' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
-  @Delete('/delete/:id')
-  async deleteTodo(@Param() params) {
-    return await this.todoService.deleteTodo(params.id);
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Delete('/deleteAll')
+  async deleteAllTodos(
+    @Request() req,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.todoService.deleteAllTodos(
+      req.user.id,
+      req.user.RecordTypeName,
+      instituteId,
+    );
   }
 
   /**
@@ -344,35 +442,50 @@ export class TodoController {
    */
   @hasRoles(Role.Student, Role.Parent, Role.Advisor, Role.Faculty)
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch('/update/:id')
+  @Patch('/update/todo/:id') //12
   @ApiOkResponse({ description: 'Todo Updated successfully' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBody({ type: UpdateTodoDto })
   async updateTodo(
-    @Body() updateTodoDto: UpdateTodoDto,
+    @Body('updatedTodo') updateTodoDto: UpdateTodoDto,
     @Param() params,
     @Request() req,
+    @Body('instituteId') instituteId: string,
   ) {
     return await this.todoService.updateTodo(
       updateTodoDto,
       req.user.id,
       params.id,
+      instituteId,
     );
   }
 
+
+  // reviewed
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiOkResponse({ description: 'Todo Updated successfully' })
   @ApiUnauthorizedResponse({ description: 'Invalid credentials' })
   @ApiBody({ type: BulkUpdateTodoStatusDto })
-  @Patch('bulk/status/update')
+  @Patch('update/bulk/status') //13
   bulkUpdate(
     @Request() req,
-    @Body()
-    bulkUpdateTodoStatusDto: BulkUpdateTodoStatusDto,
+    @Body('todoIds') todoIds: string[],
+    @Body('status') status: string,
+    @Body('instituteId') instituteId: string,
   ) {
-    return this.todoService.bulkUpdateStatus('', bulkUpdateTodoStatusDto);
+    return this.todoService.updateTodoStatusBulk(
+      req.user.id,
+      todoIds,
+      status,
+      req.user.RecordTypeName,
+      instituteId,
+    );
   }
+
+  /*
+   * Create a Todo.
+   */
   @hasRoles(
     Role.Student,
     Role.Parent,
@@ -382,19 +495,29 @@ export class TodoController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @ApiBearerAuth()
-  @Post('/bulk/status/update')
-  async updateTodoStatusBulk(
+  @ApiResponse({
+    status: 200,
+    description: 'Adds a discrete or global todo',
+    type: CreateTodoResponse,
+  })
+  @Post('/create') //4 // not
+  async createTodo(
+    @Body('todo') createTodoDto: CreateTodoV2Dto,
+    @Body('instituteId') instituteId: string,
     @Request() req,
-    @Body('todoIds') todoIds: string[],
-    @Body('status') status: string,
   ) {
-    return await this.todoService.updateTodoStatusBulk(
+    console.log(req.user);
+    
+    return await this.todoService.createTodoV2(
+      createTodoDto,
       req.user.id,
-      todoIds,
-      status,
+      req.user.RecordTypeName,
+      instituteId,
     );
   }
 
+
+  // reviewed
   @hasRoles(
     Role.Student,
     Role.Parent,
@@ -403,40 +526,40 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('/todo')
-  async createTodo(@Body() createTodoDto: CreateTodoDto, @Request() req) {
-    const id: string = req.user.id;
-    const recordType: Role = req.user.RecordTypeName;
-    let todo: CreateTodoDto;
-    if (!createTodoDto.assignee) {
-      throw new BadRequestException(Errors.ASSIGNEE_EMPTY);
-    }
-    // TODO :- Enabled after enabling valid assignee service
-    // if (
-    //   !(await this.todoService.isValidAssignee(todo.assignee, id, recordType))
-    // ) {
-    //   throw new BadRequestException(Errors.ASSIGNEE_INVALID);
-    // }
-    switch (recordType) {
-      case Role.Student: {
-        todo = {
-          ...createTodoDto,
-          assignee: [id],
-          listedBy: id,
-        };
-        break;
-      }
-      case Role.Parent:
-      case Role.Advisor:
-      case Role.Faculty:
-      case Role.Administrator: {
-        todo = {
-          ...createTodoDto,
-          listedBy: id,
-        };
-      }
-    }
+  @Get('/:instituteId/requested/pending') //6
+  @ApiBearerAuth()
+  @ApiResponse({
+    status: 200,
+    description: 'Get all requested todos.',
+  })
+  async getRequestedTodos(
+    @Request() req,
+    @Param('instituteId') instituteId: string,
+  ) {
+    return await this.todoService.getRequestedTodosV2(req.user.id, instituteId);
+  }
 
-    return await this.todoService.createTodo(todo);
+  // reviewed
+  @UseInterceptors(CacheInterceptor)
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Observer,
+    Role.Administrator,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('/:instituteId/task/:studentid') //2
+  async getToDo(
+    @Param('studentid') studentid: string,
+    @Param('instituteId') instituteId: string,
+  ) {
+    const response = await this.todoService.getThirdPartyTodosV2(
+      studentid,
+      'Student',
+      instituteId,
+    );
+    return response;
   }
 }

@@ -9,7 +9,7 @@ export type ActivityCategory =
 // Salesforce Response Types
 export interface SFContactDetailInstitute {
   Id: string;
-  Primary_Educational_Institution__c: string;
+  Primary_Educational_Institution: string;
 }
 
 export interface ResponseInstituteEvents {
@@ -29,14 +29,14 @@ export interface SFActivityAccountDetail {
   Id: string;
   Name: string;
   Description: string;
-  Start_Date__c: string;
-  End_Date__c: string;
-  Venue__c: string;
-  Category__c: ActivityCategory;
+  Start_Date: string;
+  End_Date: string;
+  Venue: string;
+  Category: ActivityCategory;
   ShippingAddress: SFShippingAddress;
   Phone: string;
   Website: string;
-  Listed_by__c: string;
+  Listed_by: string;
   ParentId?: string;
 }
 
@@ -44,25 +44,25 @@ export interface SFActivityActivityDetail {
   Id: string;
   Name: string;
   Description: string;
-  Start_Date__c: string;
-  End_Date__c: string;
-  Venue__c: string;
-  Category__c: ActivityCategory;
+  Start_Date: string;
+  End_Date: string;
+  Venue: string;
+  Category: ActivityCategory;
   ShippingAddress: SFShippingAddress;
   Phone: string;
   Website: string;
   CreatedById: string;
-  Listed_by__c: string;
+  Listed_by: string;
 }
 
 export interface SFActivityActivityDetail {
   Id: string;
   Name: string;
   Description: string;
-  Start_Date__c: string;
-  End_Date__c: string;
-  Venue__c: string;
-  Category__c: ActivityCategory;
+  Start_Date: string;
+  End_Date: string;
+  Venue: string;
+  Category: ActivityCategory;
   ShippingAddress: SFShippingAddress;
   Phone: string;
   Website: string;
@@ -74,8 +74,8 @@ export interface SFPaletteActivityOrganization {
 }
 
 export interface SFPaletteActivity {
-  Contact__c: string;
-  Event__c: string;
+  Contact: string;
+  Event: string;
 }
 
 export interface SFActivityAccountParticipant {
@@ -87,11 +87,11 @@ export interface SFActivityAccountParticipant {
 
 export interface SFPaletteActivityOptInOut {
   Id: string;
-  HasOptOut__c: boolean;
+  HasOptOut: boolean;
 }
 
 export interface SFPaletteActivityIsOptIn {
-  HasOptOut__c: boolean;
+  HasOptOut: boolean;
 }
 
 export interface SFRecommendationId {
@@ -190,35 +190,35 @@ export interface SFRecommendations {
   attributes: Attributes;
   Id: string;
   Name: string;
-  Assignee__c: string;
-  Recommended_by__c: string;
+  Assignee: string;
+  Recommended_by: string;
   Recommended_by__r: {
     attributes: Attributes;
     Name: string;
-    Record_Type_Name__c: string;
+    Record_Type_Name: string;
   };
-  Event__c: string;
+  Event: string;
   Event__r: {
     attributes: Attributes;
     Name: string;
     Description: string;
-    Start_Date__c: string;
-    End_Date__c: string;
-    Category__c: string;
-    Venue__c: string;
+    Start_Date: string;
+    End_Date: string;
+    Category: string;
+    Venue: string;
     Phone: string;
     Website: string;
   };
-  Accepted__c: string;
+  Accepted: string;
 }
 
 export interface SFRecommendationMin {
   attributes: Attributes;
   Id: string;
-  Assignee__c: string;
-  Recommended_by__c: string;
-  Event__c: string;
-  Accepted__c: string;
+  Assignee: string;
+  Recommended_by: string;
+  Event: string;
+  Accepted: string;
 }
 export interface RecommendationsData {
   Id: string[];

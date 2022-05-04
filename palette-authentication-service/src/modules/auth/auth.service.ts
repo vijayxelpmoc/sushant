@@ -93,6 +93,8 @@ export class AuthService {
     const user: User = (
       await this.sfService.generics.contacts.get(_userFields, identifier, sort, instituteId)
     )[0];
+    console.log(user);
+    
     return user;
   }
 

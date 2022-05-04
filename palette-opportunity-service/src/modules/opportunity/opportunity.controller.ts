@@ -83,7 +83,7 @@ export class OpportunityController {
   async getLinkedOpportunites(
     @Request() req,
     @Query('instituteId') instituteId: string,  
-  ): Promise<any> {
+  ): Promise<any> {    
     return await this.opportunityService.getLinkedOpportunities(
       req.user.id,
       instituteId,

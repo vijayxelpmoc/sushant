@@ -1,13 +1,34 @@
+import { ApprovedStatus, Status, TodoType } from "../dtos";
+import { Task } from "./task-interface";
+
 interface Attributes {
   type: string;
   url: string;
 }
 
-export interface StudentResponse {
+export interface StudentResponse { 
   Id: string;
   name: string;
   institute: string;
   grade: string;
+}
+
+export interface getTodoResponse {
+  filteredTasks: Task[];
+  taskIds: any[];
+}
+
+export interface CreateTodo {
+  name: string;
+  description: string;
+  status: string;
+  type: string;
+  venue?: string;
+  eventAt?: string;
+  completeBy?: string;
+  assignee: string[];
+  listedBy: string;
+  instituteId: string;
 }
 
 export interface MentorParentResponse {
@@ -30,25 +51,25 @@ export interface ObserverParentResponse {
 
 export interface StudentConnectionResponseSF {
   attributes: Attributes;
-  hed__RelatedContact__c: string;
-  hed__Type__c: string;
-  hed__Contact__r: {
+  RelatedContact: string;
+  Type: string;
+  Contact__r: {
     attributes: Attributes;
-    Primary_Educational_Institution__c: string;
-    Designation__c: string;
+    Primary_Educational_Institution: string;
+    Designation: string;
   };
-  hed__RelatedContact__r: {
+  RelatedContact__r: {
     attributes: Attributes;
     Name: string;
-    Profile_Picture__c: string;
-    Palette_Email__c: string;
-    Is_Deactive__c: boolean;
+    Profile_Picture: string;
+    Palette_Email: string;
+    Is_Deactive: boolean;
   };
 }
 
 export interface TodoResourceConnection {
-  Todo__c: string;
-  Resource__c: string;
+  Todo: string;
+  Resource: string;
 }
 
 export interface TodoNotificationData {
