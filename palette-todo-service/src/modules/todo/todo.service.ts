@@ -497,6 +497,59 @@ export class TodoService {
     };
   }
 
+  async getTodoV2(userId: string, todoId: string, instituteId: string) {
+    const todo = (
+      await this.sfService.models.todos.get(
+        '*',
+        {
+          Id: todoId,
+          // Assignee: userId,
+        },
+        {},
+        instituteId,
+      )
+    )[0];
+
+    if (!todo) {
+      throw new BadRequestException(
+        "Todo Id is either invalid or doesn't belong to you",
+      );
+    }
+
+    console.log(todo);
+
+    const todoResources = await this.getResourcesById([todo.Id], instituteId);
+    const assignees =
+      todo.Assignee !== null
+        ? await this.sfService.generics.contacts.get(
+            'Name, Profile_Picture, Id',
+            {
+              Id: todo.Assignee,
+            },
+          )
+        : null;
+
+    return {
+      statusCode: 200,
+      message: 'Todo Details',
+      data: {
+        id: todo.Id,
+        name: todo.To_do,
+        description: todo.Description,
+        taskStatus: todo.Task_Status,
+        type: todo.Type,
+        completedBy: todo.Complete_By,
+        listedBy: todo.Listed_by,
+        groupId: todo.Group_Id,
+        status: todo.Status,
+        eventAt: todo.Event_At || null,
+        venue: todo.Event_Venue || null,
+        resources: todoResources[todo.Id] || [],
+        Assignee: assignees,
+      },
+    };
+  }
+
   // error
   async notifyOnTaskStatusChange(
     taskId: string,
@@ -1045,7 +1098,7 @@ export class TodoService {
         const studentRecepients = [];
         const relations = ['Guardian', 'Mentor'];
         for (const relation of relations) {
-          // hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture__c, hed__RelatedContact__r.Primary_Educational_Institution__c
+          // hed__RelatedContact__r.id, hed__RelatedContact__r.Name, hed__RelatedContact__r.Profile_Picture, hed__RelatedContact__r.Primary_Educational_Institution
           const relationRecepients =
             await this.sfService.models.relationships.get(
               'Id, Relationship_Number,Contact,Type',
@@ -1068,7 +1121,7 @@ export class TodoService {
         }
 
         // doubt
-        // hed__Contact__r.Name, hed__Contact__r.Profile_Picture__c, hed__Contact__r.Primary_Educational_Institution__c
+        // hed__Contact__r.Name, hed__Contact__r.Profile_Picture, hed__Contact__r.Primary_Educational_Institution
         const admins = await this.sfService.models.affiliations.get(
           'Id, Affiliation_Name,Organization',
           {
@@ -1359,11 +1412,16 @@ export class TodoService {
 
     // console.log(resources);
 
+    let resourceRes = [];
     // error
-    const resourceRes = await this.sfService.models.resources.create(
-      resources,
-      instituteId,
-    );
+    resources.forEach(async (res) => {
+      resourceRes = [
+        ...resourceRes,
+        await this.sfService.models.resources.create(res, instituteId),
+      ];
+    });
+
+    console.log(resourceRes);
 
     for (const resource of resourceRes) {
       for (const todoId of todoIds) {
@@ -1515,8 +1573,8 @@ export class TodoService {
       instituteId,
     );
 
-    console.log("allToDo",allToDo[0]);
-    
+    console.log('allToDo', allToDo[0]);
+
     // not getting the Created_By name so getting the names of the user by the ids
     const createdUserIds = [];
     const listedByContactIds = [];
@@ -1577,7 +1635,6 @@ export class TodoService {
     const toDoIds = [];
     const filteredToDos: Task[] = [];
     allToDo.map((todo) => {
-
       const filteredToDoObject: Task = {
         Id: todo.Id,
         Assignee: todo.Assignee && todo.Assignee,
@@ -1598,7 +1655,7 @@ export class TodoService {
         listedBy: createdUser[`${todo.Listed_by}`]
           ? createdUser[`${todo.Listed_by}`]
           : createdUser[`${todo.Created_By}`],
-          opportunity:todo.Opportunit_Id
+        opportunity: todo.Opportunit_Id,
       };
       filteredToDos.push(filteredToDoObject);
       toDoIds.push(todo.Id);
@@ -1864,7 +1921,7 @@ export class TodoService {
       data: haveTodos
         ? requestedTodos.map((todo) => ({
             id: todo.Id,
-            name: todo.Name,
+            name: todo.To_do,
             description: todo.Description,
             TaskStatus: todo.Task_Status,
             type: todo.Type,
@@ -2116,9 +2173,9 @@ export class TodoService {
   }
 
   async getThirdPartyTodosV2(Id: string, role: string, instituteId: string) {
-    const allTodos = await (
-      await this.getTodosV2(Id, role, instituteId)
-    ).data['todoList'];
+    const allTodos = await (await this.getTodosV2(Id, role, instituteId)).data;
+    console.log(allTodos);
+
     const response = [];
     allTodos.map(async (current_todo) => {
       if (
