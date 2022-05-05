@@ -179,7 +179,7 @@ export class TodoController {
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
   ) {    
-    return await this.todoService.getTodo(req.user.id, id, instituteId);
+    return await this.todoService.getTodoV2(req.user.id, id, instituteId);
   }
 
   /*
