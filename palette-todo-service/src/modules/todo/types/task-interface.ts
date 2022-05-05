@@ -7,7 +7,9 @@ export interface Task {
   Archived: boolean;
   name: string;
   description: string;
+  TaskStatus:string,
   status: string;
+  todoScope:string;
   type: string;
   eventAt: string;
   venue: string;
@@ -17,6 +19,7 @@ export interface Task {
     Id: string;
     Name: string;
   };
+  opportunity:string
 }
 
 export interface ResponseResources {

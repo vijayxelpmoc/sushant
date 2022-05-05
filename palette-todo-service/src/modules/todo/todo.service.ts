@@ -212,7 +212,7 @@ export class TodoService {
       instituteId,
     );
 
-    console.log(todos);
+    // console.log(todos);
 
     if (!todos || todos.length === 0) {
       throw new NotFoundException(Errors.TODOS_NOT_FOUND);
@@ -251,7 +251,7 @@ export class TodoService {
           id: todoObj.Id,
           name: todoObj.To_do,
           description: todoObj.Description,
-          taskStatus: todoObj.Task_Status,
+          TaskStatus: todoObj.Task_Status,
           acceptedStatus: todoObj.Assignee_accepted_status,
           type: todoObj.Type,
           completeBy: todoObj.Complete_By,
@@ -334,7 +334,7 @@ export class TodoService {
           Assignee_accepted_status:
             userId === assignee ? 'Accepted' : 'Requested',
         };
-        console.log(newtodoObj);
+        // console.log(newtodoObj);
 
         // Todo created.
         const createdTodo = await this.sfService.models.todos.create(
@@ -483,7 +483,7 @@ export class TodoService {
         id: todo.Id,
         name: todo.Name,
         description: todo.Description,
-        taskStatus: todo.Task_Status,
+        TaskStatus: todo.Task_Status,
         type: todo.Type,
         completedBy: todo.Complete_By,
         listedBy: todo.Listed_by,
@@ -553,7 +553,7 @@ export class TodoService {
       instituteId,
     );
 
-    console.log(requestedTodo);
+    // console.log(requestedTodo);
 
     // if todo is invalid
     if (!requestedTodo || requestedTodo.length === 0) {
@@ -574,7 +574,7 @@ export class TodoService {
 
     // if this person has listed the todo, then update the status for all the assignees
 
-    console.log(userId);
+    // console.log(userId);
 
     if (requestedTodo[0].Listed_by === userId) {
       const todoGroupId = requestedTodo[0].Group_Id;
@@ -599,7 +599,7 @@ export class TodoService {
           todoId,
           instituteId,
         );
-        console.log(response);
+        // console.log(response);
 
         // Send Notification that creator has updated the status of todo.
         // The assignee can also revert back the status
@@ -715,7 +715,7 @@ export class TodoService {
         });
       }
 
-      console.log(assigneeTodos);
+      // console.log(assigneeTodos);
 
       // error
       const createResponse = await this.sfService.models.todos.create(
@@ -723,7 +723,7 @@ export class TodoService {
         instituteId,
       );
 
-      console.log(createResponse);
+      // console.log(createResponse);
 
       if (
         createResponse.every(
@@ -1007,7 +1007,7 @@ export class TodoService {
     recordType: string,
     instituteId: string,
   ) {
-    console.log(recordType);
+    // console.log(recordType);
 
     switch (recordType) {
       case 'Administrator':
@@ -1015,7 +1015,7 @@ export class TodoService {
           userId,
           instituteId,
         );
-        console.log(adminData);
+        // console.log(adminData);
 
         const adminRecepients = [
           ...adminData.students,
@@ -1040,7 +1040,7 @@ export class TodoService {
             instituteId,
           )
         )[0].Primary_Educational_Institution;
-        console.log(institute);
+        // console.log(institute);
 
         const studentRecepients = [];
         const relations = ['Guardian', 'Mentor'];
@@ -1064,7 +1064,7 @@ export class TodoService {
             });
           });
 
-          console.log('relationRecepients', relationRecepients);
+          // console.log('relationRecepients', relationRecepients);
         }
 
         // doubt
@@ -1085,7 +1085,7 @@ export class TodoService {
             institute: admin.Organization,
           });
         });
-        console.log('admins', admins);
+        // console.log('admins', admins);
 
         return {
           statusCode: 200,
@@ -1101,7 +1101,7 @@ export class TodoService {
     todoId: string,
     instituteId: string,
   ) {
-    console.log(updateTodoDto);
+    // console.log(updateTodoDto);
 
     const updateObj: any = {};
 
@@ -1357,7 +1357,7 @@ export class TodoService {
       resources.push(resObj);
     }
 
-    console.log(resources);
+    // console.log(resources);
 
     // error
     const resourceRes = await this.sfService.models.resources.create(
@@ -1509,11 +1509,14 @@ export class TodoService {
   async getTasks(filters, instituteId: string) {
     const allToDo: SFTask[] = await this.sfService.models.todos.get(
       // 'Id, Archived, Assignee, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, Name, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
-      'Id, Archived, Assignee, Complete_By, Created_at, Description, Task_Status, To_do, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
+      'Id, Archived, Assignee, Complete_By, Created_at, Description, Task_Status, Status, To_do,Todo_Scope, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id,Opportunit_Id',
       filters,
       {},
       instituteId,
     );
+
+    console.log("allToDo",allToDo[0]);
+    
     // not getting the Created_By name so getting the names of the user by the ids
     const createdUserIds = [];
     const listedByContactIds = [];
@@ -1552,7 +1555,7 @@ export class TodoService {
 
     // creating a hash to access the user faster rather than doing to for loops
     const createdUser = {};
-    console.log(createdByUser);
+    // console.log(createdByUser);
 
     createdByUser.map((user) => {
       const userObj = {
@@ -1574,7 +1577,6 @@ export class TodoService {
     const toDoIds = [];
     const filteredToDos: Task[] = [];
     allToDo.map((todo) => {
-      console.log('todo', todo);
 
       const filteredToDoObject: Task = {
         Id: todo.Id,
@@ -1583,9 +1585,11 @@ export class TodoService {
         profilePicture: todo.Assignee && todo.Assignee.Profile_Picture,
         groupId: todo.Group_Id,
         Archived: todo.Archived,
-        name: todo.Name,
+        name: todo.To_do,
         description: todo.Description,
-        status: todo.Task_Status,
+        status: todo.Status,
+        TaskStatus: todo.Task_Status,
+        todoScope: todo.Todo_Scope,
         type: todo.Type,
         eventAt: todo.Event_At,
         venue: todo.Event_Venue,
@@ -1594,6 +1598,7 @@ export class TodoService {
         listedBy: createdUser[`${todo.Listed_by}`]
           ? createdUser[`${todo.Listed_by}`]
           : createdUser[`${todo.Created_By}`],
+          opportunity:todo.Opportunit_Id
       };
       filteredToDos.push(filteredToDoObject);
       toDoIds.push(todo.Id);
@@ -1861,7 +1866,7 @@ export class TodoService {
             id: todo.Id,
             name: todo.Name,
             description: todo.Description,
-            taskStatus: todo.Task_Status,
+            TaskStatus: todo.Task_Status,
             type: todo.Type,
             completeBy: todo.Complete_By,
             listedBy: todo.Listed_by,
@@ -1904,7 +1909,7 @@ export class TodoService {
     archived: boolean,
     instituteId: string,
   ) {
-    console.log('listed tasks');
+    // console.log('listed tasks');
 
     return await this.getTasks(
       {
@@ -1926,13 +1931,13 @@ export class TodoService {
       instituteId,
     );
 
-    console.log('institute', institute[0]);
+    // console.log('institute', institute[0]);
 
     return institute[0].Account;
   }
 
   async getGlobalTasks(Id: string, instituteId: string) {
-    console.log('golbalTasks');
+    // console.log('golbalTasks');
 
     return await this.getTasks(
       {
@@ -1989,7 +1994,7 @@ export class TodoService {
             name: todo.name,
             description: todo.description,
             reminderAt: todo.reminderAt,
-            taskStatus: todo.taskStatus,
+            TaskStatus: todo.TaskStatus,
             status: todo.status,
             todoScope: todo.todoScope,
             type: todo.type,
@@ -2026,7 +2031,7 @@ export class TodoService {
           name: todo.name,
           description: todo.description,
           reminderAt: todo.reminderAt,
-          taskStatus: todo.taskStatus,
+          TaskStatus: todo.TaskStatus,
           status: todo.status,
           acceptedStatus: todo.acceptedStatus,
           todoScope: todo.todoScope,
@@ -2046,7 +2051,7 @@ export class TodoService {
             Id: todo.Assignee,
             todoId: todo.Id,
             Archived: todo.Archived,
-            status: todo.taskStatus,
+            status: todo.TaskStatus,
             name: todo.AssigneeName,
             profilePicture: todo.profilePicture,
             acceptedStatus: todo.acceptedStatus,
@@ -2084,19 +2089,19 @@ export class TodoService {
 
   async getTodosV2(Id: string, role: string, instituteId: string) {
     const tasks = await this.getTasksByStudentId(Id, false, instituteId);
-    // const listedTasks = await this.getTasksByListedById(Id, false, instituteId);
+    const listedTasks = await this.getTasksByListedById(Id, false, instituteId);
     const instiId = await this.getInstituteId(Id, instituteId);
     const globalTasks = await this.getGlobalTasks(instiId, instituteId);
 
     let i = 0;
     let tasksLen = tasks.filteredTasks.length;
 
-    // while (i < listedTasks.filteredTasks.length) {
-    //   tasks.filteredTasks[tasksLen] = listedTasks.filteredTasks[i];
-    //   tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
-    //   i += 1;
-    //   tasksLen += 1;
-    // }
+    while (i < listedTasks.filteredTasks.length) {
+      tasks.filteredTasks[tasksLen] = listedTasks.filteredTasks[i];
+      tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
+      i += 1;
+      tasksLen += 1;
+    }
 
     i = 0;
     while (i < globalTasks.filteredTasks.length) {
@@ -2105,7 +2110,7 @@ export class TodoService {
       i += 1;
       tasksLen += 1;
     }
-    console.log(`tasks`, tasks);
+    console.log(`tasks`, tasks.filteredTasks[0]);
 
     return this.getTodoAndResource(tasks, instituteId);
   }

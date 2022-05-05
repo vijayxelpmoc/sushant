@@ -89,21 +89,24 @@ export interface SFTask {
   Id: string;
   Group_Id: string;
   Archived: boolean;
-  Name: string;
+  To_do: string;
   Assignee?: {
-    Id:string
+    Id: string;
     Name: string;
     Profile_Picture: string;
   };
   Complete_By: string;
   Description: string;
   Listed_by: string;
+  Status: string;
   Task_Status: string;
+  Todo_Scope: string;
   Created_at: string;
   Created_By: string;
   Type: string;
   Event_At: string;
   Event_Venue: string;
+  Opportunit_Id: string;
 }
 
 export interface SFResource {
