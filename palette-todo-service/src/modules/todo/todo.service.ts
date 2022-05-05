@@ -1412,11 +1412,16 @@ export class TodoService {
 
     // console.log(resources);
 
+    let resourceRes = [];
     // error
-    const resourceRes = await this.sfService.models.resources.create(
-      resources,
-      instituteId,
-    );
+    resources.forEach(async (res) => {
+      resourceRes = [
+        ...resourceRes,
+        await this.sfService.models.resources.create(res, instituteId),
+      ];
+    });
+
+    console.log(resourceRes);
 
     for (const resource of resourceRes) {
       for (const todoId of todoIds) {
@@ -2168,11 +2173,9 @@ export class TodoService {
   }
 
   async getThirdPartyTodosV2(Id: string, role: string, instituteId: string) {
-    const allTodos = await (
-      await this.getTodosV2(Id, role, instituteId)
-    ).data;
+    const allTodos = await (await this.getTodosV2(Id, role, instituteId)).data;
     console.log(allTodos);
-    
+
     const response = [];
     allTodos.map(async (current_todo) => {
       if (
