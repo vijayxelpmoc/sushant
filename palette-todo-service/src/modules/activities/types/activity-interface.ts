@@ -70,7 +70,7 @@ export interface SFActivityActivityDetail {
 }
 
 export interface SFPaletteActivityOrganization {
-  Event__r: SFActivityAccountDetail;
+  Event: SFActivityAccountDetail;
 }
 
 export interface SFPaletteActivity {
@@ -79,7 +79,7 @@ export interface SFPaletteActivity {
 }
 
 export interface SFActivityAccountParticipant {
-  Contact__r: {
+  Contact: {
     Id: string;
     Name: string;
   };
@@ -191,14 +191,13 @@ export interface SFRecommendations {
   Id: string;
   Name: string;
   Assignee: string;
-  Recommended_by: string;
-  Recommended_by__r: {
+  Recommended_by: {
     attributes: Attributes;
+    Id: string;
     Name: string;
     Record_Type_Name: string;
   };
-  Event: string;
-  Event__r: {
+  Event: {
     attributes: Attributes;
     Name: string;
     Description: string;

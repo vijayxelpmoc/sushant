@@ -1,13 +1,19 @@
-import { ApprovedStatus, Status, TodoType } from "../dtos";
-import { Task } from "./task-interface";
+import { ApprovedStatus, Status, TodoType } from '../dtos';
+import { Task } from './task-interface';
 
 interface Attributes {
   type: string;
   url: string;
 }
 
-export interface StudentResponse { 
-  Id: string;
+export interface StudentResponse {
+  Id: {
+    attributes: Attributes;
+    Name: string;
+    Profile_Picture: string;
+    Palette_Email: string;
+    Is_Deactive: boolean;
+  };
   name: string;
   institute: string;
   grade: string;
@@ -32,33 +38,50 @@ export interface CreateTodo {
 }
 
 export interface MentorParentResponse {
-  Id: string;
+  Id: {
+    attributes: Attributes;
+    Name: string;
+    Profile_Picture: string;
+    Palette_Email: string;
+    Is_Deactive: boolean;
+  };
   name: string;
+  profilePicture: string;
   instituteName: string;
   designation: string;
 }
+
+// export interface MentorParentResponse {
+//   Id: string;
+//   name: string;
+//   profilePicture: string;
+//   instituteName: string;
+//   designation: string;
+// }
+
 export interface ObserverParentResponse {
-  Id: string;
+  Id: {
+    attributes: Attributes;
+    Name: string;
+    Profile_Picture: string;
+    Palette_Email: string;
+    Is_Deactive: boolean;
+  };
   name: string;
+  profilePicture: string;
   instituteName: string;
   designation: string;
-}
-export interface ObserverParentResponse {
-  Id: string;
-  name: string;
-  instituteName: string;
 }
 
 export interface StudentConnectionResponseSF {
   attributes: Attributes;
-  RelatedContact: string;
   Type: string;
-  Contact__r: {
+  Contact: {
     attributes: Attributes;
     Primary_Educational_Institution: string;
     Designation: string;
   };
-  RelatedContact__r: {
+  Related_Contact: {
     attributes: Attributes;
     Name: string;
     Profile_Picture: string;

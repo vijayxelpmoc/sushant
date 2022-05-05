@@ -81,8 +81,9 @@ export class TodoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   async getTodos(@Request() req, @Query('instituteId') instituteId: string) {    
-    return await this.todoService.getTodos(
+    return await this.todoService.getTodosV2(
       req.user.id,
+      req.user.recordTypeName,
       instituteId,
     );
   }
