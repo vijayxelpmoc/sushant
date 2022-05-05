@@ -54,7 +54,7 @@ export class TodoController {
    * return status code and errors
    */
 
-   // activites
+  // activites
   // @hasRoles(Role.Student)
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @ApiBearerAuth()
@@ -77,10 +77,16 @@ export class TodoController {
   // }
 
   // reviewed
-  @hasRoles(Role.Student)
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Administrator,
+    Role.Faculty,
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
-  async getTodos(@Request() req, @Query('instituteId') instituteId: string) {    
+  async getTodos(@Request() req, @Query('instituteId') instituteId: string) {
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
@@ -125,7 +131,7 @@ export class TodoController {
     Role.Administrator,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('requested/accept/:id') 
+  @Post('requested/accept/:id')
   async acceptRequestedTodo(
     @Request() req,
     @Param('id') id: string,
@@ -171,14 +177,14 @@ export class TodoController {
     Role.Advisor,
     Role.Faculty,
     Role.Administrator,
-  )  
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('detail/:id')
   async getTodo(
     @Request() req,
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
-  ) {    
+  ) {
     return await this.todoService.getTodoV2(req.user.id, id, instituteId);
   }
 
@@ -207,7 +213,6 @@ export class TodoController {
     );
   }
 
-
   // reviewed
   /**
    * function to update the todo
@@ -229,9 +234,9 @@ export class TodoController {
     @Body('status') status,
     @Body('note') note,
     @Body('instituteId') instituteId: string,
-  ) {    
+  ) {
     console.log(instituteId);
-    
+
     return await this.todoService.updateToDoStatus(
       req.user.id,
       id,
@@ -241,7 +246,6 @@ export class TodoController {
       note,
     );
   }
-
 
   // reviewed
   /*
@@ -269,7 +273,6 @@ export class TodoController {
     );
   }
 
-
   // reviewed
   /*
    * Get Todo Recepient List
@@ -285,10 +288,10 @@ export class TodoController {
   @Get('/recepients/get') //11
   async getTodoRecepients(
     @Request() req,
-    @Query('instituteId') instituteId: string
-  ) {   
+    @Query('instituteId') instituteId: string,
+  ) {
     console.log(req.user);
-    
+
     return await this.todoService.getTodoRecepients(
       req.user.id,
       req.user.recordTypeName,
@@ -329,7 +332,13 @@ export class TodoController {
    * @param todoID
    * fields with values that has to be updated
    */
-  @hasRoles(Role.Student, Role.Parent, Role.Advisor, Role.Faculty)
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Administrator,
+    Role.Faculty,
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete('/deleteAll')
   async deleteAllTodos(
@@ -364,7 +373,6 @@ export class TodoController {
       instituteId,
     );
   }
-
 
   // reviewed
   @hasRoles(Role.Student)
@@ -403,7 +411,7 @@ export class TodoController {
     @Request() req,
   ) {
     console.log(req.user);
-    
+
     return await this.todoService.createTodoV2(
       createTodoDto,
       req.user.id,
@@ -411,7 +419,6 @@ export class TodoController {
       instituteId,
     );
   }
-
 
   // reviewed
   @hasRoles(
