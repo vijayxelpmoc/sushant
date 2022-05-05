@@ -444,6 +444,8 @@ export class TodoService {
   }
 
   async getTodo(userId: string, todoId: string, instituteId: string) {
+    // console.log(userId, todoId, instituteId);
+
     const todo = await this.sfService.models.todos.get(
       '*',
       {
@@ -452,7 +454,7 @@ export class TodoService {
       },
       {},
       instituteId,
-    )[0];
+    );
 
     // console.log(todo);
 
@@ -460,9 +462,11 @@ export class TodoService {
       throw new BadRequestException(Errors.INVALID_TODO_ID);
     }
 
-    console.log(todo);
+    // console.log(todo);
 
-    // const todoResources = await this.getResourcesById([todo.Id],instituteId);
+    const todoResources = await this.getResourcesById([todoId], instituteId);
+    // console.log('todoResources', todoResources);
+
     const assignees = await this.sfService.generics.contacts.get(
       'Name, Profile_Picture, Id',
       {
@@ -487,7 +491,7 @@ export class TodoService {
         status: todo.Status,
         eventAt: todo.Event_At || null,
         venue: todo.Event_Venue || null,
-        // resources: todoResources[todo.Id] || [],
+        resources: todoResources[todoId] || [],
         Assignee: assignees,
       },
     };
@@ -1504,7 +1508,8 @@ export class TodoService {
    */
   async getTasks(filters, instituteId: string) {
     const allToDo: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived, Assignee, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, Name, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
+      // 'Id, Archived, Assignee, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, Name, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
+      'Id, Archived, Assignee, Complete_By, Created_at, Description, Task_Status, To_do, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
       filters,
       {},
       instituteId,
@@ -1547,6 +1552,8 @@ export class TodoService {
 
     // creating a hash to access the user faster rather than doing to for loops
     const createdUser = {};
+    console.log(createdByUser);
+
     createdByUser.map((user) => {
       const userObj = {
         Id: user.Id,
@@ -1567,11 +1574,13 @@ export class TodoService {
     const toDoIds = [];
     const filteredToDos: Task[] = [];
     allToDo.map((todo) => {
+      console.log('todo', todo);
+
       const filteredToDoObject: Task = {
         Id: todo.Id,
-        Assignee: todo.Assignee,
-        AssigneeName: todo.Assignee.Name,
-        profilePicture: todo.Assignee.Profile_Picture,
+        Assignee: todo.Assignee && todo.Assignee,
+        AssigneeName: todo.Assignee && todo.Assignee.Name,
+        profilePicture: todo.Assignee && todo.Assignee.Profile_Picture,
         groupId: todo.Group_Id,
         Archived: todo.Archived,
         name: todo.Name,
@@ -1589,7 +1598,10 @@ export class TodoService {
       filteredToDos.push(filteredToDoObject);
       toDoIds.push(todo.Id);
     });
+
     const response = { filteredTasks: filteredToDos, taskIds: toDoIds };
+    // console.log(response);
+
     return response;
   }
 
@@ -1599,19 +1611,26 @@ export class TodoService {
    * array of resources assigned to the tasks.
    */
   async getResourcesById(tasksId: string[], instituteId: string) {
+    // console.log(tasksId);
+
     const resources: SFResource[] =
       await this.sfService.models.resourceConnections.get(
-        'Name, Todo, Resource, Resource.Id, Resource.Resource_Name, Resource.URL, Resource.Resource_Type',
-        { Todo: tasksId },
+        // 'Name, Todo, Resource, Resource.Id, Resource.Resource_Name, Resource.URL, Resource.Resource_Type',
+        'Resource_Connection_Name, Todo, Resource',
+        {
+          Todo: tasksId,
+        },
         {},
         instituteId,
       );
 
-    console.log(resources);
+    // console.log('resources', resources);
 
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
     const allResource = {};
     resources.map((resource) => {
+      // console.log("resource",resource);
+
       if (resource.Resource) {
         const resourcesObj = {
           Id: resource.Resource.Id,
@@ -1619,6 +1638,8 @@ export class TodoService {
           url: resource.Resource.URL,
           type: resource.Resource.Resource_Type,
         };
+        // console.log("resourcesObj",resourcesObj);
+
         // if a record with a todo task is present then add the object into it or if not create one
         const hashResource = allResource[`${resource.Todo}`];
         if (hashResource) {
@@ -1883,6 +1904,8 @@ export class TodoService {
     archived: boolean,
     instituteId: string,
   ) {
+    console.log('listed tasks');
+
     return await this.getTasks(
       {
         Listed_by: listedById,
@@ -1903,14 +1926,18 @@ export class TodoService {
       instituteId,
     );
 
+    console.log('institute', institute[0]);
+
     return institute[0].Account;
   }
 
   async getGlobalTasks(Id: string, instituteId: string) {
+    console.log('golbalTasks');
+
     return await this.getTasks(
       {
         Todo_Scope: 'Global',
-        ParentId: Id,
+        Parent_Account: Id,
         Status: 'Approved',
       },
       instituteId,
@@ -1954,6 +1981,8 @@ export class TodoService {
     for (const key of Object.keys(mp)) {
       if (key === 'default') {
         for (const todo of mp[key]) {
+          // console.log(todo);
+
           const todoObj = {
             Id: todo.Id,
             groupId: todo.groupId,
@@ -2055,19 +2084,19 @@ export class TodoService {
 
   async getTodosV2(Id: string, role: string, instituteId: string) {
     const tasks = await this.getTasksByStudentId(Id, false, instituteId);
-    const listedTasks = await this.getTasksByListedById(Id, false, instituteId);
+    // const listedTasks = await this.getTasksByListedById(Id, false, instituteId);
     const instiId = await this.getInstituteId(Id, instituteId);
     const globalTasks = await this.getGlobalTasks(instiId, instituteId);
 
     let i = 0;
     let tasksLen = tasks.filteredTasks.length;
 
-    while (i < listedTasks.filteredTasks.length) {
-      tasks.filteredTasks[tasksLen] = listedTasks.filteredTasks[i];
-      tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
-      i += 1;
-      tasksLen += 1;
-    }
+    // while (i < listedTasks.filteredTasks.length) {
+    //   tasks.filteredTasks[tasksLen] = listedTasks.filteredTasks[i];
+    //   tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
+    //   i += 1;
+    //   tasksLen += 1;
+    // }
 
     i = 0;
     while (i < globalTasks.filteredTasks.length) {
@@ -2082,7 +2111,9 @@ export class TodoService {
   }
 
   async getThirdPartyTodosV2(Id: string, role: string, instituteId: string) {
-    const allTodos = await (await this.getTodos(Id, instituteId)).data.todoList;
+    const allTodos = await (
+      await this.getTodosV2(Id, role, instituteId)
+    ).data['todoList'];
     const response = [];
     allTodos.map(async (current_todo) => {
       if (

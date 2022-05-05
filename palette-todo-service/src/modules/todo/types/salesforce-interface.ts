@@ -90,7 +90,8 @@ export interface SFTask {
   Group_Id: string;
   Archived: boolean;
   Name: string;
-  Assignee: {
+  Assignee?: {
+    Id:string
     Name: string;
     Profile_Picture: string;
   };
