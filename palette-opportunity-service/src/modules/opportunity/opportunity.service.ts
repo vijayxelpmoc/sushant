@@ -1346,390 +1346,401 @@ export class OpportunityService {
     return { statusCode: 201, message: 'Success' };
   }
 
-  // async changeHidingStatus(
-  //   userId: string,
-  //   opportunityIds: string[],
-  //   hidingStatus: string,
-  //   instituteId: string,
-  // ) {
-  //   if (hidingStatus != 'Hidden' && hidingStatus != 'Available') {
-  //     throw new BadRequestException(
-  //       `Bad request, you can either make it hidden or available.`,
-  //     );
-  //   }
-  //   const Result = [];
-  //   const creatorOpportunity = await this.sfService.getAccount('*', {
-  //     Listed_by__c: userId,
-  //   });
-  //   const isPresent = {};
-  //   creatorOpportunity.map(event => {
-  //     isPresent[event.Id] = event;
-  //   });
+  async changeHidingStatus(
+    userId: string,
+    opportunityIds: string[],
+    hidingStatus: string,
+    instituteId: string,
+  ) {
+    if (hidingStatus != 'Hidden' && hidingStatus != 'Available') {
+      throw new BadRequestException(
+        `Bad request, you can either make it hidden or available.`,
+      );
+    }
+    const Result = [];
+    const creatorOpportunity = await this.sfService.models.accounts.get('*', {
+      Listed_by: userId,
+    }, {}, instituteId);
+    const isPresent = {};
+    creatorOpportunity.map(event => {
+      isPresent[event.Id] = event;
+    });
 
-  //   for (const opportunityId of opportunityIds) {
-  //     const tempResult = [];
-  //     tempResult.push(opportunityId);
-  //     if (isPresent.hasOwnProperty(opportunityId)) {
-  //       if (isPresent[opportunityId].Visibility__c == 'Removed') {
-  //         tempResult.push(
-  //           `Event is already removed, so cannot be made Hidden or Available.`,
-  //         );
-  //       } else {
-  //         if (hidingStatus == 'Hidden') {
-  //           if (isPresent[opportunityId].Visibility__c == 'Hidden') {
-  //             tempResult.push(`Event is already hidden.`);
-  //           } else {
-  //             await this.sfService.updateAccount(opportunityId, {
-  //               Visibility__c: 'Hidden',
-  //             });
-  //             tempResult.push(`Event is successfully made hidden.`);
-  //           }
-  //         }
-  //         if (hidingStatus == 'Available') {
-  //           if (isPresent[opportunityId].Visibility__c == 'Available') {
-  //             tempResult.push(`Event is already available.`);
-  //           } else {
-  //             await this.sfService.updateAccount(opportunityId, {
-  //               Visibility__c: 'Available',
-  //             });
-  //             tempResult.push(`Event is successfully made available.`);
-  //           }
-  //         }
-  //       }
-  //     } else {
-  //       tempResult.push(
-  //         `Bad request, please check the credentials that you are requesting.`,
-  //       );
-  //     }
-  //     Result.push(tempResult);
-  //   }
-  //   return { statusCode: 201, message: 'Success', data: Result };
-  // }
+    for (const opportunityId of opportunityIds) {
+      const tempResult = [];
+      tempResult.push(opportunityId);
+      if (isPresent.hasOwnProperty(opportunityId)) {
+        if (isPresent[opportunityId].Visibility == 'Removed') {
+          tempResult.push(
+            `Event is already removed, so cannot be made Hidden or Available.`,
+          );
+        } else {
+          if (hidingStatus == 'Hidden') {
+            if (isPresent[opportunityId].Visibility == 'Hidden') {
+              tempResult.push(`Event is already hidden.`);
+            } else {
+              await this.sfService.models.accounts.update({
+                Visibility: 'Hidden',
+              },
+              opportunityId, instituteId);
+              tempResult.push(`Event is successfully made hidden.`);
+            }
+          }
+          if (hidingStatus == 'Available') {
+            if (isPresent[opportunityId].Visibility == 'Available') {
+              tempResult.push(`Event is already available.`);
+            } else {
+              await this.sfService.models.accounts.update({
+                Visibility: 'Available',
+              }, opportunityId, instituteId);
+              tempResult.push(`Event is successfully made available.`);
+            }
+          }
+        }
+      } else {
+        tempResult.push(
+          `Bad request, please check the credentials that you are requesting.`,
+        );
+      }
+      Result.push(tempResult);
+    }
+    return { statusCode: 201, message: 'Success', data: Result };
+  }
 
-  // // Soft Delete => visibilty will change to "Removed"
-  // // If Discrete?: visibilty will change to "Removed"
-  // // If Global?: Removal Status will change to "In Review"
-  // async deleteOpportunity(
-  //   userId: string,
-  //   opportunityIds: string[],
-  //   message: string,
-  //   userType: string,
-  // ) {
-  //   let notificationTitle = ``;
-  //   let notificationMsg = ``;
-  //   const Results = [];
-  //   for (let I = 0; I < opportunityIds.length; I++) {
-  //     const Temp_result = [];
-  //     const opportunityId = opportunityIds[I];
-  //     Temp_result.push(opportunityId);
-  //     // gets listed by user opportunities
-  //     if (!opportunityId) {
-  //       Temp_result.push("Opportunity Id can't be NULL");
-  //       Results.push(Temp_result);
-  //       continue;
-  //     }
-  //     // get creator opportunities.
-  //     const listedby = await this.sfService.getAccount('*', {
-  //       Listed_by__c: userId,
-  //     });
-  //     let Flag = 0; // opportunityId present or not present
-  //     listedby.map(async event => {
-  //       if (event.Id == opportunityId) {
-  //         if (
-  //           event.Visibility__c != 'Removed' &&
-  //           event.opportunityScope__c == 'Discrete'
-  //         ) {
-  //           Flag = 1;
-  //           // update opportunity
-  //           this.sfService.updateAccount(opportunityId, {
-  //             Visibility__c: 'Removed',
-  //             Approval_Status__c: 'Rejected',
-  //             Status_At__c: new Date(),
-  //             Removal_Status__c: 'Approved',
-  //             Removal_at__c: new Date(),
-  //             message__c: message,
-  //           });
-  //           Temp_result.push('Opportunity is removed');
-  //           Results.push(Temp_result);
+  // Soft Delete => visibilty will change to "Removed"
+  // If Discrete?: visibilty will change to "Removed"
+  // If Global?: Removal Status will change to "In Review"
+  async deleteOpportunity(
+    userId: string,
+    userType: string,
+    opportunityIds: string[],
+    message: string,
+    instituteId: string,
+  ) {
+    let notificationTitle = ``;
+    let notificationMsg = ``;
+    const Results = [];
+    for (let I = 0; I < opportunityIds.length; I++) {
+      const Temp_result = [];
+      const opportunityId = opportunityIds[I];
+      Temp_result.push(opportunityId);
+      // gets listed by user opportunities
+      if (!opportunityId) {
+        Temp_result.push("Opportunity Id can't be NULL");
+        Results.push(Temp_result);
+        continue;
+      }
+      // get creator opportunities.
+      const listedby = await this.sfService.models.accounts.get('*', {
+        Listed_by__c: userId,
+      }, {}, instituteId);
+      let Flag = 0; // opportunityId present or not present
+      listedby.map(async event => {
+        if (event.Id == opportunityId) {
+          if (
+            event.Visibility != 'Removed' &&
+            event.opportunityScope == 'Discrete'
+          ) {
+            Flag = 1;
+            // update opportunity
+            this.sfService.models.accounts.update({
+              Visibility: 'Removed',
+              Approval_Status: 'Rejected',
+              Status_At: new Date(),
+              Removal_Status: 'Approved',
+              Removal_at: new Date(),
+              message: message,
+            }, opportunityId, instituteId);
+            Temp_result.push('Opportunity is removed');
+            Results.push(Temp_result);
 
-  //           // assignees of discrete opportunity.
-  //           const recipients = await this.sfService.getOpportunity('*', {
-  //             Account__c: opportunityId,
-  //           });
-  //           // opportunity todos.
-  //           const connectedTodoIds = await this.sfService.getTodo('Id', {
-  //             Opportunity_Id__c: opportunityId,
-  //           });
-  //           notificationTitle = `Todo removed`;
-  //           notificationMsg = `Todo has been removed`;
-  //           connectedTodoIds.map(async event => {
-  //             await this.sfService.updateTodo(event.Id, {
-  //               Status__c: 'Removed',
-  //               Task_Status__c: 'Closed',
-  //             });
-  //             try {
-  //               await this.firebaseService.sendNotification(
-  //                 event.Assignee__c,
-  //                 notificationTitle,
-  //                 notificationMsg,
-  //                 {
-  //                   data: await this.utilityService.GetTodoNotificationData(
-  //                     event.Id,
-  //                   ),
-  //                   type: 'Create Todo removal',
-  //                 },
-  //               );
-  //             } catch (error) {
-  //               console.log('error', error);
-  //             }
-  //           });
-  //           notificationTitle = `Opportunity removed`;
-  //           notificationMsg = `Opportunity has been removed by the creater`;
-  //           recipients.map(async event => {
-  //             // create push notification  => Sent to Recipient
-  //             const recipientId = event.Contact__c;
-  //             try {
-  //               await this.firebaseService.sendNotification(
-  //                 recipientId,
-  //                 notificationTitle,
-  //                 notificationMsg,
-  //                 {
-  //                   data: await this.utilityService.GetOpportunityNotificationData(
-  //                     opportunityId,
-  //                     userId,
-  //                   ),
-  //                   type: 'Create oppotunity removal',
-  //                 },
-  //               );
-  //             } catch (error) {
-  //               console.log('error', error);
-  //             }
-  //             // Notifications history to be updated for delete opportunity => Discrete
-  //             await this.sfService.createNotification({
-  //               Type__c: 'Opportunity Removed',
-  //               Title__c: notificationMsg,
-  //               Opportunity__c: opportunityId,
-  //               Contact__c: recipientId,
-  //               Notification_By__c: userId,
-  //               Created_at__c: new Date(),
-  //               Is_Read__c: false,
-  //             });
-  //           });
-  //         } else if (event.opportunityScope__c == 'Global') {
-  //           Flag = 1;
-  //           if (userType == 'Administrator') {
-  //             await this.sfService.updateAccount(event.Id, {
-  //               Removal_Status__c: 'Approved',
-  //               Removal_at__c: new Date(),
-  //               message__c: message,
-  //             });
-  //             // create push notification  => Sent to Admin
-  //             notificationTitle = `Opportunity Removed`;
-  //             notificationMsg = `Opportunity has been removed by the admin`;
+            // assignees of discrete opportunity.
+            const recipients = await this.sfService.models.opportunities.get('*', {
+              Account: opportunityId,
+            }, {}, instituteId);
+            // opportunity todos.
+            const connectedTodoIds = await this.sfService.models.todos.get('Id', {
+              Opportunit_Id: opportunityId,
+            }, {}, instituteId);
+            notificationTitle = `Todo removed`;
+            notificationMsg = `Todo has been removed`;
+            connectedTodoIds.map(async event => {
+              await this.sfService.models.todos.update({
+                Status: 'Not Approved',
+                Task_Status: 'Closed',
+              }, event.Id, instituteId);
+              // try {
+              //   await this.firebaseService.sendNotification(
+              //     event.Assignee,
+              //     notificationTitle,
+              //     notificationMsg,
+              //     {
+              //       data: await this.utilityService.GetTodoNotificationData(
+              //         event.Id,
+              //       ),
+              //       type: 'Create Todo removal',
+              //     },
+              //   );
+              // } catch (error) {
+              //   console.log('error', error);
+              // }
+            });
+            notificationTitle = `Opportunity removed`;
+            notificationMsg = `Opportunity has been removed by the creater`;
+            recipients.map(async event => {
+              // create push notification  => Sent to Recipient
+              const recipientId = event.Contact;
+              // try {
+              //   await this.firebaseService.sendNotification(
+              //     recipientId,
+              //     notificationTitle,
+              //     notificationMsg,
+              //     {
+              //       data: await this.utilityService.GetOpportunityNotificationData(
+              //         opportunityId,
+              //         userId,
+              //       ),
+              //       type: 'Create oppotunity removal',
+              //     },
+              //   );
+              // } catch (error) {
+              //   console.log('error', error);
+              // }
+              // Notifications history to be updated for delete opportunity => Discrete
+              await this.sfService.models.notifications.create({
+                Type: 'Opportunity Removed',
+                Title: notificationMsg,
+                Opportunity: opportunityId,
+                Contact: recipientId,
+                Notification_By: userId,
+                Created_at: new Date(),
+                Is_Read: false,
+              }, instituteId);
+            });
+          } else if (event.opportunityScope == 'Global') {
+            Flag = 1;
+            if (userType == 'Administrator') {
+              await this.sfService.models.accounts.update(event.Id, {
+                Removal_Status: 'Approved',
+                Removal_at: new Date(),
+                message: message,
+              }, {}, instituteId);
+              // create push notification  => Sent to Admin
+              notificationTitle = `Opportunity Removed`;
+              notificationMsg = `Opportunity has been removed by the admin`;
 
-  //             const connectedTodoIds = await this.sfService.getTodo('Id', {
-  //               Opportunity_Id__c: opportunityId,
-  //             });
-  //             notificationTitle = `Todo removed`;
-  //             notificationMsg = `Todo has been removed`;
-  //             connectedTodoIds.map(async event => {
-  //               await this.sfService.updateTodo(event.Id, {
-  //                 Status__c: 'Removed',
-  //                 Task_Status__c: 'Closed',
-  //               });
-  //               // firebase notification.
-  //               try {
-  //                 await this.firebaseService.sendNotification(
-  //                   event.Assignee__c,
-  //                   notificationTitle,
-  //                   notificationMsg,
-  //                   {
-  //                     data: await this.utilityService.GetTodoNotificationData(
-  //                       event.Id,
-  //                     ),
-  //                     type: 'Create Todo removal',
-  //                   },
-  //                 );
-  //               } catch (error) {
-  //                 console.log('error', error);
-  //               }
-  //             });
+              const connectedTodoIds = await this.sfService.models.todos.get('Id', {
+                Opportunit_Id: opportunityId,
+              }, {}, instituteId);
+              notificationTitle = `Todo removed`;
+              notificationMsg = `Todo has been removed`;
+              connectedTodoIds.map(async event => {
+                await this.sfService.models.todos.update({
+                  Status: 'Not Approved',
+                  Task_Status: 'Closed',
+                }, event.Id, instituteId);
+                // // firebase notification.
+                // try {
+                //   await this.firebaseService.sendNotification(
+                //     event.Assignee__c,
+                //     notificationTitle,
+                //     notificationMsg,
+                //     {
+                //       data: await this.utilityService.GetTodoNotificationData(
+                //         event.Id,
+                //       ),
+                //       type: 'Create Todo removal',
+                //     },
+                //   );
+                // } catch (error) {
+                //   console.log('error', error);
+                // }
+              });
 
-  //             const recipientId = userId;
-  //             try {
-  //               // firebase notification.
-  //               await this.firebaseService.sendNotification(
-  //                 recipientId,
-  //                 notificationTitle,
-  //                 notificationMsg,
-  //                 {
-  //                   data: await this.utilityService.GetOpportunityNotificationData(
-  //                     event.Id,
-  //                     userId,
-  //                   ),
-  //                   type: 'Create oppotunity edit',
-  //                 },
-  //               );
-  //             } catch (error) {
-  //               console.log('error', error);
-  //             }
-  //           } else {
-  //             Flag = 1;
-  //             if (
-  //               event.Approval_Status__c === 'In Review' ||
-  //               event.Approval_Status__c === 'AdvisorReview'
-  //             ) {
-  //               // updating opportunity.
-  //               await this.sfService.updateAccount(event.Id, {
-  //                 Approval_Status__c: 'Rejected',
-  //                 Status_At__c: new Date(),
-  //                 Removal_Status__c: 'Approved',
-  //                 Removal_at__c: new Date(),
-  //                 message__c: 'Removed directly',
-  //               });
-  //             } else if (event.Approval_Status__c === 'Approved') {
-  //               // update opportunity status
-  //               const getModification = event.Modification__c;
-  //               await this.sfService.updateAccount(opportunityId, {
-  //                 Removal_Status__c: 'In Review',
-  //                 Modification__c: null,
-  //                 message__c: message,
-  //               });
-  //               if (getModification !== null) {
-  //                 await this.sfService.updateModification(getModification, {
-  //                   Status__c: 'Canceled',
-  //                 });
-  //               }
-  //               // create firebase notification.
-  //               notificationTitle = `Opportunity Removal Request`;
-  //               notificationMsg = `Removal Request for the Global Opportunity`;
+              const recipientId = userId;
+              // try {
+              //   // firebase notification.
+              //   await this.firebaseService.sendNotification(
+              //     recipientId,
+              //     notificationTitle,
+              //     notificationMsg,
+              //     {
+              //       data: await this.utilityService.GetOpportunityNotificationData(
+              //         event.Id,
+              //         userId,
+              //       ),
+              //       type: 'Create oppotunity edit',
+              //     },
+              //   );
+              // } catch (error) {
+              //   console.log('error', error);
+              // }
+            } else {
+              Flag = 1;
+              if (
+                event.Approval_Status === 'In Review' ||
+                event.Approval_Status === 'AdvisorReview'
+              ) {
+                // updating opportunity.
+                await this.sfService.models.accounts.update({
+                  Approval_Status: 'Rejected',
+                  Status_At: new Date(),
+                  Removal_Status: 'Approved',
+                  Removal_at: new Date(),
+                  message: 'Removed directly',
+                }, event.Id, instituteId);
+              } else if (event.Approval_Status === 'Approved') {
+                // update opportunity status
+                const getModification = event.Modification__c;
+                await this.sfService.models.accounts.update({
+                  Removal_Status: 'In Review',
+                  Modification: null,
+                  message: message,
+                }, opportunityId, instituteId);
+                if (getModification !== null) {
+                  await this.sfService.models.modifications.update({
+                    Status: 'Canceled',
+                  }, getModification, instituteId);
+                }
+                // create firebase notification.
+                notificationTitle = `Opportunity Removal Request`;
+                notificationMsg = `Removal Request for the Global Opportunity`;
 
-  //               const InstituteId = event.ParentId;
-  //               // fetch admin
-  //               const admins = await this.sfService.getAffiliation(
-  //                 'hed__Contact__r.Id',
-  //                 {
-  //                   hed__Account__c: InstituteId,
-  //                   hed__Role__c: 'Admin',
-  //                 },
-  //               );
-  //               admins.map(async admin => {
-  //                 try {
-  //                   // push notification
-  //                   await this.firebaseService.sendNotification(
-  //                     admin.hed__Contact__r.Id,
-  //                     notificationTitle,
-  //                     notificationMsg,
-  //                     {
-  //                       data: await this.utilityService.GetOpportunityNotificationData(
-  //                         event.Id,
-  //                         userId,
-  //                       ),
-  //                       type: 'Create opportunity removal',
-  //                     },
-  //                   );
-  //                 } catch (error) {
-  //                   console.log('error', error);
-  //                 }
-  //                 // create notification
-  //                 await this.sfService.createNotification({
-  //                   Title__c: notificationMsg,
-  //                   Contact__c: admin.hed__Contact__r.Id,
-  //                   Opportunity__c: opportunityId,
-  //                   Type__c: 'Opportunity Removal Request',
-  //                   Notification_By__c: userId,
-  //                   Created_at__c: new Date(),
-  //                   Is_Read__c: false,
-  //                 });
-  //               });
-  //               Temp_result.push('Opportunity removal request is created.');
-  //               Results.push(Temp_result);
-  //             } else {
-  //               // update opportunity status
-  //               await this.sfService.updateAccount(opportunityId, {
-  //                 Removal_Status__c: 'Approved',
-  //                 Removal_at__c: new Date(),
-  //                 message__c: message,
-  //               });
-  //               return {
-  //                 statusCode: 200,
-  //                 message: 'Opportunity Already Rejected',
-  //               };
-  //             }
-  //           }
-  //         }
-  //       }
-  //     });
+                const InstituteId = event.ParentId;
+                // fetch admin
+                const admins = await this.sfService.models.affiliations.get(
+                  'Contact.Id',
+                  {
+                    Organization: InstituteId,
+                    Role: 'Admin',
+                  },
+                  {},
+                  instituteId
+                );
+                admins.map(async admin => {
+                  // try {
+                  //   // push notification
+                  //   await this.firebaseService.sendNotification(
+                  //     admin.hed__Contact__r.Id,
+                  //     notificationTitle,
+                  //     notificationMsg,
+                  //     {
+                  //       data: await this.utilityService.GetOpportunityNotificationData(
+                  //         event.Id,
+                  //         userId,
+                  //       ),
+                  //       type: 'Create opportunity removal',
+                  //     },
+                  //   );
+                  // } catch (error) {
+                  //   console.log('error', error);
+                  // }
+                  // create notification
+                  await this.sfService.models.notifications.create({
+                    Title: notificationMsg,
+                    Contact: admin.Contact.Id,
+                    Opportunity: opportunityId,
+                    Type: 'Opportunity Removal Request',
+                    Notification_By: userId,
+                    Created_at: new Date(),
+                    Is_Read: false,
+                  }, instituteId);
+                });
+                Temp_result.push('Opportunity removal request is created.');
+                Results.push(Temp_result);
+              } else {
+                // update opportunity status
+                await this.sfService.models.accounts.update({
+                  Removal_Status: 'Approved',
+                  Removal_at: new Date(),
+                  message: message,
+                }, opportunityId, instituteId);
+                return {
+                  statusCode: 200,
+                  message: 'Opportunity Already Rejected',
+                };
+              }
+            }
+          }
+        }
+      });
 
-  //     if (Flag == 0) {
-  //       Temp_result.push(
-  //         'Bad request, Opportunity does not exist or it is already removed.',
-  //       );
-  //       Results.push(Temp_result);
-  //       continue;
-  //     }
-  //   }
-  //   return { statusCode: 201, message: 'Success' };
-  // }
+      if (Flag == 0) {
+        Temp_result.push(
+          'Bad request, Opportunity does not exist or it is already removed.',
+        );
+        Results.push(Temp_result);
+        continue;
+      }
+    }
+    return { statusCode: 201, message: 'Success' };
+  }
 
 
 
-  // /** gets enrolled and interested opportunity users
-  //  *  @param {opportunityId} string opportunity id
-  //  * @returns {Object} status code, message, enrolledUsers & interestedUsers
-  //  */
-  //  async getOpportunityUsers(
-  //   userId: string,
-  //   RecordType: string,
-  //   opportunityId: string,
-  //   instituteId: string,
-  // ): Promise<any> {
-  //   const opportunity = await this.sfService.models.account.get('*', {
-  //     Id: opportunityId,
-  //   }, {}, instituteId);
+  /** gets enrolled and interested opportunity users
+   *  @param {opportunityId} string opportunity id
+   * @returns {Object} status code, message, enrolledUsers & interestedUsers
+   */
+  async getOpportunityUsers(
+    userId: string,
+    RecordType: string,
+    opportunityId: string,
+    instituteId: string,
+  ): Promise<any> {
+    const opportunity = await this.sfService.models.accounts.get('*', {
+        Id: opportunityId,
+      },
+      {}, 
+      instituteId
+    );
 
-  //   // only creator or admin can access.
-  //   if (
-  //     opportunity[0].Listed_by == userId ||
-  //     RecordType === 'Administrator'
-  //   ) {
-  //     // get interested users.
-  //     const getInterestedUsers = await this.sfService.models.recommendations.get(
-  //       'Assignee__r.Profile_Picture__c, Assignee__r.Name, Assignee__r.Record_Type_Name__c',
-  //       { Event__c: opportunityId },
-  //       {}, 
-  //       instituteId
-  //     );
-  //     const interestedUsers = [];
-  //     getInterestedUsers.map(interested => {
-  //       interestedUsers.push({
-  //         profilePicture: interested.Assignee__r.Profile_Picture__c,
-  //         name: interested.Assignee__r.Name,
-  //         role: interested.Assignee__r.Record_Type_Name__c,
-  //       });
-  //     });
+    // only creator or admin can access.
+    if (
+      opportunity[0].Listed_by == userId ||
+      RecordType === 'Administrator'
+    ) {
+      // get interested users.
+      const getInterestedUsers = await this.sfService.models.recommendations.get(
+        'Assignee.Profile_Picture, Assignee.Name, Assignee.Record_Type_Name',
+        { Event: opportunityId },
+        {}, 
+        instituteId
+      );
+      
+      const interestedUsers = [];
+      getInterestedUsers.map(interested => {
+        interestedUsers.push({
+          profilePicture: interested.Assignee.Profile_Picture,
+          name: interested.Assignee.Name,
+          role: interested.Assignee.Record_Type_Name,
+        });
+      });
 
-  //     // get enrolled users.
-  //     const getEnrolledUsers = await this.sfService.getTodo(
-  //       'Assignee__r.Profile_Picture__c, Assignee__r.Name, Assignee__r.Record_Type_Name__c',
-  //       { Opportunity_Id__c: opportunityId },
-  //     );
-  //     const enrolledUsers = [];
-  //     getEnrolledUsers.map(enrolled => {
-  //       enrolledUsers.push({
-  //         profilePicture: enrolled.Assignee__r.Profile_Picture__c,
-  //         name: enrolled.Assignee__r.Name,
-  //         role: enrolled.Assignee__r.Record_Type_Name__c,
-  //       });
-  //     });
+      // get enrolled users.
+      const getEnrolledUsers = await this.sfService.models.todos.get(
+        'Assignee.Profile_Picture, Assignee.Name, Assignee.Record_Type_Name',
+        { Opportunit_Id: opportunityId },
+        {},
+        instituteId
+      );
 
-  //     return {
-  //       statusCode: 200,
-  //       message: 'Success',
-  //       enrolledUsers: enrolledUsers,
-  //       interestedUsers: interestedUsers,
-  //     };
-  //   }
-  //   throw new BadRequestException(`Not Authorized!`);
-  // }
+      const enrolledUsers = [];
+      getEnrolledUsers.map(enrolled => {
+        enrolledUsers.push({
+          profilePicture: enrolled.Assignee.Profile_Picture,
+          name: enrolled.Assignee.Name,
+          role: enrolled.Assignee.Record_Type_Name,
+        });
+      });
+
+      return {
+        statusCode: 200,
+        message: 'Success',
+        enrolledUsers: enrolledUsers,
+        interestedUsers: interestedUsers,
+      };
+    }
+    throw new BadRequestException(`Not Authorized!`);
+  }
 }
