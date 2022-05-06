@@ -84,6 +84,18 @@ functions:
           method: PATCH
           path: opportunity/edit/discrete
           cors: true
+      - http:  
+          method: GET
+          path: userNetwork/contactsList
+          cors: true
+      - http:  
+          method: GET
+          path: userNetwork/share/recipients/{opportunityId}
+          request: 
+            parameters:
+              paths: 
+                opportunityId: true
+          cors: true
 
 
 
