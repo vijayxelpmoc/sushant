@@ -470,9 +470,10 @@ export class TodoController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('/publish/draft')
-  async publishDraftTodo(@Request() req, 
-  @Body('Id') Id: string,
-  @Body('instituteId') instituteId: string
+  async publishDraftTodo(
+    @Request() req,
+    @Body('Id') Id: string,
+    @Body('instituteId') instituteId: string,
   ) {
     return await this.todoService.publishDraftTodo(Id, instituteId);
   }
