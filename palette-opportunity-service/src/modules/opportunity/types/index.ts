@@ -15,6 +15,24 @@ export const ObserverSubRoles: string[] = [
   'Coworker',
 ];
 
+export const StudentSubRoles: string[] = [
+  'Daughter',
+  'Stepdaughter',
+  'Foster Daughter',
+  'Son',
+  'Stepson',
+  'Foster Son',
+  'Child',
+  'Stepchild',
+  'Foster Child',
+  'Grandson',
+  'Granddaughter',
+  'Grandchild',
+  'Employee',
+  'Dependent',
+  "Sibling's Child",
+];
+
 export const GuardianSubRoles: string[] = [
   'Father',
   'Stepfather',
