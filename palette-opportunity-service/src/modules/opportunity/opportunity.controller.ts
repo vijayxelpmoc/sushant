@@ -61,7 +61,7 @@ export class OpportunityController {
   ): Promise<BasicResponse> {
     return await this.opportunityService.CreateOpportunityOtherRoles(
       req.user.id,
-      req.user.recordTypeName,
+      req.user.recordTypeName, 
       opportunitiesInfoDto,
       instituteId,
     );
