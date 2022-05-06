@@ -129,4 +129,8 @@ functions:
             parameters:
               paths: 
                 studentid: true
+      - http:
+          method: POST
+          path: /todo/publish/draft
+          cors: true          
           cors: true
