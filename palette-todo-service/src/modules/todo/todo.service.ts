@@ -2327,4 +2327,19 @@ export class TodoService {
     };
     this.notifier.send(NotificationType.EMAIL, emailConfig);
   };
+
+  async publishDraftTodo(Id: string, instituteId: string) {
+    console.log(Id, instituteId);
+
+    try {
+      await this.sfService.models.todos.update(
+        {
+          Task_Status: 'Open',
+        },
+        Id,
+        instituteId,
+      );
+      return { statusCode: 200, message: 'Published draft todo' };
+    } catch (error) {}
+  }
 }
