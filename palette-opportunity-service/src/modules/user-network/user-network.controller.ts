@@ -38,7 +38,7 @@ export class UserNetworkController {
     @Request() req,
     @Query('instituteId') instituteId: string,
   ) {
-    console.log(instituteId);
+    // console.log(instituteId);
 
     return await this.userNetworkService.getContactsList(
       req.user.id,

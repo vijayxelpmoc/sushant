@@ -33,7 +33,7 @@ export class UserNetworkService {
 
   async getContactsList(userId: string, role: string, instituteId: string) {
     const contacts = [];
-    console.log(userId, role);
+    // console.log(userId, role);
 
     // const have_relationship_or_affiliation = checkRelationshipAffiliation(userId);
 
@@ -1028,7 +1028,7 @@ export class UserNetworkService {
         instituteId,
       );
 
-      console.log('fifth', advisorStudentDetails);
+      // console.log('fifth', advisorStudentDetails);
 
       if (advisorStudentDetails.length > 0) {
         advisorStudentDetails.map((student) => {
@@ -1078,7 +1078,7 @@ export class UserNetworkService {
           {},
           instituteId,
         );
-        console.log('sixth', guardians);
+        // console.log('sixth', guardians);
 
         if (guardians.length > 0) {
           const advisorGuardianIds = guardians.map((guardian) => {
@@ -1095,7 +1095,7 @@ export class UserNetworkService {
               instituteId,
             );
 
-          console.log('seventh', advisorParentDetails);
+          // console.log('seventh', advisorParentDetails);
 
           if (advisorParentDetails.length > 0) {
             advisorParentDetails.map((guardian) => {
@@ -1146,7 +1146,7 @@ export class UserNetworkService {
           instituteId,
         );
 
-        console.log('eight', advisorAdvisors);
+        // console.log('eight', advisorAdvisors);
 
         if (advisorAdvisors.length > 0) {
           const advisorAdvisorIds = advisorAdvisors.map((mentor) => {
@@ -1163,7 +1163,7 @@ export class UserNetworkService {
               instituteId,
             );
 
-          console.log('ninth', advisorAdvisorDetails);
+          // console.log('ninth', advisorAdvisorDetails);
 
           advisorAdvisorDetails.map((advisor) => {
             if (checkRepeatition.indexOf(advisor.Id) == -1) {
@@ -1211,7 +1211,7 @@ export class UserNetworkService {
           {},
           instituteId,
         );
-        console.log('tenth', advisorObservers);
+        // console.log('tenth', advisorObservers);
 
         if (advisorObservers.length > 0) {
           const advisorObserverIds = advisorObservers.map((observers) => {
@@ -1229,7 +1229,7 @@ export class UserNetworkService {
               instituteId,
             );
 
-          console.log('elev', advisorObserverDetails);
+          // console.log('elev', advisorObserverDetails);
 
           advisorObserverDetails.map((observer) => {
             if (checkRepeatition.indexOf(observer.Id) == -1) {
@@ -1280,7 +1280,7 @@ export class UserNetworkService {
         {},
         instituteId,
       );
-    console.log('twel', advisorInstituteDetails);
+    // console.log('twel', advisorInstituteDetails);
 
     const advisorInsti = await this.sfService.models.affiliations.get(
       '*',
@@ -1291,7 +1291,7 @@ export class UserNetworkService {
       {},
       instituteId,
     );
-    console.log('thirt', advisorInsti);
+    // console.log('thirt', advisorInsti);
 
     const adminIds = [];
 
@@ -1308,7 +1308,7 @@ export class UserNetworkService {
         instituteId,
       );
 
-      console.log('fourt', Admins);
+      // console.log('fourt', Admins);
 
       Admins.map((admin) => {
         if (checkRepeatition.indexOf(admin.Id) == -1) {
@@ -1359,13 +1359,13 @@ export class UserNetworkService {
     const checkRepetitionIds = [];
     checkRepetitionIds.push(userId);
     const parent = await this.parentService.getParent(userId, instituteId);
-    console.log(parent);
+    // console.log(parent);
 
     const parentStudentIds = parent.pupils.map((pupil) => {
       return pupil.Id;
     });
 
-    console.log('parentStudentIds', parentStudentIds);
+    // console.log('parentStudentIds', parentStudentIds);
 
     const parentContactList = [];
 
@@ -1379,7 +1379,7 @@ export class UserNetworkService {
         instituteId,
       );
 
-      console.log('1', parentStudentDetails);
+      // console.log('1', parentStudentDetails);
 
       parentStudentDetails.map((student) => {
         if (checkRepetitionIds.indexOf(student.Id) == -1) {
@@ -1436,7 +1436,7 @@ export class UserNetworkService {
         instituteId,
       );
 
-      console.log('2', parentGuardians);
+      // console.log('2', parentGuardians);
 
       parentGuardians.map((event) => {
         RoleType.set(event.Related_Contact, event.Type);
@@ -1462,7 +1462,7 @@ export class UserNetworkService {
           instituteId,
         );
 
-        console.log('3', parentGuardianDetails);
+        // console.log('3', parentGuardianDetails);
 
         if (parentGuardianDetails.length > 0) {
           parentGuardianDetails.map(async (guardians) => {
@@ -1519,7 +1519,7 @@ export class UserNetworkService {
         )),
       ];
 
-      console.log('4', parentStudentInstiDetails);
+      // console.log('4', parentStudentInstiDetails);
 
       const parentStudentMentorIds = parentStudentInstiDetails.map((mentor) => {
         return mentor.Contact;
@@ -1535,7 +1535,7 @@ export class UserNetworkService {
           instituteId,
         );
 
-      console.log('5', parentStudentMentorDetails);
+      // console.log('5', parentStudentMentorDetails);
 
       if (parentStudentMentorDetails.length > 0) {
         parentStudentMentorDetails.map(async (admins) => {

@@ -70,7 +70,7 @@ export class ObserverService {
       }
     });
 
-    console.log('students', students,ids);
+    // console.log('students', students,ids);
 
     // getting mentors
     const mentors: SFMentorStudents[] =
@@ -84,7 +84,7 @@ export class ObserverService {
         instituteId,
       );
 
-      console.log("mentors",mentors);
+      // console.log("mentors",mentors);
       
     // filtering mentors
     const filteredMentors = [];

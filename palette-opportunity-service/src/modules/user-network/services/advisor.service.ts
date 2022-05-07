@@ -79,7 +79,7 @@ export class AdvisorService {
       {},
       instituteId,
     );
-    console.log("second",getInstitute);
+    // console.log("second",getInstitute);
 
 
     const Institute_Id = getInstitute[0].Organization; // Real Institute Id
@@ -93,7 +93,7 @@ export class AdvisorService {
         {},
         instituteId,
       );
-      console.log("third",institute);
+      // console.log("third",institute);
 
 
     // const instituteName: string | null =
@@ -162,7 +162,7 @@ export class AdvisorService {
         {},
         instituteId,
       );
-      console.log("first",students);
+      // console.log("first",students);
       
 
     // if (students.length === 0) {
