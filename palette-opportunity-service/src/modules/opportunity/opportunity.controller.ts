@@ -36,6 +36,7 @@ import {
 } from '@gowebknot/palette-wrapper';
 import { CommentsDto } from './dtos/create-comments.dto';
 import { InstituteDataResponse } from './types/create-opportunity-interface';
+import { draftInfoDto } from './dto/opportunities.dto';
 
 @Controller({
   path: 'opportunity',
@@ -45,151 +46,151 @@ export class OpportunityController {
     private readonly opportunityService: OpportunityService
   ) {}
 
-  @hasRoles(
-    Role.Parent,
-    Role.Advisor,
-    Role.Faculty,
-    Role.Administrator,
-    Role.Observer,
-  )  
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('others')
-  async createOpportunityOtherRole(
-    @Request() req,
-    @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
-    @Body('instituteId') instituteId: string,
-  ): Promise<BasicResponse> {
-    return await this.opportunityService.CreateOpportunityOtherRoles(
-      req.user.id,
-      req.user.recordTypeName,
-      opportunitiesInfoDto,
-      instituteId,
-    );
-  }
+  // @hasRoles(
+  //   Role.Parent,
+  //   Role.Advisor,
+  //   Role.Faculty,
+  //   Role.Administrator,
+  //   Role.Observer,
+  // )  
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post('others')
+  // async createOpportunityOtherRole(
+  //   @Request() req,
+  //   @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
+  //   @Body('instituteId') instituteId: string,
+  // ): Promise<BasicResponse> {
+  //   return await this.opportunityService.CreateOpportunityOtherRoles(
+  //     req.user.id,
+  //     req.user.recordTypeName,
+  //     opportunitiesInfoDto,
+  //     instituteId,
+  //   );
+  // }
 
-  /** gets all self created opportunities
-  *  @param {userId} string user id
-  * @returns {Object} status code and message and opportunity information
-  */
-  @hasRoles(
-    Role.Student,
-    Role.Parent,
-    Role.Advisor,
-    Role.Faculty,
-    Role.Administrator,
-  )  
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Get()
-  async getLinkedOpportunites(
-    @Request() req,
-    @Query('instituteId') instituteId: string,  
-  ): Promise<any> {    
-    return await this.opportunityService.getLinkedOpportunities(
-      req.user.id,
-      instituteId,
-    );
-  }
+  // /** gets all self created opportunities
+  // *  @param {userId} string user id
+  // * @returns {Object} status code and message and opportunity information
+  // */
+  // @hasRoles(
+  //   Role.Student,
+  //   Role.Parent,
+  //   Role.Advisor,
+  //   Role.Faculty,
+  //   Role.Administrator,
+  // )  
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Get()
+  // async getLinkedOpportunites(
+  //   @Request() req,
+  //   @Query('instituteId') instituteId: string,  
+  // ): Promise<any> {    
+  //   return await this.opportunityService.getLinkedOpportunities(
+  //     req.user.id,
+  //     instituteId,
+  //   );
+  // }
 
-  /** updates an opportunity for all user
-  *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
-  *  @param {opportunityId} string the id of the record we updating
-  * @returns {Object} status code and message
-  */
-  @hasRoles(
-    Role.Student,
-    Role.Parent,
-    Role.Advisor,
-    Role.Faculty,
-    Role.Administrator,
-  )  
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch('/update')
-  async update(
-    @Request() req,
-    @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
-    @Body('opportunityId') opportunityId: string,
-    @Body('instituteId') instituteId: string,
-  ) {
-    return await this.opportunityService.updateOpportunity(
-      opportunitiesInfoDto,
-      opportunityId,
-      req.user.id,
-      instituteId,
-    );
-  }
+  // /** updates an opportunity for all user
+  // *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
+  // *  @param {opportunityId} string the id of the record we updating
+  // * @returns {Object} status code and message
+  // */
+  // @hasRoles(
+  //   Role.Student,
+  //   Role.Parent,
+  //   Role.Advisor,
+  //   Role.Faculty,
+  //   Role.Administrator,
+  // )  
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Patch('/update')
+  // async update(
+  //   @Request() req,
+  //   @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
+  //   @Body('opportunityId') opportunityId: string,
+  //   @Body('instituteId') instituteId: string,
+  // ) {
+  //   return await this.opportunityService.updateOpportunity(
+  //     opportunitiesInfoDto,
+  //     opportunityId,
+  //     req.user.id,
+  //     instituteId,
+  //   );
+  // }
 
-  /** creates opportunity for multiple students
-  *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
-  *  @param {userId} string user id
-  * @returns {Object} status code and message
-  */
-  @hasRoles(
-    Role.Parent,
-    Role.Advisor,
-    Role.Faculty,
-    Role.Administrator,
-  )
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('multi')
-  async CreateOpportunityForMultipleStudents(
-    @Request() req,
-    @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
-    @Body('instituteId') instituteId: string,
-  ): Promise<BasicResponse> {
-    return await this.opportunityService.CreateOpportunityForMultipleStudents(
-      req.user.id,
-      opportunitiesInfoDto,
-      instituteId,
-    );
-  }
+  // /** creates opportunity for multiple students
+  // *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
+  // *  @param {userId} string user id
+  // * @returns {Object} status code and message
+  // */
+  // @hasRoles(
+  //   Role.Parent,
+  //   Role.Advisor,
+  //   Role.Faculty,
+  //   Role.Administrator,
+  // )
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post('multi')
+  // async CreateOpportunityForMultipleStudents(
+  //   @Request() req,
+  //   @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
+  //   @Body('instituteId') instituteId: string,
+  // ): Promise<BasicResponse> {
+  //   return await this.opportunityService.CreateOpportunityForMultipleStudents(
+  //     req.user.id,
+  //     opportunitiesInfoDto,
+  //     instituteId,
+  //   );
+  // }
 
-  /** adds opportunites in bulk to to do for students
-  *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
-  *  @param {userId} string user id
-  * @returns {Object} status code and message
-  */
-  @hasRoles(Role.Student)
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('bulk/edit/student')
-  async bulkEditOpportunitiesStudent(
-    @Request() req,
-    @Body('opportunities') opportunities: string[],
-    @Body('instituteId') instituteId: string,
-  ): Promise<BasicResponse> {
-    return await this.opportunityService.bulkEditOpportunitiesStudent(
-      req.user.id,
-      opportunities,
-      instituteId,
-    );
-  }
+  // /** adds opportunites in bulk to to do for students
+  // *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
+  // *  @param {userId} string user id
+  // * @returns {Object} status code and message
+  // */
+  // @hasRoles(Role.Student)
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post('bulk/edit/student')
+  // async bulkEditOpportunitiesStudent(
+  //   @Request() req,
+  //   @Body('opportunities') opportunities: string[],
+  //   @Body('instituteId') instituteId: string,
+  // ): Promise<BasicResponse> {
+  //   return await this.opportunityService.bulkEditOpportunitiesStudent(
+  //     req.user.id,
+  //     opportunities,
+  //     instituteId,
+  //   );
+  // }
 
-  // LEFT
-  /** adds opportunites in bulk to to do for otherss
-  *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
-  *  @param {userId} string user id
-  * @returns {Object} status code and message
-  */
-   @hasRoles(
-    Role.Parent,
-    Role.Advisor,
-    Role.Faculty,
-    Role.Administrator,
-  )
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('bulk/edit/others')
-  async bulkEditOpportunitiesOthers(
-    @Request() req,
-    @Body() opportunitiesInfoDto: OpportunitiesInfoDto[],
-    @Body('assigneeId') assigneeId: string,
-    @Body('instituteId') instituteId: string,
-  ) {
-    return await this.opportunityService.bulkEditOpportunitiesOthers(
-      req.user.id,
-      assigneeId,
-      opportunitiesInfoDto,
-      instituteId,
-    );
-  }
+  // // LEFT
+  // /** adds opportunites in bulk to to do for otherss
+  // *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
+  // *  @param {userId} string user id
+  // * @returns {Object} status code and message
+  // */
+  //  @hasRoles(
+  //   Role.Parent,
+  //   Role.Advisor,
+  //   Role.Faculty,
+  //   Role.Administrator,
+  // )
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post('bulk/edit/others')
+  // async bulkEditOpportunitiesOthers(
+  //   @Request() req,
+  //   @Body() opportunitiesInfoDto: OpportunitiesInfoDto[],
+  //   @Body('assigneeId') assigneeId: string,
+  //   @Body('instituteId') instituteId: string,
+  // ) {
+  //   return await this.opportunityService.bulkEditOpportunitiesOthers(
+  //     req.user.id,
+  //     assigneeId,
+  //     opportunitiesInfoDto,
+  //     instituteId,
+  //   );
+  // }
 
   // >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>> V2 APIS >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
 
@@ -366,112 +367,108 @@ export class OpportunityController {
     );
   }
 
-  // /* API for suggesting edit of a Global Student Opportunity */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('/edit/global')
-  // async suggestingEditGlobalOpportunity(
-  //   @Request() req,
-  //   @Body('opportunitiesInfoDto') opportunitiesInfoDto: OpportunitiesInfoDto,
-  //   @Body('opportunityId') opportunityId: string,
-  // ): Promise<any> {
-  //   return await this.opportunityService.EditGlobalOpportunity(
-  //     req.user.id,
-  //     opportunityId,
-  //     opportunitiesInfoDto,
-  //     req.user.RecordTypeName,
-  //   );
-  // }
+  /* API for suggesting edit of a Global Student Opportunity */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/edit/global')
+  async suggestingEditGlobalOpportunity(
+    @Request() req,
+    @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
+    @Body('opportunityId') opportunityId: string,
+    @Body('instituteId') instituteId: string,
+  ): Promise<any> {
+    return await this.opportunityService.EditGlobalOpportunity(
+      req.user.id,
+      req.user.recordTypeName,
+      opportunityId,
+      opportunitiesInfoDto,
+      instituteId
+    );
+  }
 
-  // /* API for suggesting edit of a Global Student Opportunity */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('/edit/draft')
-  // async suggestingEditDraftOpportunity(
-  //   @Request() req,
-  //   @Body('opportunityId') opportunityId: string,
-  //   @Body('opportunitiesInfoDto') opportunitiesInfoDto: draftInfoDto,
-  //   @Body('assignees') assignees: string[],
-  //   @Body('InstituteId') InstituteId: string,
-  // ): Promise<any> {
-  //   return await this.opportunityService.EditDraftOpportunity(
-  //     req.user.id,
-  //     opportunityId,
-  //     opportunitiesInfoDto,
-  //     assignees,
-  //     InstituteId,
-  //   );
-  // }
+  /* API for suggesting edit of a Global Student Opportunity */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/edit/draft')
+  async suggestingEditDraftOpportunity(
+    @Request() req,
+    @Body() opportunitiesInfoDto: draftInfoDto,
+    @Body('opportunityId') opportunityId: string,
+    @Body('instituteId') instituteId: string,
+  ): Promise<any> {
+    return await this.opportunityService.EditDraftOpportunity(
+      req.user.id,
+      opportunityId,
+      opportunitiesInfoDto,
+      instituteId,
+    );
+  }
 
-  // /** creates draft opportunity
-  //  *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
-  //  *  @param {userId} string user id
-  //  * @returns {Object} status code and message
-  //  */
-  // @hasRoles(
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  //   Role.Administrator,
-  //   Role.Student,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('draft')
-  // async CreateDraftOpportunity(
-  //   @Request() req,
-  //   @Body('opportunitiesInfoDto') opportunitiesInfoDto: draftInfoDto,
-  //   @Body('assignees') assignees: string[],
-  //   @Body('InstituteId') InstituteId: string,
-  // ): Promise<BasicResponse> {
-  //   return await this.opportunityService.CreateDraftOpportunity(
-  //     opportunitiesInfoDto,
-  //     req.user.id,
-  //     assignees,
-  //     InstituteId,
-  //     req.user.RecordTypeName,
-  //   );
-  // }
+  /** creates draft opportunity
+   *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
+   *  @param {userId} string user id
+   * @returns {Object} status code and message
+   */
+  @hasRoles(
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+    Role.Student,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('draft')
+  async CreateDraftOpportunity(
+    @Request() req,
+    @Body() opportunitiesInfoDto: draftInfoDto,
+    @Body('instituteId') instituteId: string,
+  ): Promise<BasicResponse> {
+    return await this.opportunityService.CreateDraftOpportunity(
+      opportunitiesInfoDto,
+      req.user.id,
+      req.user.recordTypeName,
+      instituteId
+    );
+  }
 
-  // // Create an API to change the status of a draft opportunity to live (Available / In Review)
-  // @hasRoles(
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  //   Role.Administrator,
-  //   Role.Student,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Patch('draft/live')
-  // async setDraftOpportunityStatus(
-  //   @Request() req,
-  //   @Body('opportunityId') opportunityId: string,
-  //   @Body('opportunitiesInfoDto') opportunitiesInfoDto: draftInfoDto,
-  //   @Body('assignees') assignees: string[],
-  //   @Body('InstituteId') InstituteId: string,
-  // ) {
-  //   return await this.opportunityService.SetDraftOpportunityStatus(
-  //     opportunityId,
-  //     opportunitiesInfoDto,
-  //     assignees,
-  //     InstituteId,
-  //     req.user.id,
-  //     req.user.RecordTypeName,
-  //   );
-  // }
+  // Create an API to change the status of a draft opportunity to live (Available / In Review)
+  @hasRoles(
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+    Role.Student,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('draft/live')
+  async setDraftOpportunityStatus(
+    @Request() req,
+    @Body('opportunityId') opportunityId: string,
+    @Body() opportunitiesInfoDto: draftInfoDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.SetDraftOpportunityStatus(
+      opportunityId,
+      opportunitiesInfoDto,
+      req.user.id,
+      req.user.recordTypeName,
+      instituteId
+    );
+  }
 
   // /** gets recipients
   //  *  @returns {Object} status code and message and recipient list
@@ -487,7 +484,7 @@ export class OpportunityController {
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Get('recipients')
   // async getRecipients(@Request() req): Promise<InstituteDataResponse> {
-  //   return await this.opportunitiesService.getAllRecipients(
+  //   return await this.opportunityService.getAllRecipients(
   //     req.user.id,
   //     req.user.RecordTypeName,
   //   );
@@ -510,173 +507,188 @@ export class OpportunityController {
   //   @Request() req,
   //   @Param('opportunityId') opportunityId: string,
   // ): Promise<any> {
-  //   return await this.opportunitiesService.getOppShareRecipients(
+  //   return await this.opportunityService.getOppShareRecipients(
   //     req.user.id,
   //     req.user.RecordTypeName,
   //     opportunityId,
   //   );
   // }
 
-  // /** gets opportunity detail
-  //  *  @param {userId} string user id
-  //  *  @returns {Object} status code and message and opportunity information
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('detail/:id')
-  // async getopportunity(
-  //   @Request() req,
-  //   @Param('id') id,
-  // ): Promise<DetailOpportunity> {
-  //   return await this.opportunitiesService.getOpportunityDetail(id);
-  // }
+  /** gets opportunity detail
+   *  @param {userId} string user id
+   *  @returns {Object} status code and message and opportunity information
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('detail/:id')
+  async getopportunity(
+    @Request() req,
+    @Param('id') id,
+    @Query('instituteId') instituteId: string, 
+  ): Promise<any> {
+    return await this.opportunityService.getOpportunityDetail(id, instituteId);
+  }
 
-  // /** gets modification detail
-  //  *  @param {userId} string user id
-  //  *  @returns {Object} status code and message and opportunity information
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('modification/:modificationId')
-  // async getModification(
-  //   @Request() req,
-  //   @Param('modificationId') modificationId,
-  // ): Promise<DetailOpportunity> {
-  //   return await this.opportunitiesService.getModificationDetail(
-  //     req.user.id,
-  //     modificationId,
-  //   );
-  // }
+  /** gets modification detail
+   *  @param {userId} string user id
+   *  @returns {Object} status code and message and opportunity information
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('modification/:modificationId')
+  async getModification(
+    @Request() req,
+    @Param('modificationId') modificationId,
+    @Query('instituteId') instituteId: string,
+  ): Promise<any> {
+    return await this.opportunityService.getModificationDetail(
+      req.user.id,
+      modificationId,
+      instituteId
+    );
+  }
 
-  // /** Removal Cancel
-  //  *  @param {userId} string user id
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('removal/cancel/:opportunityId')
-  // async removalCancel(@Request() req, @Param('opportunityId') opportunityId) {
-  //   return await this.opportunitiesService.removalCancel(
-  //     req.user.id,
-  //     opportunityId,
-  //   );
-  // }
+  /** Removal Cancel
+   *  @param {userId} string user id
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('removal/cancel/:opportunityId')
+  async removalCancel(
+    @Request() req, 
+    @Param('opportunityId') opportunityId: string, 
+    @Body('instituteId') instituteId: string
+  ) {
+    return await this.opportunityService.removalCancel(
+      req.user.id,
+      opportunityId,
+      instituteId
+    );
+  }
 
-  // /** Modification Cancel
-  //  *  @param {userId} string user id
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('modification/cancel/:opportunityId')
-  // async modificationCancel(
-  //   @Request() req,
-  //   @Param('opportunityId') opportunityId,
-  // ) {
-  //   return await this.opportunitiesService.modificationCancel(
-  //     req.user.id,
-  //     opportunityId,
-  //   );
-  // }
+  /** Modification Cancel
+   *  @param {userId} string user id
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('modification/cancel/:opportunityId')
+  async modificationCancel(
+    @Request() req,
+    @Param('opportunityId') opportunityId,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.modificationCancel(
+      req.user.id,
+      opportunityId,
+      instituteId
+    );
+  }
 
-  // /** gets comments based on opportunity
-  //  *  @param {id} string opportunity id
-  //  *  @returns {Object} status code and message and opportunity comments list
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('comments/:id')
-  // async getcomments(@Request() req, @Param('id') id): Promise<AllComments> {
-  //   console.log(`id`, id);
-  //   return await this.opportunitiesService.getOpportunityComments(
-  //     req.user.id,
-  //     req.user.RecordTypeName,
-  //     id,
-  //   );
-  // }
+  /** gets comments based on opportunity
+   *  @param {id} string opportunity id
+   *  @returns {Object} status code and message and opportunity comments list
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('comments/:id')
+  async getcomments(@Request() req, @Param('id') id: string, @Query('instituteId') instituteId: string,): Promise<any> {
+    console.log(`id`, id);
+    return await this.opportunityService.getOpportunityComments(
+      req.user.id,
+      req.user.recordTypeName,
+      id,
+      instituteId
+    );
+  }
 
-  // /** creates comment on opportunity
-  //  *  @param {id} string opportunity id and commentsDto
-  //  *  @Returns status code and message
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('comment')
-  // async createComment(
-  //   @Request() req,
-  //   @Body('commentsDto') commentsDto: CommentsDto,
-  // ): Promise<BasicResponse> {
-  //   return await this.opportunitiesService.createOpportunityComment(
-  //     req.user.id,
-  //     req.user.RecordTypeName,
-  //     commentsDto,
-  //   );
-  // }
+  /** creates comment on opportunity
+   *  @param {id} string opportunity id and commentsDto
+   *  @Returns status code and message
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Observer,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('comment')
+  async createComment(
+    @Request() req,
+    @Body() commentsDto: CommentsDto,
+    @Body('instituteId') instituteId: string,
+  ): Promise<BasicResponse> {
+    return await this.opportunityService.createOpportunityComment(
+      req.user.id,
+      req.user.recordTypeName,
+      commentsDto,
+      instituteId,
+    );
+  }
 
-  // /** adds opportunites in bulk to recommendations
-  //  *  @param {opportunities} string[] array of opportunity IDs
-  //  *  @param {userId} string user id
-  //  * @param {assigneeId} string assignee id
-  //  * @returns {Object} status code and message
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('bulk/save')
-  // async bulkAddOpportunitiesToConsiderations(
-  //   @Request() req,
-  //   @Body('opportunities') opportunities: string[],
-  // ) {
-  //   return await this.opportunitiesService.bulkAddOpportunitiesToConsiderations(
-  //     req.user.id,
-  //     opportunities,
-  //   );
-  // }
+  /** adds opportunites in bulk to recommendations
+   *  @param {opportunities} string[] array of opportunity IDs
+   *  @param {userId} string user id
+   * @param {assigneeId} string assignee id
+   * @returns {Object} status code and message
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('bulk/save')
+  async bulkAddOpportunitiesToConsiderations(
+    @Request() req,
+    @Body('opportunities') opportunities: string[],
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.bulkAddOpportunitiesToConsiderations(
+      req.user.id,
+      opportunities,
+      instituteId,
+    );
+  }
 
   // /** adds opportunites in bulk to to do
   //  *  @param {opportunities} string[] array of the opportunity Ids
@@ -687,8 +699,8 @@ export class OpportunityController {
   // @hasRoles(
   //   Role.Administrator,
   //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
+  //   Role.Advisor,
+  //   Role.Faculty,
   //   Role.Student,
   // )
   // @UseGuards(JwtAuthGuard, RolesGuard)
@@ -696,10 +708,12 @@ export class OpportunityController {
   // async bulkAddConsiderationsToToDo(
   //   @Request() req,
   //   @Body('considerations') opportunities: string[],
+  //   @Body('instituteId') instituteId: string,
   // ) {
-  //   return await this.opportunitiesService.bulkAddConsiderationToToDo(
+  //   return await this.opportunityService.bulkAddConsiderationToToDo(
   //     req.user.id,
   //     opportunities,
+  //     instituteId
   //   );
   // }
 
@@ -712,8 +726,8 @@ export class OpportunityController {
   // @hasRoles(
   //   Role.Administrator,
   //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
+  //   Role.Advisor,
+  //   Role.Faculty,
   //   Role.Student,
   // )
   // @UseGuards(JwtAuthGuard, RolesGuard)
@@ -722,11 +736,13 @@ export class OpportunityController {
   //   @Request() req,
   //   @Body('opportunityIds') opportunityIds: string[],
   //   @Body('assigneesIds') assigneesIds: string[],
+  //   @Body('instituteId') instituteId: string,
   // ) {
-  //   return await this.opportunitiesService.shareConsideration(
+  //   return await this.opportunityService.shareConsideration(
   //     req.user.id,
   //     opportunityIds,
   //     assigneesIds,
+  //     instituteId
   //   );
   // }
 
@@ -737,8 +753,8 @@ export class OpportunityController {
   // @hasRoles(
   //   Role.Administrator,
   //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
+  //   Role.Advisor,
+  //   Role.Faculty,
   //   Role.Student,
   // )
   // @UseGuards(JwtAuthGuard, RolesGuard)
@@ -746,9 +762,11 @@ export class OpportunityController {
   // async bulkDismissConsideration(
   //   @Request() req,
   //   @Body('considerations') considerations: string[],
+  //   @Body('instituteId') instituteId: string,
   // ) {
-  //   return await this.opportunitiesService.bulkDismissConsiderations(
+  //   return await this.opportunityService.bulkDismissConsiderations(
   //     considerations,
+  //     instituteId
   //   );
   // }
 
@@ -759,15 +777,15 @@ export class OpportunityController {
   // @hasRoles(
   //   Role.Administrator,
   //   Role.Parent,
-  //   Role.advisor,
+  //   Role.Advisor,
   //   Role.Student,
-  //   Role.faculty,
+  //   Role.Faculty,
   //   Role.Observer,
   // )
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Get('contactsList')
   // async getContactsList(@Request() req) {
-  //   return await this.opportunitiesService.getContactsList(
+  //   return await this.opportunityService.getContactsList(
   //     req.user.id,
   //     req.user.RecordTypeName,
   //   );
@@ -782,20 +800,22 @@ export class OpportunityController {
   //   Role.Student,
   //   Role.Administrator,
   //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
+  //   Role.Advisor,
+  //   Role.Faculty,
   //   Role.Observer,
   // )
   // @UseGuards(JwtAuthGuard, RolesGuard)
   // @Post('bulk/opp/todo')
   // async bulkOpportunitiesTodo(
   //   @Request() req,
-  //   @Body('opportunityTodoDto') opportunityTodoDto: OpportunityTodoDto,
+  //   @Body() opportunityTodoDto: OpportunityTodoDto,
+  //   @Body('instituteId') instituteId: string,
   // ): Promise<any> {
-  //   return await this.opportunitiesService.bulkOpportunitiestoTodo(
+  //   return await this.opportunityService.bulkOpportunitiestoTodo(
   //     req.user.id,
   //     req.user.RecordTypeName,
   //     opportunityTodoDto,
+  //     instituteId
   //   );
   // }
 

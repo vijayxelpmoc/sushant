@@ -24,6 +24,14 @@ export class SFFieldsService {
     return found;
   }
 
+  async deleteAll() {
+    for (let id=2404; id<=2462; id++) {
+      console.log('id', id);
+      await this.sfFieldsRepository.delete({id});
+    }
+    return 'Done';
+  }
+
   async create(data: CreateSFFieldDto[]): Promise<any> {
     for (const entry of data) {
       await this.sfFieldsRepository.create(entry).save();

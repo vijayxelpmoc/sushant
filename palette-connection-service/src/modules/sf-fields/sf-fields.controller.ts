@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Param, Patch, Post } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post } from '@nestjs/common';
 
 import { CreateSFFieldDto } from './dto/create-sf-field.dto';
 import { SFFieldEntity } from './sf-field.entity';
@@ -18,6 +18,11 @@ export class SFFieldsController {
   @Get('/:id')
   async getById(@Param('id') id: number): Promise<SFFieldEntity> {
     return await this.sffieldsService.getById(id);
+  }
+
+  @Delete('del')
+  async deleteFields(): Promise<any> {
+    return await this.sffieldsService.deleteAll();
   }
 
   @Post()
