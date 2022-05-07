@@ -454,7 +454,7 @@ export class OpportunityController {
     Role.Student,
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch('draft/live')
+  @Post('draft/live')
   async setDraftOpportunityStatus(
     @Request() req,
     @Body('opportunityId') opportunityId: string,
@@ -626,8 +626,11 @@ export class OpportunityController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('comments/:id')
-  async getcomments(@Request() req, @Param('id') id: string, @Query('instituteId') instituteId: string,): Promise<any> {
-    console.log(`id`, id);
+  async getcomments(
+    @Request() req, 
+    @Param('id') id: string, 
+    @Query('instituteId') instituteId: string
+  ): Promise<any> {
     return await this.opportunityService.getOpportunityComments(
       req.user.id,
       req.user.recordTypeName,
