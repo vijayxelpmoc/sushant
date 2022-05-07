@@ -24,28 +24,28 @@ import { UserNetworkService } from './user-network.service';
 export class UserNetworkController {
   constructor(private readonly userNetworkService: UserNetworkService) {}
 
-  // @hasRoles(
-  //   Role.Parent,
-  //   Role.Student,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  //   Role.Administrator,
-  //   Role.Observer,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('contactsList')
-  // async getContactsList(
-  //   @Request() req,
-  //   @Query('instituteId') instituteId: string,
-  // ) {
-  //   console.log(instituteId);
+  @hasRoles(
+    Role.Parent,
+    Role.Student,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+    Role.Observer,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('contactsList')
+  async getContactsList(
+    @Request() req,
+    @Query('instituteId') instituteId: string,
+  ) {
+    console.log(instituteId);
 
-  //   return await this.userNetworkService.getContactsList(
-  //     req.user.id,
-  //     req.user.recordTypeName,
-  //     instituteId,
-  //   );
-  // }
+    return await this.userNetworkService.getContactsList(
+      req.user.id,
+      req.user.recordTypeName,
+      instituteId,
+    );
+  }
 
   /** gets recipients
    *  @returns {Object} status code and message and recipient list
