@@ -2176,8 +2176,11 @@ export class OpportunityService {
             delList.push(v);
           }
           
-          // BULK DELETE HAS TO BE FIXED
+          console.log("delList", delList);
+          
           const del = await this.sfService.models.opportunities.delete(delList, instituteId);
+          console.log('del', del);
+          
         }
       }
 
@@ -2408,6 +2411,8 @@ export class OpportunityService {
               Organization: InstituteId,
               Role: 'Advisor',
             },
+            {},
+            instituteId
           );
           notificationTitle = `Opportunity ${opportunityDetails[0].Account_Name}`;
           notificationMsg = `${
@@ -2455,6 +2460,8 @@ export class OpportunityService {
               Organization: InstituteId,
               Role: 'Admin',
             },
+            {},
+            instituteId
           );
           notificationTitle = `Opportunity ${opportunityDetails[0].Account_Name}`;
           notificationMsg = `${
@@ -2507,72 +2514,74 @@ export class OpportunityService {
    *  @param {userId} string user id
    *  @returns {Object} status code and message and opportunity information
    */
-   async getOpportunityDetail(id: string, instituteId): Promise<any> {
+   async getOpportunityDetail(opportunityId: string, instituteId): Promise<any> {
     const res = await this.sfService.models.accounts.get('*', {
-      Id: id,
+      Id: opportunityId,
     }, {}, instituteId);
-
+    
     if (res.length === 0) {
       throw new NotFoundException();
     }
 
     let filteredData = null;
-    res.map(async opp => {
-      if (opp.opportunityScope === 'Discrete') {
-        const assignees = await this.sfService.models.opportunities.get(
-          'Contact.Id, Contact.Name, Contact.Profile_Picture',
-          { Account: res[0]['Id'] },
-        );
-        const assigneesList = [];
-        assignees.map(assignee => {
-          const oppassignee = {
-            Id: assignee.Contact.Id,
-            name: assignee.Contact.Name,
-            profilePicture: assignee.Contact.Profile_Picture,
-            isAssignee: true,
-          };
-          assigneesList.push(oppassignee);
-        });
-        filteredData = {
-          Id: res[0]['Id'],
-          eventName: res[0]['Account_Name'],
-          description: res[0]['Description'],
-          venue: res[0]['Venue'],
-          website: res[0]['Website'],
-          eventDate: res[0]['Start_Date']
-            ? new Date(res[0]['Start_Date'])
-            : null,
-          phone: res[0]['Phone'],
-          type: res[0]['Type'] || 'Others',
-          visibility: res[0]['Visibility'],
-          expirationDate: res[0]['End_Date']
-            ? new Date(res[0]['End_Date'])
-            : null,
-          status: res[0]['Approval_Status'],
-          assignees: assigneesList,
+    if (res[0].opportunityScope === 'Discrete') {
+      const assignees = await this.sfService.models.opportunities.get(
+        'Contact.Id, Contact.Name, Contact.Profile_Picture',
+        { Account: opportunityId },
+        {},
+        instituteId
+      );
+      
+      const assigneesList = [];
+      assignees.map(assignee => {
+        const oppassignee = {
+          Id: assignee.Contact.Id,
+          name: assignee.Contact.Name,
+          profilePicture: assignee.Contact.Profile_Picture,
+          isAssignee: true,
         };
-      } else {
-        // global opportunity
-        filteredData = {
-          Id: res[0]['Id'],
-          eventName: res[0]['Account_Name'],
-          description: res[0]['Description'],
-          venue: res[0]['Venue'],
-          website: res[0]['Website'],
-          eventDate: res[0]['Start_Date']
-            ? new Date(res[0]['Start_Date'])
-            : null,
-          phone: res[0]['Phone'],
-          type: res[0]['Type'] || 'Others',
-          visibility: res[0]['Visibility'],
-          expirationDate: res[0]['End_Date']
-            ? new Date(res[0]['End_Date'])
-            : null,
-          status: res[0]['Approval_Status'],
-          assignees: null,
-        };
-      }
-    });
+        assigneesList.push(oppassignee);
+      });
+      filteredData = {
+        Id: res[0]['Id'],
+        eventName: res[0]['Account_Name'],
+        description: res[0]['Description'],
+        venue: res[0]['Venue'],
+        website: res[0]['Website'],
+        eventDate: res[0]['Start_Date']
+          ? new Date(res[0]['Start_Date'])
+          : null,
+        phone: res[0]['Phone'],
+        type: res[0]['Type'] || 'Others',
+        visibility: res[0]['Visibility'],
+        expirationDate: res[0]['End_Date']
+          ? new Date(res[0]['End_Date'])
+          : null,
+        status: res[0]['Approval_Status'],
+        assignees: assigneesList,
+      };
+    } else {
+      // global opportunity
+      filteredData = {
+        Id: res[0]['Id'],
+        eventName: res[0]['Account_Name'],
+        description: res[0]['Description'],
+        venue: res[0]['Venue'],
+        website: res[0]['Website'],
+        eventDate: res[0]['Start_Date']
+          ? new Date(res[0]['Start_Date'])
+          : null,
+        phone: res[0]['Phone'],
+        type: res[0]['Type'] || 'Others',
+        visibility: res[0]['Visibility'],
+        expirationDate: res[0]['End_Date']
+          ? new Date(res[0]['End_Date'])
+          : null,
+        status: res[0]['Approval_Status'],
+        assignees: null,
+      };
+    }
+
     return {
       statusCode: 200,
       message: 'OpportunityDetail',
@@ -2585,9 +2594,9 @@ export class OpportunityService {
     modificationId: string,
     instituteId: string
   ): Promise<any> {
-    // Id, Account_Name, Description, Venue, Website__c, Start_Date, Phone, Category, End_Date, Status
+    // Id, Account_Name, Description, Venue, Website, Start_Date, Phone, Category, End_Date, Status
     const getModification = await this.sfService.models.modifications.get(
-      'Opportunity_Id.Listed_by, *',
+      'Opportunity_Id.Listed_by, Id, Account_Name, Description, Venue, Website, Start_Date, Phone, Category, End_Date, Status',
       {
         Id: modificationId,
       },
@@ -2596,7 +2605,7 @@ export class OpportunityService {
     );
 
     if (
-      getModification.length <= 0 ||
+      getModification.length == 0 ||
       getModification[0].Opportunity_Id.Listed_by !== userId
     ) {
       throw new NotFoundException(`No Modification Request Found!`);
@@ -2607,7 +2616,7 @@ export class OpportunityService {
       Name: getModification[0].Account_Name,
       description: getModification[0].Description,
       venue: getModification[0].Venue,
-      website: getModification[0].Website__c,
+      website: getModification[0].Website,
       eventDate: getModification[0].Start_Date
         ? new Date(getModification[0].Start_Date)
         : null,
@@ -2633,6 +2642,7 @@ export class OpportunityService {
   ) {
     const getOpportunity = await this.sfService.models.accounts.get('Id', {
         Listed_by: userId,
+        Removal_Status: 'In Review',
       }, 
       {}, 
       instituteId
@@ -2644,10 +2654,7 @@ export class OpportunityService {
       }
     }
     if (isOpportunityExist === 0) {
-      return {
-        statusCode: 404,
-        message: 'No opportunity with given userId',
-      };
+      throw new NotFoundException('No removal request found');
     }
     await this.sfService.models.accounts.update({
       Removal_Status: 'Canceled',
@@ -2673,7 +2680,7 @@ export class OpportunityService {
     await this.sfService.models.modifications.update({
       Status: 'Canceled',
     }, modificationId , instituteId);
-    await this.sfService.models.accounts.get({
+    await this.sfService.models.accounts.update({
       Modification: null,
     }, opportunityId, instituteId);
     return {
@@ -2709,7 +2716,7 @@ export class OpportunityService {
       );
       // No comments
       if (commentslist.length === 0) {
-        throw new NotFoundException('No Comments Available');
+        throw new NotFoundException('No comments found');
       }
       const Status_At = new Date(opportunity[0]['Status_At']);
       const comments: any = [];
@@ -2772,6 +2779,8 @@ export class OpportunityService {
       {},
       instituteId
     );
+    console.log('opportunity', opportunity);
+    
     // not found opportunity.
     if (opportunity.length === 0) {
       throw new NotFoundException('Opportunity not found!');
@@ -2782,7 +2791,7 @@ export class OpportunityService {
     // if opportunity is Approved.
     //  commentType = Approval.
     // else commentType = Generic.
-    if (opportunity[0]['Approval_Status__c'] === 'Approved') {
+    if (opportunity[0]['Approval_Status'] === 'Approved') {
       // create comment.
       await this.sfService.models.opportunityComments.create({
         Comment: comment,
@@ -2865,11 +2874,12 @@ export class OpportunityService {
             Title: notificationTitle,
             Type: 'New Comment',
             Opportunity: id,
-            Contact: opportunity[0].Listed_by__c,
+            Contact: RecordTypeName === 'Administrator' ? userId : opportunity[0].Listed_by,
             Notification_By: userId,
             Created_at: new Date(),
             Is_Read: false,
           }, instituteId);
+          // seperate notification for diff users >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
         }
         return {
           statusCode: 201,
