@@ -84,6 +84,22 @@ functions:
           method: PATCH
           path: opportunity/edit/discrete
           cors: true
+      - http:  
+          method: PATCH
+          path: opportunity/visibility
+          cors: true
+      - http:  
+          method: PATCH
+          path: opportunity/delete
+          cors: true
+      - http:  
+          method: PATCH
+          path: opportunity/edit/global
+          cors: true
+      - http:  
+          method: POST
+          path: opportunity/draft
+          cors: true
 
 
 
