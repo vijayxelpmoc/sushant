@@ -21,6 +21,7 @@ export interface AdvisorBEResponse {
   website_Title: string;
   github_link: string;
   linkedin_link: string;
+  accountName: string;
 }
 
 interface Attributes {
@@ -32,32 +33,32 @@ export interface AdvisorInstituteName {
   attributes: Attributes;
   Id: string;
   Name: string;
-  program_logo__c: string;
+  program_logo: string;
 }
 
 export interface SFAdvisorContact {
   attributes: Attributes;
   Id: string;
   Name: string;
-  prod_uuid__c: string;
-  dev_uuid__c: string;
+  prod_uuid: string;
+  dev_uuid: string;
   Phone: string;
-  Palette_Email__c: string;
+  Palette_Email: string;
   MailingCity: string;
   MailingCountry: string;
   MailingState: string;
   MailingStreet: string;
   MailingPostalCode: string;
-  Facebook__c: string;
-  Whatsapp__c: string;
-  Instagram__c: string;
-  Website__c: string;
-  WebsiteTitle__c: string;
-  Github__c: string;
-  LinkedIn_URL__c: string;
-  Designation__c: string;
-  AccountId: string;
-  Profile_Picture__c: string;
+  Facebook: string;
+  Whatsapp: string;
+  Instagram: string;
+  Website: string;
+  Website_Title: string;
+  Github: string;
+  LinkedIn_URL: string;
+  Designation: string;
+  Account_Name: string;
+  Profile_Picture: string;
 }
 
 export interface AdvisorUpdateResponse {
@@ -82,30 +83,30 @@ export interface AdvisorStudents {
 }
 
 interface hedContactr {
+  Id: string;
   attributes: Attributes;
   Name: string;
 }
 
-interface hedRelatedContactr {
+interface hedRelated_Contactr {
   attributes: Attributes;
   Id: string;
   Name: string;
-  Grade__c: string;
-  Primary_Educational_Institution__c: string;
-  Profile_Picture__c: string;
-  IsRegisteredOnPalette__c: boolean;
-  Palette_Email__c: string;
-  Is_Deactive__c: boolean;
+  Grade: string;
+  Primary_Educational_Institution: string;
+  Profile_Picture: string;
+  IsRegisteredOnPalette: boolean;
+  Palette_Email: string;
+  Is_Deactive: boolean;
 }
 
 export interface advisorStudentRelation {
   attributes: Attributes;
   Id: string;
   Name: string;
-  hed__Contact__c: string;
-  hed__Contact__r: hedContactr;
-  hed__RelatedContact__r: hedRelatedContactr;
-  hed__Type__c: string;
+  Contact: hedContactr;
+  Related_Contact: hedRelated_Contactr;
+  Type: string;
 }
 
 export interface StudentResponse {
