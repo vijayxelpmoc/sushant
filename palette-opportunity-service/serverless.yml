@@ -111,6 +111,7 @@ functions:
             parameters:
               paths: 
                 opportunityId: true
+          cors: true
       - http:  
           method: PATCH
           path: opportunity/edit/draft
