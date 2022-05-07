@@ -111,6 +111,63 @@ functions:
             parameters:
               paths: 
                 opportunityId: true
+      - http:  
+          method: PATCH
+          path: opportunity/edit/draft
+          cors: true
+      - http:  
+          method: POST
+          path: opportunity/draft
+          cors: true
+      - http:  
+          method: POST
+          path: opportunity/draft/live
+          cors: true
+      - http:  
+          method: GET
+          path: opportunity/detail/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
+          cors: true
+      - http:  
+          method: GET
+          path: opportunity/modification/{modificationId}
+          request: 
+            parameters:
+              paths: 
+                modificationId: true
+          cors: true
+      - http:  
+          method: POST
+          path: opportunity/removal/cancel/{opportunityId}
+          request: 
+            parameters:
+              paths: 
+                opportunityId: true
+          cors: true
+      - http:  
+          method: POST
+          path: opportunity/modification/cancel/{opportunityId}
+          request: 
+            parameters:
+              paths: 
+                opportunityId: true
+          cors: true
+      - http:  
+          method: GET
+          path: opportunity/comments/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
+          cors: true
+      - http:  
+          method: POST
+          path: opportunity/comment/
+          cors: true
+
 
 
 
