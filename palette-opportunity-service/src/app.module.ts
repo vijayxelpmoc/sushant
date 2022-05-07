@@ -7,6 +7,7 @@ import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { OpportunityModule } from './modules/opportunity/opportunity.module';
 import { SfModule } from '@gowebknot/palette-salesforce-service';
+import { UserNetworkModule } from './modules/user-network/user-network.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { SfModule } from '@gowebknot/palette-salesforce-service';
     SfModule.forRoot(),
     WrapperModule,
     OpportunityModule,
+    UserNetworkModule,
   ],
   controllers: [AppController],
   providers: [AppService],

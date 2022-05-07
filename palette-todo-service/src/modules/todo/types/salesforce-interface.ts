@@ -7,13 +7,18 @@ export interface SFInstitute {
   attributes: Attributes;
   Id: string;
   Name: string;
-  Account: string;
-  Account__r: { Name: string };
+  Account: { Name: string };
 }
 
 export interface SFStudents {
   attributes: Attributes;
-  Id: string;
+  Id: {
+    attributes: Attributes;
+    Name: string;
+    Profile_Picture: string;
+    Palette_Email: string;
+    Is_Deactive: boolean;
+  };
   Name: string;
   Grade: string;
   Is_Deactive: boolean;
@@ -26,8 +31,7 @@ export interface SFStudents {
 
 export interface SFAdmins {
   attributes: Attributes;
-  Contact: string;
-  Contact__r: {
+  Contact: {
     attributes: Attributes;
     Name: string;
     Profile_Picture: string;
@@ -42,10 +46,9 @@ export interface SFMentors {
   Name: string;
   Account: string;
   Affiliation_Type: string;
-  Contact: string;
   Description: string;
   Role: string;
-  Contact__r: {
+  Contact: {
     attributes: Attributes;
     Id: string;
     Name: string;
@@ -86,28 +89,31 @@ export interface SFTask {
   Id: string;
   Group_Id: string;
   Archived: boolean;
-  Name: string;
-  Assignee: string;
-  Assignee__r: {
+  To_do: string;
+  Assignee?: {
+    Id: string;
     Name: string;
     Profile_Picture: string;
   };
   Complete_By: string;
   Description: string;
   Listed_by: string;
+  Status: string;
   Task_Status: string;
+  Todo_Scope: string;
   Created_at: string;
   Created_By: string;
   Type: string;
   Event_At: string;
   Event_Venue: string;
+  Opportunit_Id: string;
 }
 
 export interface SFResource {
   attributes: Attributes;
   Name: string;
   Todo: string;
-  Resource__r: {
+  Resource: {
     Id: string;
     attributes: Attributes;
     Resource_Name: string;
@@ -121,7 +127,7 @@ export interface SFEventResource {
   Id: string;
   Name: string;
   Event: string;
-  Resource__r: {
+  Resource: {
     attributes: Attributes;
     Resource_Name: string;
     URL: string;

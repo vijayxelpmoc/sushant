@@ -42,16 +42,16 @@ export class ActivitiesService {
   async getStudentActivities(studentId: string): Promise<ActivitiesResponse> {
     const paletteActivitiesDetail: SFPaletteActivityOrganization[] =
       await this.sfService.models.activities.get(
-        'Event__r.Id, Event__r.Name, Event__r.Venue, Event__r.Description, Event__r.Category, Event__r.Start_Date, Event__r.End_Date, Event__r.ShippingAddress, Event__r.Phone, Event__r.Website',
+        'Event.Id, Event.Name, Event.Venue, Event.Description, Event.Category, Event.Start_Date, Event.End_Date, Event.ShippingAddress, Event.Phone, Event.Website',
         {
           Contact: studentId,
           HasOptOut: false,
-          'Event__r.Start_Date': { $lt: Date.TODAY },
+          'Event.Start_Date': { $lt: Date.TODAY },
         },
       );
 
     const studentActivities: Activity[] = paletteActivitiesDetail.map((value) =>
-      getMappedActivityObject(value.Event__r),
+      getMappedActivityObject(value.Event),
     );
 
     return {
@@ -84,7 +84,7 @@ export class ActivitiesService {
   async getRecommendedActivities(activitiesIds: string[], userId: string) {
     const recommendedActivities: SFRecommendations[] =
       await this.sfService.models.recommendations.get(
-        'Id, Name, Assignee, Recommended_by, Recommended_by__r.Name, Recommended_by__r.Record_Type_Name, Event, Event__r.Name, Event__r.Description, Event__r.Start_Date, Event__r.End_Date, Event__r.Category, Event__r.Venue, Accepted',
+        'Id, Name, Assignee, Recommended_by, Recommended_by.Name, Recommended_by.Record_Type_Name, Event, Event.Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Accepted',
         {
           Assignee: userId,
           Event: activitiesIds,
@@ -95,8 +95,8 @@ export class ActivitiesService {
     const recommendedActivitiesResponse = {};
     recommendedActivities.map((activityId) => {
       // recommendedActivitiesResponse[activityId.Event] = false;
-      if (activityId.Recommended_by !== userId) {
-        recommendedActivitiesResponse[activityId.Event] = true;
+      if (activityId.Recommended_by.Name !== userId) {
+        recommendedActivitiesResponse[activityId.Event.Name] = true;
       }
     });
     return recommendedActivitiesResponse;
@@ -109,7 +109,7 @@ export class ActivitiesService {
   async getWishListedActivities(activitiesIds: string[], userId: string) {
     const wishListedActivities: SFRecommendations[] =
       await this.sfService.models.recommendations.get(
-        'Id, Name, Assignee, Recommended_by, Recommended_by__r.Name, Recommended_by__r.Record_Type_Name, Event, Event__r.Name, Event__r.Description, Event__r.Start_Date, Event__r.End_Date, Event__r.Category, Event__r.Venue, Accepted',
+        'Id, Name, Assignee, Recommended_by, Recommended_by.Name, Recommended_by.Record_Type_Name, Event, Event.Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Accepted',
         {
           Assignee: userId,
           Event: activitiesIds,
@@ -120,7 +120,7 @@ export class ActivitiesService {
 
     const wishListedActivitiesResponse = {};
     wishListedActivities.map((activityId) => {
-      wishListedActivitiesResponse[activityId.Event] = true;
+      wishListedActivitiesResponse[activityId.Event.Name] = true;
     });
     return wishListedActivitiesResponse;
   }
@@ -135,7 +135,7 @@ export class ActivitiesService {
   ): Promise<any> {
     const resources: SFEventResource[] =
       await this.sfService.models.resourceConnections.get(
-        'Id, Name, Event, Resource, Resource__r.Name, Resource__r.URL, Resource__r.Resource_Type',
+        'Id, Name, Event, Resource, Resource.Name, Resource.URL, Resource.Resource_Type',
         {
           Event: activitiesIds,
         },
@@ -145,9 +145,9 @@ export class ActivitiesService {
     const resourceConnectionsId = [];
     resources.map((resource) => {
       const resourcesObj = {
-        name: resource.Resource__r.Resource_Name,
-        url: resource.Resource__r.URL,
-        type: resource.Resource__r.Resource_Type,
+        name: resource.Resource.Resource_Name,
+        url: resource.Resource.URL,
+        type: resource.Resource.Resource_Type,
       };
       // if a record with a todo task is present then add the object into it or if not create one
       const hashResource = allResource[`${resource.Event}`];
@@ -352,7 +352,7 @@ export class ActivitiesService {
     // To get Participant List
     const activityAccountParticipant: SFActivityAccountParticipant[] =
       await this.sfService.models.activities.get(
-        'Contact__r.Id, Contact__r.Name',
+        'Contact.Id, Contact.Name',
         {
           Event: activityId,
           HasOptOut: false,
@@ -371,8 +371,8 @@ export class ActivitiesService {
 
     const participantsList: Participant[] = activityAccountParticipant.map(
       (value) => ({
-        id: value.Contact__r.Id,
-        name: value.Contact__r.Name,
+        id: value.Contact.Id,
+        name: value.Contact.Name,
       }),
     );
 

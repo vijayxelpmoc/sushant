@@ -130,3 +130,8 @@ functions:
               paths: 
                 studentid: true
           cors: true
+      - http:
+          method: PATCH
+          path: /todo/publish/draft
+          cors: true
+
