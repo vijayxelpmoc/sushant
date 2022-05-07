@@ -509,7 +509,6 @@ export class OpportunityService {
     let todoResponse = null;
     if (todoList.length > 0) {
       todoResponse = await this.sfService.models.todos.create(todoList[0], instituteId);
-      console.log('todoResponse', todoResponse);
     }
 
     if (delConsIds.length > 0) {
@@ -584,9 +583,7 @@ export class OpportunityService {
       { Created_at: -1 },
       instituteId,
     );
-    console.log('listedby', listedby);
     
-
     const allOpportunities = await this.sfService.models.opportunities.get('Contact, Account',
       {},
       {},
@@ -2178,8 +2175,9 @@ export class OpportunityService {
           for (const [k, v] of Object.entries(getOppAssigneesObj)) {
             delList.push(v);
           }
+          
           // BULK DELETE HAS TO BE FIXED
-          await this.sfService.models.opportunities.delete(delList, instituteId);
+          const del = await this.sfService.models.opportunities.delete(delList, instituteId);
         }
       }
 
@@ -2227,7 +2225,6 @@ export class OpportunityService {
       assignees,
       InstituteId,
     } = draftInfoDto;
-    console.log('destruct');
     
     if (RecordTypeName === 'Student') {
       if (InstituteId === '' && assignees.length === 0) {
@@ -2264,7 +2261,6 @@ export class OpportunityService {
         );
       }
     } else {
-      console.log('in else');
       
       const res = await this.sfService.models.accounts.create({
         Account_Name: eventTitle,
@@ -2298,7 +2294,6 @@ export class OpportunityService {
             Account: res['id'],
           });
         }
-        console.log('OppAssignees', OppAssignees);
         
         if (OppAssignees.length > 0) {
           // BULK CREATE FIX
