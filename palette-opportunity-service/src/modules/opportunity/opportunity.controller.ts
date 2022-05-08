@@ -18,7 +18,7 @@ import {
   SetDraftOpportunityStatusDto,
 } from './dtos/opportunities.dto';
 
-import { OpportunitiesInfoDto } from './dtos/opportunities.dto';
+import { OpportunitiesInfoDto, OpportunityTodoDto } from './dtos/opportunities.dto';
 import { OpportunityService } from './opportunity.service';
 import { BasicResponse } from './types/login-interface';
 import {
@@ -470,50 +470,6 @@ export class OpportunityController {
     );
   }
 
-  // /** gets recipients
-  //  *  @returns {Object} status code and message and recipient list
-  //  */
-  //  @hasRoles(
-  //   Role.Student,
-  //   // Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('recipients')
-  // async getRecipients(@Request() req): Promise<InstituteDataResponse> {
-  //   return await this.opportunityService.getAllRecipients(
-  //     req.user.id,
-  //     req.user.RecordTypeName,
-  //   );
-  // }
-
-  // /** gets recipients
-  //  *  @returns {Object} status code and message and recipient list
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   // Role.Observer,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.advisor,
-  //   Role.faculty,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('share/recipients/:opportunityId')
-  // async getShareRecipients(
-  //   @Request() req,
-  //   @Param('opportunityId') opportunityId: string,
-  // ): Promise<any> {
-  //   return await this.opportunityService.getOppShareRecipients(
-  //     req.user.id,
-  //     req.user.RecordTypeName,
-  //     opportunityId,
-  //   );
-  // }
-
   /** gets opportunity detail
    *  @param {userId} string user id
    *  @returns {Object} status code and message and opportunity information
@@ -693,134 +649,113 @@ export class OpportunityController {
     );
   }
 
-  // /** adds opportunites in bulk to to do
-  //  *  @param {opportunities} string[] array of the opportunity Ids
-  //  *  @param {userId} string user id
-  //  * @param {assigneeId} string assignee Id
-  //  * @returns {Object} status code and message
-  //  */
-  // @hasRoles(
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  //   Role.Student,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('add/todo')
-  // async bulkAddConsiderationsToToDo(
-  //   @Request() req,
-  //   @Body('considerations') opportunities: string[],
-  //   @Body('instituteId') instituteId: string,
-  // ) {
-  //   return await this.opportunityService.bulkAddConsiderationToToDo(
-  //     req.user.id,
-  //     opportunities,
-  //     instituteId
-  //   );
-  // }
+  /** adds opportunites in bulk to to do
+   *  @param {opportunities} string[] array of the opportunity Ids
+   *  @param {userId} string user id
+   * @param {assigneeId} string assignee Id
+   * @returns {Object} status code and message
+   */
+  @hasRoles(
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Student,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('add/todo')
+  async bulkAddConsiderationsToToDo(
+    @Request() req,
+    @Body('considerations') considerations: string[],
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.bulkAddConsiderationToToDo(
+      req.user.id,
+      considerations,
+      instituteId
+    );
+  }
 
-  // /** adds opportunites in bulk to recommendations in bulk
-  //  *  @param {opportunities} string[] array of the opportunity Ids
-  //  *  @param {userId} string user id
-  //  * @param {assigneeId} string assignee Id
-  //  * @returns {Object} status code and message
-  //  */
-  // @hasRoles(
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  //   Role.Student,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('share')
-  // async shareConsideration(
-  //   @Request() req,
-  //   @Body('opportunityIds') opportunityIds: string[],
-  //   @Body('assigneesIds') assigneesIds: string[],
-  //   @Body('instituteId') instituteId: string,
-  // ) {
-  //   return await this.opportunityService.shareConsideration(
-  //     req.user.id,
-  //     opportunityIds,
-  //     assigneesIds,
-  //     instituteId
-  //   );
-  // }
+  /** adds opportunites in bulk to recommendations in bulk
+   *  @param {opportunities} string[] array of the opportunity Ids
+   *  @param {userId} string user id
+   * @param {assigneeId} string assignee Id
+   * @returns {Object} status code and message
+   */
+  @hasRoles(
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Student,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('share')
+  async shareConsideration(
+    @Request() req,
+    @Body('opportunityIds') opportunityIds: string[],
+    @Body('assigneesIds') assigneesIds: string[],
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.shareConsideration(
+      req.user.id,
+      opportunityIds,
+      assigneesIds,
+      instituteId
+    );
+  }
 
-  // /** dismisses bulk recommendations
-  //  *  @param {considerations} string[] array of the opportunity Ids
-  //  * @returns {Object} status code and message
-  //  */
-  // @hasRoles(
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  //   Role.Student,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('dismiss')
-  // async bulkDismissConsideration(
-  //   @Request() req,
-  //   @Body('considerations') considerations: string[],
-  //   @Body('instituteId') instituteId: string,
-  // ) {
-  //   return await this.opportunityService.bulkDismissConsiderations(
-  //     considerations,
-  //     instituteId
-  //   );
-  // }
+  /** dismisses bulk recommendations
+   *  @param {considerations} string[] array of the opportunity Ids
+   * @returns {Object} status code and message
+   */
+  @hasRoles(
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Student,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('dismiss')
+  async bulkDismissConsideration(
+    @Request() req,
+    @Body('considerations') considerations: string[],
+    @Body('instituteId') instituteId: string,
+  ) {
+    return await this.opportunityService.bulkDismissConsiderations(
+      considerations,
+      instituteId
+    );
+  }
 
-  // /** Gets contacts list when the app starts
-  //  * @param { userId } string
-  //  * @returns {Object} with status code message and the list of contacts
-  //  */
-  // @hasRoles(
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Student,
-  //   Role.Faculty,
-  //   Role.Observer,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('contactsList')
-  // async getContactsList(@Request() req) {
-  //   return await this.opportunityService.getContactsList(
-  //     req.user.id,
-  //     req.user.RecordTypeName,
-  //   );
-  // }
-
-  // /** adds opportunites in bulk to to do for otherss
-  //  *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
-  //  *  @param {userId} string user id
-  //  * @returns {Object} status code and message
-  //  */
-  // @hasRoles(
-  //   Role.Student,
-  //   Role.Administrator,
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  //   Role.Observer,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Post('bulk/opp/todo')
-  // async bulkOpportunitiesTodo(
-  //   @Request() req,
-  //   @Body() opportunityTodoDto: OpportunityTodoDto,
-  //   @Body('instituteId') instituteId: string,
-  // ): Promise<any> {
-  //   return await this.opportunityService.bulkOpportunitiestoTodo(
-  //     req.user.id,
-  //     req.user.RecordTypeName,
-  //     opportunityTodoDto,
-  //     instituteId
-  //   );
-  // }
+  /** adds opportunites in bulk to to do for otherss
+   *  @param {OpportunitiesInfoDto} OpportunitiesInfoDto details of the the opportunity
+   *  @param {userId} string user id
+   * @returns {Object} status code and message
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Observer,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('bulk/opp/todo')
+  async bulkOpportunitiesTodo(
+    @Request() req,
+    @Body() opportunityTodoDto: OpportunityTodoDto,
+    @Body('instituteId') instituteId: string,
+  ): Promise<any> {
+    return await this.opportunityService.bulkOpportunitiestoTodo(
+      req.user.id,
+      req.user.recordTypeName,
+      opportunityTodoDto,
+      instituteId
+    );
+  }
 
   /** gets enrolled and interested opportunity users
    *  @param {opportunityId} string opportunity id
@@ -849,3 +784,10 @@ export class OpportunityController {
     );
   }
 }
+
+// YML DATA
+// custom:
+//   serverless-offline: 
+//     httpsProtocol: "dev-certs"
+//     httpPort: 4000
+//     lambdaPort: 4002
