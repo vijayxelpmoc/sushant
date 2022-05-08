@@ -791,3 +791,9 @@ export class OpportunityController {
 //     httpsProtocol: "dev-certs"
 //     httpPort: 4000
 //     lambdaPort: 4002
+
+
+// CON : /event/recommend
+// OPP : /student/event/wishlist
+// OPP : /student/activities/institute
+// OPP : /student/explore/activities
