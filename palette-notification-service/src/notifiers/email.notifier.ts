@@ -13,19 +13,19 @@ export class EmailNotifier {
   private _templateDir = path.join(__dirname, '../data/templates');
 
   constructor() {
-    // this._transporter = nodemailer.createTransport({
-    //   host: env.MAILER_HOST,
-    //   port: Number(env.MAILER_PORT) || 587,
-    //   secure: false,
-    //   auth: {
-    //     user: env.MAILER_AUTH_USER,
-    //     pass: env.MAILER_AUTH_PASS,
-    //   },
-    //   debug: true,
-    // });
     this._transporter = nodemailer.createTransport({
-      ses: new AWS.SES(),
+      host: env.MAILER_HOST,
+      port: Number(env.MAILER_PORT) || 587,
+      secure: false,
+      auth: {
+        user: env.MAILER_AUTH_USER,
+        pass: env.MAILER_AUTH_PASS,
+      },
+      debug: true,
     });
+    // this._transporter = nodemailer.createTransport({
+    //   ses: new AWS.SES(),
+    // });
   }
 
   _mapTemplateToSource(template: EmailTemplates) {

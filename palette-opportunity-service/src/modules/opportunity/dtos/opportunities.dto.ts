@@ -204,7 +204,7 @@ export class OpportunityTodoDto {
   assigneesIds: string[];
 
   @IsOptional()
-  instituteId: string;
+  InstituteId: string;
 }
 
 export class CreateDraftOpportunityDto {
