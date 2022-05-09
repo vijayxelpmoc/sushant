@@ -24,7 +24,7 @@ export class EmailNotifier {
     //   debug: true,
     // });
     this._transporter = nodemailer.createTransport({
-      ses: new AWS.SES(),
+      // ses: new AWS.SES(),
     });
   }
 

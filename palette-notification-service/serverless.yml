@@ -35,3 +35,35 @@ functions:
     events:
       - sqs:
           arn : ${env:PALETTE_AWS_SQS_ARN}
+      - http:
+          method: GET
+          path: /notification
+          cors: true
+      - http:
+          method: GET
+          path: /notification/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
+          cors: true
+      - http:
+            method: GET
+            path: /notification/readall
+            cors: true
+      - http:
+          method: GET
+          path: /notification/read/{id}
+          request: 
+            parameters:
+              paths: 
+                id: true
+          cors: true
+      - http:
+          method: DELETE
+          path: /notification/deleteAll
+          request: 
+            parameters:
+              paths: 
+                id: true
+          cors: true
