@@ -44,7 +44,8 @@ import _ from 'lodash';
 import { CreatedByUserOpportunity } from './types/create-opportunity-interface';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { SFALlAccountFields } from '@src/types/sf-interface';
-
+import { draftInfoDto } from './dto/opportunities.dto';
+import { OpportunityTodoDto } from './dtos/opportunities.dto';
 @Injectable()
 export class OpportunityService {
 
@@ -509,7 +510,6 @@ export class OpportunityService {
     let todoResponse = null;
     if (todoList.length > 0) {
       todoResponse = await this.sfService.models.todos.create(todoList[0], instituteId);
-      console.log('todoResponse', todoResponse);
     }
 
     if (delConsIds.length > 0) {
@@ -584,9 +584,7 @@ export class OpportunityService {
       { Created_at: -1 },
       instituteId,
     );
-    console.log('listedby', listedby);
     
-
     const allOpportunities = await this.sfService.models.opportunities.get('Contact, Account',
       {},
       {},
@@ -1676,7 +1674,1838 @@ export class OpportunityService {
     return { statusCode: 201, message: 'Success' };
   }
 
+  async updateAllTodos(opportunityId: string, instituteId: string) {
+    const allConnectedTodos = await this.sfService.models.todos.get('*', {
+      Opportunit_Id: opportunityId,
+    }, {}, instituteId);
+    const event = await this.sfService.models.accounts.get('*', { Id: opportunityId }, {}, instituteId);
+    let todoObj: any = {};
+    const todoIds: any = [];
+    const todoAssigneesIds: any = [];
+    if (allConnectedTodos.length > 0) {
+      todoObj = {
+        To_do: event[0]['Name'],
+        Opportunit_Id: opportunityId,
+        Description: event[0]['Description'],
+        Complete_By: event[0]['End_Date']
+          ? new Date(event[0]['End_Date'])
+          : null,
+        // Assignee__c: userId,
+        Task_status: 'Open',
+        Status: 'Approved',
+        Created_at: new Date(),
+        Type: event[0]['Category'],
+        Event_Venue: event[0]['Venue'],
+        Event_At: event[0]['Start_Date']
+          ? new Date(event[0]['Start_Date'])
+          : null,
+      };
+      allConnectedTodos.map(todo => {
+        // storing todo ids.
+        todoIds.push(todo.Id);
+        // storing todo assignees ids.
+        todoAssigneesIds.push(todo.Assignee);
+      });
+      // updating all todos content.
+      const result = await this.sfService.models.todos.update(todoObj, todoIds, instituteId);
+      if (result.success == true) {
+        return { statusCode: 200, message: `Success`, data: todoAssigneesIds };
+      }
+      return { statusCode: 200, message: `Failure`, data: [] };
+    }
+    return { statusCode: 200, message: `Success`, data: todoAssigneesIds };
+  }
 
+  async createAllTodoAssigneeNotifications(
+    userId: string,
+    opportunityId: string,
+    notificationTitle: string,
+    notificationMsg: string,
+    assignees: any,
+    instituteId: string,
+  ) {
+    assignees.map(async assignee => {
+      const recipientId = assignee;
+      // try {
+      //   await this.firebaseService.sendNotification(
+      //     recipientId,
+      //     notificationTitle,
+      //     notificationMsg,
+      //     {
+      //       data: await this.utilityService.GetOpportunityNotificationData(
+      //         opportunityId,
+      //         recipientId,
+      //       ),
+      //       type: 'Create oppotunity edit',
+      //     },
+      //   );
+      // } catch (error) {
+      //   console.log('error', error);
+      // }
+      // create notification for creator
+      await this.sfService.models.notifications.create({
+        Title: notificationTitle,
+        Contact: recipientId,
+        Opportunity: opportunityId,
+        Type: 'Opportunity Modified',
+        Notification_By: userId,
+        Created_at: new Date(),
+        Is_Read: false,
+      }, instituteId);
+    });
+    return { statusCode: 200, message: `Success` };
+  }
+
+  async EditGlobalOpportunity(
+    userId: string,
+    userType: string,
+    opportunityId: string,
+    opportunitiesInfoDto: OpportunitiesInfoDto,
+    instituteId: string,
+  ): Promise<any> {
+    // check opportunity Id to proceed
+    if (!opportunityId || opportunityId === '') {
+      throw new BadRequestException("opportunity Id can't ne null");
+    }
+
+    // get all opportunities created by user
+    const listedby = await this.sfService.models.accounts.get('*', {
+      Listed_by: userId,
+      opportunityScope: 'Global',
+    }, {}, instituteId);
+
+    let Flag = 0;
+    listedby.map(event => {
+      if (event.Id == opportunityId) {
+        {
+          Flag = 1;
+        }
+      }
+    });
+
+    // admin can also edit
+    if (userType === 'Administrator') {
+      Flag = 1;
+    }
+
+    // opportunity not listed by user
+    if (Flag == 0) {
+      throw new NotFoundException(
+        `Opportunity Not Found, Please Check The Credentials.`,
+      );
+    }
+
+    // check if opportunity's status is In Review
+    const oppStatus = await this.sfService.models.accounts.get('*', {
+      Id: opportunityId,
+    }, {}, instituteId);
+
+    if (oppStatus.length == 0) {
+      throw new NotFoundException(`Opportunity Not Found!`);
+    }
+
+    if (oppStatus[0].Visibility === 'Removed') {
+      return {
+        statusCode: 200,
+        message: 'Cannot process modification, opportunity might be removed',
+      };
+    }
+
+    if (userType == 'Administrator') {
+      // creating update opp object.
+      const oppObj = {
+        Account_Name: opportunitiesInfoDto.eventTitle,
+        Category: opportunitiesInfoDto.eventType,
+        Description: opportunitiesInfoDto.description,
+        End_Date: opportunitiesInfoDto.expirationDateTime
+          ? new Date(opportunitiesInfoDto.expirationDateTime)
+          : null,
+        Start_Date: opportunitiesInfoDto.eventDateTime
+          ? new Date(opportunitiesInfoDto.eventDateTime)
+          : null,
+        Venue: opportunitiesInfoDto.venue,
+        Phone: opportunitiesInfoDto.phone,
+        Website: opportunitiesInfoDto.website,
+        Modification: null,
+      };
+      let notificationTitle = ``;
+      let notificationMsg = ``;
+
+      // modification exists.
+      if (oppStatus[0].Modification !== null) {
+        notificationTitle = `${oppStatus[0].Account_Name} opportunity rejected`;
+        notificationMsg = `${
+          oppStatus[0].Account_Name
+        } opportunity has been rejected by the admin`;
+        await this.sfService.models.modifications.update({
+          Status: 'Rejected',
+        }, oppStatus[0].Modification__c, instituteId);
+      }
+
+      // Check for opportunity removal.
+
+      // updating opportunity.
+      const result = await this.sfService.models.accounts.update(oppObj, opportunityId, instituteId);
+
+      if (result.success == true) {
+        // sending notifications.
+        // create push notification for opportunity creator.
+        const notificationTitle = `${oppStatus[0].Account_Name} opportunity modified`;
+        const notificationMsg = `${
+          oppStatus[0].Account_Name
+        } opportunity has been changed by the admin`;
+        const RecipientId = oppStatus[0].Listed_by;
+        // try {
+        //   await this.firebaseService.sendNotification(
+        //     RecipientId,
+        //     notificationTitle,
+        //     notificationMsg,
+        //     {
+        //       data: await this.utilityService.GetOpportunityNotificationData(
+        //         opportunityId,
+        //         RecipientId,
+        //       ),
+        //       type: 'Create oppotunity edit',
+        //     },
+        //   );
+        // } catch (error) {
+        //   console.log('error', error);
+        // }
+        // SF notification for creator.
+        await this.sfService.models.notifications.create({
+          Title: notificationTitle,
+          Contact: RecipientId,
+          Opportunity: opportunityId,
+          Type: 'Opportunity Modified',
+          Notification_By: userId,
+          Created_at: new Date(),
+          Is_Read: false,
+        }, instituteId);
+
+        // updating all todos content.
+        const updateResult = await this.updateAllTodos(opportunityId, instituteId);
+
+        // sending todo assignees edit notifications.
+        await this.createAllTodoAssigneeNotifications(
+          userId,
+          opportunityId,
+          notificationTitle,
+          notificationMsg,
+          updateResult.data,
+          instituteId,
+        );
+        return { statusCode: 201, message: 'Success' };
+      }
+      return { statusCode: 201, message: 'Failure' };
+    } else {
+      if (
+        oppStatus[0].Approval_Status === 'In Review' ||
+        oppStatus[0].Approval_Status === 'AdvisorReview'
+      ) {
+        // updated Account object
+        const updateOppData = {
+          Account_Name: opportunitiesInfoDto.eventTitle,
+          Category: opportunitiesInfoDto.eventType,
+          Description: opportunitiesInfoDto.description,
+          End_Date: opportunitiesInfoDto.expirationDateTime
+            ? new Date(opportunitiesInfoDto.expirationDateTime)
+            : null,
+          Start_Date: opportunitiesInfoDto.eventDateTime
+            ? new Date(opportunitiesInfoDto.eventDateTime)
+            : null,
+          Venue: opportunitiesInfoDto.venue,
+          Phone: opportunitiesInfoDto.phone,
+          Website: opportunitiesInfoDto.website,
+        };
+        // updating opportunity
+        await this.sfService.models.accounts.update(updateOppData, opportunityId, instituteId);
+        // creating comment for update
+        await this.sfService.models.opportunityComments.create({
+          Account: opportunityId,
+          Comment: 'Updated content',
+          Comment_Type: 'Approval',
+          Contact: userId,
+          Posted_at: new Date(),
+        }, instituteId);
+        const institute = oppStatus[0].Parent_Account;
+        // fetch admins
+        const admins = await this.sfService.models.affiliations.get(
+          'Contact.Id',
+          {
+            Organization: institute,
+            Role: 'Admin',
+          },
+          {}, 
+          instituteId
+        );
+        admins.map(async admin => {
+          // try {
+          //   // create push notification for admin
+          //   await this.firebaseService.sendNotification(
+          //     admin.Contact.Id,
+          //     `Opportunity ${oppStatus[0].Name}`,
+          //     `New comment on opportunity ${oppStatus[0].Name} by creator`,
+          //     {
+          //       data: await this.utilityService.GetOpportunityNotificationData(
+          //         opportunityId,
+          //         userId,
+          //       ),
+          //       type: 'Updated Modification opportunity',
+          //     },
+          //   );
+          // } catch (error) {
+          //   console.log('error', error);
+          // }
+          // create notification for admin
+          await this.sfService.models.notifications.create({
+            Title: `New comment on opportunity ${
+              oppStatus[0].Account_Name
+            } by creator`,
+            Contact: admin.Contact.Id,
+            Opportunity: opportunityId,
+            Type: 'New Comment',
+            Notification_By: userId,
+            Created_at: new Date(),
+            Is_Read: false,
+          }, instituteId);
+        });
+        return { statusCode: 201, message: 'Success' };
+      } else if (oppStatus[0].Approval_Status === 'Approved') {
+        // invalidating in-review modification requests
+        const getallMods = await this.sfService.models.modifications.get('Id', {
+          Opportunity_Id__c: opportunityId,
+          Status__c: 'In Review',
+        }, {}, instituteId);
+        // const allModIds = [];
+        if (getallMods.length > 0) {
+          getallMods.map(async mod => {
+            await this.sfService.models.modifications.update({
+              Status: 'Rejected',
+            }, mod.Id, instituteId);
+          });
+        }
+
+        // creating modification
+        const mod = await this.sfService.models.modifications.create({
+          Opportunity_Id: opportunityId,
+          Account_Name: opportunitiesInfoDto.eventTitle,
+          Category: opportunitiesInfoDto.eventType,
+          Description: opportunitiesInfoDto.description,
+          End_Date: opportunitiesInfoDto.expirationDateTime
+            ? new Date(opportunitiesInfoDto.expirationDateTime)
+            : null,
+          Start_Date: opportunitiesInfoDto.eventDateTime
+            ? new Date(opportunitiesInfoDto.eventDateTime)
+            : null,
+          Venue: opportunitiesInfoDto.venue,
+          Phone: opportunitiesInfoDto.phone,
+          Website: opportunitiesInfoDto.website,
+        }, instituteId);
+        // updating opportunity necessary fields
+        await this.sfService.models.accounts.update({
+          Modification: mod.id,
+        }, opportunityId, instituteId);
+        const institute = oppStatus[0].Parent_Account;
+        // fetch admins
+        const admins = await this.sfService.models.affiliations.get(
+          'Contact.Id',
+          {
+            Organization: institute,
+            Role: 'Admin',
+          },
+          {}, 
+          instituteId
+        );
+        admins.map(async admin => {
+          // try {
+          //   // create push notification for admin
+          //   await this.firebaseService.sendNotification(
+          //     admin.Contact.Id,
+          //     `${oppStatus[0].Name} modification`,
+          //     `New modification request`,
+          //     {
+          //       data: await this.utilityService.GetOpportunityNotificationData(
+          //         opportunityId,
+          //         userId,
+          //       ),
+          //       type: 'Create Modification opportunity',
+          //     },
+          //   );
+          // } catch (error) {
+          //   console.log('error', error);
+          // }
+          // create notification for admin
+          await this.sfService.models.notifications.create({
+            Title: `New modification request for ${oppStatus[0].Account_Name}`,
+            Contact: admin.Contact.Id,
+            // Opportunity__c: opportunityId,
+            Type: 'Opportunity Modification Request',
+            Notification_By: userId,
+            Modification: mod.id,
+            Created_at: new Date(),
+            Is_Read: false,
+          }, instituteId);
+        });
+        return { statusCode: 201, message: 'Success' };
+      }
+      return {
+        statusCode: 200,
+        message: 'Failure, Opportunity Might Be Rejected',
+      };
+    }
+  }
+
+  async EditDraftOpportunity(
+    userId: string,
+    opportunityId: string,
+    draftInfoDto: draftInfoDto,
+    instituteId: string,
+  ): Promise<any> {
+    // check opportunity Id to proceed
+    if (opportunityId === '' || !opportunityId) {
+      throw new BadRequestException(`OpportunityId Not Found!`);
+    }
+
+    // get all opportunities created by user
+    const listedby = await this.sfService.models.accounts.get('*', {
+      Listed_by: userId,
+      Approval_Status: 'Draft',
+    }, {}, instituteId);
+
+    let Flag = 0;
+    listedby.map(event => {
+      if (event.Id == opportunityId) {
+        Flag = 1;
+      }
+    });
+
+    // opportunity not listed by user
+    if (Flag == 0) {
+      return {
+        statusCode: 401,
+        message: 'Bad request, please check the credentials.',
+      };
+    }
+
+    // check if opportunity's status is Removed
+    const oppStatus = await this.sfService.models.accounts.get('*', {
+      Id: opportunityId,
+    }, {}, instituteId);
+    if (oppStatus[0].Visibility === 'Removed') {
+      return {
+        statusCode: 200,
+        message: 'Cannot Process Edit, Opportunity Might Be Removed!',
+      };
+    }
+
+    // destructing draft Dto
+    const {
+      eventTitle,
+      description,
+      eventDateTime,
+      expirationDateTime,
+      phone,
+      website,
+      venue,
+      eventType,
+      assignees,
+      InstituteId,
+    } = draftInfoDto;
+
+    // opportunity object
+    const oppObj = {
+      Account_Name: eventTitle,
+      Description: description,
+      Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+      End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
+      Created_at: new Date(),
+      Phone: phone,
+      Website: website,
+      Venue: venue,
+      Category: eventType,
+      Listed_by: userId,
+      Parent_Account: InstituteId.length > 0 ? InstituteId : '',
+      opportunityScope:
+        assignees.length > 0 || InstituteId.length > 0
+          ? assignees.length > 0
+            ? 'Discrete'
+            : 'Global'
+          : '',
+      Visibility: 'Available',
+      Approval_Status: 'Draft',
+    };
+
+    // updating opportunity
+    const updateOpp = await this.sfService.models.accounts.update(oppObj, opportunityId, instituteId);
+    // if updated
+    if (updateOpp.success === true) {
+      // all siiginess of dic
+      const getOppAssignees = await this.sfService.models.opportunities.get(
+        'Id, Contact.Id',
+        {
+          Account: opportunityId,
+        },
+        {},
+        instituteId
+      );
+
+      const getOppAssigneesObj = {},
+        delList = [];
+
+      // for discrete
+      if (assignees.length > 0) {
+        // mapping as { contactId: Id }
+        getOppAssignees.map(opp => {
+          getOppAssigneesObj[opp.Contact.Id] = opp.Id;
+        });
+
+        for (const assignee of assignees) {
+          if (getOppAssigneesObj.hasOwnProperty(assignee)) {
+            // deleting entry if assignee still exists in assigneesList
+            delete getOppAssigneesObj[assignee];
+          } else {
+            // create opp entry
+            await this.sfService.models.opportunities.create({
+              Account: opportunityId,
+              Contact: assignee,
+            }, instituteId);
+          }
+        }
+        // deleting entries which are not in assigneesList
+        if (Object.keys(getOppAssigneesObj).length > 0) {
+          for (const [k, v] of Object.entries(getOppAssigneesObj)) {
+            delList.push(v);
+          }
+          
+          console.log("delList", delList);
+          
+          const del = await this.sfService.models.opportunities.delete(delList, instituteId);
+          console.log('del', del);
+          
+        }
+      }
+
+      // for global
+      if (InstituteId.length > 0 && getOppAssignees.length > 0) {
+        getOppAssignees.map(opp => {
+          delList.push(opp.Id);
+        });
+        await this.sfService.models.opportunities.delete(delList, InstituteId);
+      }
+      return { statusCode: 201, message: 'Success' };
+    }
+    return { statusCode: 400, message: 'Failure' };
+  }
+
+  // creates an opportunity
+  async CreateDraftOpportunity(
+    draftInfoDto: draftInfoDto,
+    userId: string,
+    RecordTypeName: string,
+    instituteId: string
+  ): Promise<BasicResponse> {
+    // get Activity
+    const recordTypeId = await this.sfService.models.accounts.get('Account_Record_Type', {
+        Record_Type_Name: AccountActivity.ACTIVITY,
+      },
+      {},
+      instituteId,
+    );
+
+    if (recordTypeId.length === 0) {
+      throw new BadRequestException(`Something went wrong!`);
+    }
+
+    // destructing Dto
+    const {
+      eventTitle,
+      description,
+      eventDateTime,
+      expirationDateTime,
+      phone,
+      website,
+      venue,
+      eventType,
+      assignees,
+      InstituteId,
+    } = draftInfoDto;
+    
+    if (RecordTypeName === 'Student') {
+      if (InstituteId === '' && assignees.length === 0) {
+        const oppAcc = await this.sfService.models.accounts.create({
+          Account_Name: eventTitle,
+          Description: description,
+          Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+          End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
+          Created_at: new Date(),
+          Phone: phone,
+          Website: website,
+          Venue: venue,
+          Category: eventType,
+          Listed_by: userId,
+          opportunityScope: 'Discrete',
+          Visibility: 'Available',
+          Approval_Status: 'Draft',
+          Account_Record_Type:
+            recordTypeId.length > 0 ? recordTypeId[0].Account_Record_Type : '',
+        }, instituteId);
+
+        await this.sfService.models.opportunities.create({
+          Contact: userId,
+          Account: oppAcc['id'],
+        }, instituteId);
+
+        return {
+          statusCode: 201,
+          message: `OpportunitySavedAsDraft`,
+        };
+      } else {
+        throw new BadRequestException(
+          `You Can Create Opportunity Only For Yourself!`,
+        );
+      }
+    } else {
+      
+      const res = await this.sfService.models.accounts.create({
+        Account_Name: eventTitle,
+        Description: description,
+        Start_Date: eventDateTime ? new Date(eventDateTime) : null,
+        End_Date: expirationDateTime ? new Date(expirationDateTime) : null,
+        Created_at: new Date(),
+        Phone: phone,
+        Website: website,
+        Venue: venue,
+        Category: eventType,
+        Listed_by: userId,
+        Parent_Account: InstituteId.length > 0 ? InstituteId : '',
+        opportunityScope:
+          assignees.length > 0 || InstituteId.length > 0
+            ? assignees.length > 0
+              ? 'Discrete'
+              : 'Global'
+            : '',
+        Approval_Status: 'Draft',
+        Visibility: 'Available',
+        Account_Record_Type:
+          recordTypeId.length > 0 ? recordTypeId[0].Account_Record_Type : '',
+      }, instituteId);
+      if (assignees.length !== 0) {
+        const OppAssignees = [];
+        // assigning assiness to opportunity
+        for (const assignee of assignees) {
+          OppAssignees.push({
+            Contact: assignee,
+            Account: res['id'],
+          });
+        }
+        
+        if (OppAssignees.length > 0) {
+          // BULK CREATE FIX
+          await this.sfService.models.opportunities.create(OppAssignees, instituteId);
+        }
+      }
+      return {
+        statusCode: 201,
+        message: `OpportunitySavedAsDraft`,
+      };
+    }
+  }
+
+  // creates an status from draft => Available / In Review
+  async SetDraftOpportunityStatus(
+    opportunityId: string,
+    draftInfoDto: draftInfoDto,
+    userId: string,
+    RecordTypeName: string,
+    instituteId: string,
+  ) {
+    // destructing Dto
+    let {
+      eventTitle,
+      description,
+      eventDateTime,
+      expirationDateTime,
+      phone,
+      website,
+      venue,
+      eventType,
+      assignees,
+      InstituteId,
+    } = draftInfoDto;
+    if (assignees.length == 0 || InstituteId.length == 0) {
+      // throw new BadRequestException(`InstituteId Or Assignee List Required!`,);
+      const Institute = await this.sfService.models.affiliations.get(
+        'Organization.Id',
+        {
+          Contact: userId,
+        },
+        {},
+        instituteId
+      );
+      if (Institute.length > 0) {
+        InstituteId = Institute[0].Organization.Id;
+      } else {
+        throw new BadRequestException(`Something Went Wrong!`);
+      }
+    }
+
+    // getting account oportunity
+    const isOpportunityCreatedByThisUser = await this.sfService.models.accounts.get('*', {
+      Id: opportunityId,
+      Listed_by: userId,
+      Approval_Status: 'Draft',
+    }, {}, instituteId);
+    // if not a creator of account oportunity
+    if (isOpportunityCreatedByThisUser.length == 0) {
+      return {
+        successCode: '401',
+        message: 'Bad request, provide proper credentials.',
+      };
+    }
+
+    const result = await this.EditDraftOpportunity(
+      userId,
+      opportunityId,
+      draftInfoDto,
+      instituteId
+    );
+
+    // if admin
+    if (RecordTypeName === 'Administrator') {
+      await this.sfService.models.accounts.update({
+        Approval_Status: 'Approved',
+      }, opportunityId, instituteId);
+      return {
+        statusCode: 201,
+        message: 'Success',
+      };
+    }
+
+    // getting opportunity details
+    const opportunityDetails = await this.sfService.models.accounts.get('*', {
+      Id: opportunityId,
+    }, {}, instituteId);
+
+    // for discrete
+    if (opportunityDetails[0].opportunityScope == 'Discrete') {
+      await this.sfService.models.accounts.update({
+        Approval_Status: 'Approved',
+      }, opportunityId, instituteId);
+      return {
+        statusCode: 201,
+        message: 'Success',
+      };
+    } else if (opportunityDetails[0].opportunityScope == 'Global') {
+      const updateStatus = await this.sfService.models.accounts.update({
+        Approval_Status:
+          RecordTypeName === 'Guardian' ? 'AdvisorReview' : 'In Review',
+      }, opportunityId, instituteId);
+      if (updateStatus['success'] === true) {
+        let notificationTitle = ``;
+        let notificationMsg = ``;
+        // const InstituteId = opportunityDetails[0].ParentId;
+        if (RecordTypeName === 'Guardian') {
+          // fetch advisors
+          const advisors = await this.sfService.models.affiliations.get(
+            'Contact.Id',
+            {
+              Organization: InstituteId,
+              Role: 'Advisor',
+            },
+            {},
+            instituteId
+          );
+          notificationTitle = `Opportunity ${opportunityDetails[0].Account_Name}`;
+          notificationMsg = `${
+            opportunityDetails[0].Account_Name
+          } opportunity requested for approval`;
+          advisors.map(async adv => {
+            // try {
+            //   // create push notification
+            //   await this.firebaseService.sendNotification(
+            //     adv.Contact.Id,
+            //     notificationTitle,
+            //     notificationMsg,
+            //     {
+            //       data: await this.utilityService.GetOpportunityNotificationData(
+            //         opportunityId,
+            //         userId,
+            //       ),
+            //       type: 'Create opportunity',
+            //     },
+            //   );
+            // } catch (error) {
+            //   console.log('error', error);
+            // }
+            // create notification
+            const noti = await this.sfService.models.notifications.create({
+              Contact: adv.Contact.Id,
+              Notification_By: userId,
+              Created_at: new Date(),
+              Event_type: opportunityDetails[0].Category,
+              Is_Read: false,
+              Opportunity: opportunityDetails[0].Id,
+              Title: notificationMsg,
+              Type: 'Opportunity Approval Request',
+            }, instituteId);
+          });
+          return {
+            statusCode: 201,
+            message: 'Success',
+          };
+        } else {
+          // fetch admin
+          const admins = await this.sfService.models.affiliations.get(
+            'Contact.Id',
+            {
+              Organization: InstituteId,
+              Role: 'Admin',
+            },
+            {},
+            instituteId
+          );
+          notificationTitle = `Opportunity ${opportunityDetails[0].Account_Name}`;
+          notificationMsg = `${
+            opportunityDetails[0].Account_Name
+          } opportunity requested for approval`;
+          admins.map(async admin => {
+            // try {
+            //   // create push notification
+            //   await this.firebaseService.sendNotification(
+            //     admin.hed__Contact__r.Id,
+            //     notificationTitle,
+            //     notificationMsg,
+            //     {
+            //       data: await this.utilityService.GetOpportunityNotificationData(
+            //         opportunityId,
+            //         userId,
+            //       ),
+            //       type: 'Create opportunity',
+            //     },
+            //   );
+            // } catch (error) {
+            //   console.log('error', error);
+            // }
+            // create notification
+            const noti = await this.sfService.models.notifications.create({
+              Contact: admin.Contact.Id,
+              Notification_By: userId,
+              Created_at: new Date(),
+              Event_type: opportunityDetails[0].Category,
+              Is_Read: false,
+              Opportunity: opportunityDetails[0].Id,
+              Title: notificationMsg,
+              Type: 'Opportunity Approval Request',
+            }, instituteId);
+          });
+          return {
+            statusCode: 201,
+            message: 'Success',
+          };
+        }
+      }
+      return {
+        statusCode: 200,
+        message: 'Failure',
+      };
+    }
+  }
+
+  /** gets opportunity detail
+   *  @param {userId} string user id
+   *  @returns {Object} status code and message and opportunity information
+   */
+   async getOpportunityDetail(opportunityId: string, instituteId): Promise<any> {
+    const res = await this.sfService.models.accounts.get('*', {
+      Id: opportunityId,
+    }, {}, instituteId);
+    
+    if (res.length === 0) {
+      throw new NotFoundException();
+    }
+
+    let filteredData = null;
+    if (res[0].opportunityScope === 'Discrete') {
+      const assignees = await this.sfService.models.opportunities.get(
+        'Contact.Id, Contact.Name, Contact.Profile_Picture',
+        { Account: opportunityId },
+        {},
+        instituteId
+      );
+      
+      const assigneesList = [];
+      assignees.map(assignee => {
+        const oppassignee = {
+          Id: assignee.Contact.Id,
+          name: assignee.Contact.Name,
+          profilePicture: assignee.Contact.Profile_Picture,
+          isAssignee: true,
+        };
+        assigneesList.push(oppassignee);
+      });
+      filteredData = {
+        Id: res[0]['Id'],
+        eventName: res[0]['Account_Name'],
+        description: res[0]['Description'],
+        venue: res[0]['Venue'],
+        website: res[0]['Website'],
+        eventDate: res[0]['Start_Date']
+          ? new Date(res[0]['Start_Date'])
+          : null,
+        phone: res[0]['Phone'],
+        type: res[0]['Type'] || 'Others',
+        visibility: res[0]['Visibility'],
+        expirationDate: res[0]['End_Date']
+          ? new Date(res[0]['End_Date'])
+          : null,
+        status: res[0]['Approval_Status'],
+        assignees: assigneesList,
+      };
+    } else {
+      // global opportunity
+      filteredData = {
+        Id: res[0]['Id'],
+        eventName: res[0]['Account_Name'],
+        description: res[0]['Description'],
+        venue: res[0]['Venue'],
+        website: res[0]['Website'],
+        eventDate: res[0]['Start_Date']
+          ? new Date(res[0]['Start_Date'])
+          : null,
+        phone: res[0]['Phone'],
+        type: res[0]['Type'] || 'Others',
+        visibility: res[0]['Visibility'],
+        expirationDate: res[0]['End_Date']
+          ? new Date(res[0]['End_Date'])
+          : null,
+        status: res[0]['Approval_Status'],
+        assignees: null,
+      };
+    }
+
+    return {
+      statusCode: 200,
+      message: 'OpportunityDetail',
+      data: filteredData,
+    };
+  }
+
+  async getModificationDetail(
+    userId: string,
+    modificationId: string,
+    instituteId: string
+  ): Promise<any> {
+    // Id, Account_Name, Description, Venue, Website, Start_Date, Phone, Category, End_Date, Status
+    const getModification = await this.sfService.models.modifications.get(
+      'Opportunity_Id.Listed_by, Id, Account_Name, Description, Venue, Website, Start_Date, Phone, Category, End_Date, Status',
+      {
+        Id: modificationId,
+      },
+      {},
+      instituteId
+    );
+
+    if (
+      getModification.length == 0 ||
+      getModification[0].Opportunity_Id.Listed_by !== userId
+    ) {
+      throw new NotFoundException(`No Modification Request Found!`);
+    }
+
+    const filterDataObj = {
+      Id: getModification[0].Id,
+      Name: getModification[0].Account_Name,
+      description: getModification[0].Description,
+      venue: getModification[0].Venue,
+      website: getModification[0].Website,
+      eventDate: getModification[0].Start_Date
+        ? new Date(getModification[0].Start_Date)
+        : null,
+      phone: getModification[0].Phone,
+      Type: getModification[0].Category,
+      expirationDate: getModification[0].End_Date
+        ? new Date(getModification[0].End_Date)
+        : null,
+      status: getModification[0].Status,
+    };
+
+    return {
+      statusCode: 200,
+      message: 'Success',
+      data: filterDataObj,
+    };
+  }
+
+  async removalCancel(
+    userId: string, 
+    opportunityId: string,
+    instituteId: string   
+  ) {
+    const getOpportunity = await this.sfService.models.accounts.get('Id', {
+        Listed_by: userId,
+        Removal_Status: 'In Review',
+      }, 
+      {}, 
+      instituteId
+    );
+    let isOpportunityExist = 0;
+    for (let i = 0; i < getOpportunity.length; i++) {
+      if (getOpportunity[i].Id == opportunityId) {
+        isOpportunityExist = 1;
+      }
+    }
+    if (isOpportunityExist === 0) {
+      throw new NotFoundException('No removal request found');
+    }
+    await this.sfService.models.accounts.update({
+      Removal_Status: 'Canceled',
+    }, opportunityId, instituteId);
+    return {
+      statusCode: 200,
+      message: 'Success',
+    };
+  }
+
+  async modificationCancel(userId: string, opportunityId: string, instituteId: string) {
+    const getOpportunity = await this.sfService.models.accounts.get('Modification', {
+      Listed_by: userId,
+      Id: opportunityId,
+    }, {}, instituteId);
+    if (getOpportunity.length === 0) {
+      throw new NotFoundException();
+    } else if (getOpportunity[0].Modification === null) {
+      throw new NotFoundException('Modification not found');
+    }
+
+    const modificationId = getOpportunity[0].Modification;
+    await this.sfService.models.modifications.update({
+      Status: 'Canceled',
+    }, modificationId , instituteId);
+    await this.sfService.models.accounts.update({
+      Modification: null,
+    }, opportunityId, instituteId);
+    return {
+      statusCode: 200,
+      message: 'Success',
+    };
+  }
+
+  // gets comments based on opportunity
+  async getOpportunityComments(
+    userId: string,
+    userType: string,
+    opportunityId: string,
+    instituteId: string
+  ): Promise<any> {
+    // extracting comments data
+    const opportunity = await this.sfService.models.accounts.get(
+      'Approval_Status, Status_At, opportunityScope, Listed_by',
+      {
+        Id: opportunityId,
+      },
+      {},
+      instituteId
+    );
+    if (opportunity.length !== 0) {
+      const commentslist = await this.sfService.models.opportunityComments.get(
+        'Id, Contact.Name, Contact.Profile_Picture, Comment, Posted_at, Comment_Type',
+        {
+          Account: opportunityId,
+        },
+        {Posted_at: -1},
+        instituteId
+      );
+      // No comments
+      if (commentslist.length === 0) {
+        throw new NotFoundException('No comments found');
+      }
+      const Status_At = new Date(opportunity[0]['Status_At']);
+      const comments: any = [];
+      commentslist.map(comment => {
+        const Posted_at = new Date(comment.Posted_at);
+        if (comment.Comment_Type == 'Approval') {
+          if (
+            opportunity[0]['Listed_by'] === userId ||
+            userType === 'Administrator'
+          ) {
+            const filterDataObj = {
+              Id: comment.Id,
+              name: comment.Contact.Name,
+              profilePicture: comment.Contact.Profile_Picture,
+              comment: comment.Comment,
+              posted_at: comment.Posted_at,
+            };
+            comments.push(filterDataObj);
+          }
+        } else if (comment.Comment_Type == 'Generic') {
+          const filterDataObj = {
+            Id: comment.Id,
+            name: comment.Contact.Name,
+            profilePicture: comment.Contact.Profile_Picture,
+            comment: comment.Comment,
+            posted_at: comment.Posted_at,
+          };
+          comments.push(filterDataObj);
+        }
+      });
+      if (comments.length !== 0) {
+        return {
+          statusCode: 200,
+          message: 'Comments on opportunity fetched successfully',
+          data: comments,
+        };
+      } else {
+        throw new NotFoundException('No Comments Available');
+      }
+    }
+    throw new NotFoundException('Opportunity Not Found!');
+  }
+
+  // creates comment on opportunity
+  async createOpportunityComment(
+    userId: string,
+    RecordTypeName: string,
+    commentsDto: CommentsDto,
+    instituteId: string,
+  ): Promise<BasicResponse> {
+    // destructing the Dto
+    const { id, comment, commentType } = commentsDto;
+
+    // get opportunity
+    const opportunity = await this.sfService.models.accounts.get(
+      'Approval_Status, opportunityScope, Listed_by, Account_Name',
+      {
+        Id: id,
+      },
+      {},
+      instituteId
+    );
+    console.log('opportunity', opportunity);
+    
+    // not found opportunity.
+    if (opportunity.length === 0) {
+      throw new NotFoundException('Opportunity not found!');
+    }
+
+    let notificationTitle = ``;
+    let notificationMsg = ``;
+    // if opportunity is Approved.
+    //  commentType = Approval.
+    // else commentType = Generic.
+    if (opportunity[0]['Approval_Status'] === 'Approved') {
+      // create comment.
+      await this.sfService.models.opportunityComments.create({
+        Comment: comment,
+        Contact: userId,
+        Account: id,
+        Comment_Type: commentType,
+        Posted_at: new Date(),
+      }, instituteId);
+
+      notificationTitle = `New comment on ${opportunity[0].Account_Name}!`;
+      notificationMsg = `Comment: ${comment}`;
+      // try {
+      //   // create push notification for creator.
+      //   await this.firebaseService.sendNotification(
+      //     opportunity[0].Listed_by,
+      //     notificationTitle,
+      //     notificationMsg,
+      //     {
+      //       data: await this.utilityService.GetOpportunityNotificationData(
+      //         id,
+      //         opportunity[0].Listed_by,
+      //       ),
+      //       type: 'Create opportunity comment',
+      //     },
+      //   );
+      // } catch (error) {
+      //   console.log('error', error);
+      // }
+      // create SF notification.
+      const res = await this.sfService.models.notifications.create({
+        Title: notificationTitle,
+        Type: 'New Comment',
+        Opportunity: id,
+        Contact: opportunity[0].Listed_by,
+        Notification_By: userId,
+        Created_at: new Date(),
+        Is_Read: false,
+      }, instituteId);
+      return {
+        statusCode: 201,
+        message: 'Comment Created.',
+      };
+    } else {
+      // admin || creator can comment if !Approved.
+      if (
+        RecordTypeName === 'Administrator' ||
+        opportunity[0].Listed_by == userId
+      ) {
+        // create comment.
+        await this.sfService.models.opportunityComments.create({
+          Comment: comment,
+          Contact: userId,
+          Account: id,
+          Comment_Type: commentType,
+          Posted_at: new Date(),
+        });
+
+        if (RecordTypeName === 'Administrator') {
+          notificationTitle = `New comment on ${opportunity[0].Account_Name}!`;
+          notificationMsg = `Comment: ${comment}`;
+          // try {
+          //   // create push notification for creator.
+          //   await this.firebaseService.sendNotification(
+          //     opportunity[0].Listed_by__c,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetOpportunityNotificationData(
+          //         id,
+          //         opportunity[0].Listed_by__c,
+          //       ),
+          //       type: 'Create opportunity comment',
+          //     },
+          //   );
+          // } catch (error) {
+          //   console.log('error', error);
+          // }
+          // create SF notification
+          const res = await this.sfService.models.notifications.create({
+            Title: notificationTitle,
+            Type: 'New Comment',
+            Opportunity: id,
+            Contact: RecordTypeName === 'Administrator' ? userId : opportunity[0].Listed_by,
+            Notification_By: userId,
+            Created_at: new Date(),
+            Is_Read: false,
+          }, instituteId);
+          // seperate notification for diff users >>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>
+        }
+        return {
+          statusCode: 201,
+          message: 'Comment Created.',
+        };
+      }
+      throw new BadRequestException(`Cannot Create Comment!`);
+    }
+  }
+
+  /** adds opportunities in bulk to to do for Others
+   *  @param {userId} string user id
+   *  @param {assigneeId} string user id of the student the opportunities are to be recommended to
+   *  @param {opportunities} string[] a list of all opportunities to be added
+   * @returns {Object} status code and message
+   */
+   async bulkAddOpportunitiesToConsiderations(
+    userId: string,
+    opportunities: string[],
+    instituteId: string,
+  ) {
+    const recc = await this.sfService.models.recommendations.get('*', {Assignee: userId}, {}, instituteId); 
+    let reccObj = {};
+    recc.map(cons => {
+      reccObj[cons.Event] = cons.Id;
+    });
+    const considerations = [];
+    for (let i = 0; i < opportunities.length; i++) {
+      const opportunity = opportunities[i];
+      const temp = await this.sfService.models.accounts.get('*', { Id: opportunity }, {}, instituteId);
+
+      console.log('temp[0].Approval_Status', temp[0].Approval_Status);
+      console.log('temp[0].opportunityScope)', temp[0].opportunityScope);
+      console.log('reccObj.hasOwnProperty(opportunity)', reccObj.hasOwnProperty(opportunity));
+      if (((temp[0].Approval_Status == 'Approved' && temp[0].opportunityScope == 'Global') || temp[0].opportunityScope == 'Discrete') && !reccObj.hasOwnProperty(opportunity)) {
+        const obj: any = {
+          Assignee: userId,
+          Recommended_by: userId,
+          Event: temp[0].Id,
+          Accepted: 'Pending',
+        };
+        const createResponse = await this.sfService.models.recommendations.create(obj, instituteId);
+  
+        // create notification
+        await this.sfService.models.notifications.create({
+          Title: `Opportunity saved`,
+          Contact: userId,
+          Created_at: new Date(),
+          Is_Read: false,
+          // Notification_By: userId,
+          Event_type: temp[0].Category,
+          Type: 'New in Consideration',
+          Recommendation: createResponse.id,
+          Opportunity: opportunity,
+        }, instituteId);
+        considerations.push({opportunity: 'Added'});
+      } else {
+        considerations.push({opportunity: 'Not Added'});
+      }
+    }
+    return {
+      statusCode: 200,
+      message: 'Added opportunities to recommendations!',
+      data: considerations,
+    };
+  }
+
+  /** adds opportunities in bulk to to do for Others
+   *  @param {userId} string user id
+   *  @param {assigneeId} string user id of the student the opportunities are to be recommended to
+   *  @param {opportunities} string[] a list of all opportunities to be added
+   * @returns {Object} status code and message
+   */
+  // single add - /add/todo - considerations
+  // multi add - considerationId list
+  async bulkAddConsiderationToToDo(userId: string, considerations: string[], instituteId: string) {
+    const todoIds = [];
+    const groupId = uuidv4();
+    const TodoList = [];
+    const ResultList = [];
+    const delReccIds = [];
+    const hasTodo = await this.sfService.models.todos.get('*', {
+      Assignee: userId,
+      }, 
+      {}, 
+      instituteId
+    );
+    hasTodo.map(todo => {
+      if (todo.Opportunit_Id !== null) {
+        TodoList.push(todo.Opportunit_Id);
+      }
+    });
+    for (let i = 0; i < considerations.length; i++) {
+      // const considerationObj = [];
+      const consideration = considerations[i];
+      const recc = await this.sfService.models.recommendations.get('*', {
+        Id: consideration,
+        Assignee: userId,
+      }, {}, instituteId);
+
+      if (recc.length > 0) {
+        if (TodoList.indexOf(recc[0].Event__c) < 0) {
+          const event = await this.sfService.models.accounts.get('*', {
+            Id: recc[0].Event,
+          }, {}, instituteId);
+
+          ResultList.push({
+            consideration: consideration,
+            status: 'Added',
+          });
+
+          const obj: any = {
+            To_do: event[0]['Account_Name'],
+            Opportunit_Id: recc[0].Event,
+            Description: event[0]['Description'],
+            Complete_By: event[0]['End_Date']
+              ? new Date(event[0]['End_Date'])
+              : null,
+            Assignee: userId,
+            Task_Status: 'Open',
+            Status: 'Approved',
+            Group_Id: groupId,
+            Created_at: new Date(),
+            Type: event[0]['Category'],
+            Event_Venue: event[0]['Venue'],
+            Event_At: event[0]['Start_Date']
+              ? new Date(event[0]['Start_Date'])
+              : null,
+          };
+
+          // considerationObj.push(obj);
+          const createResponse = await this.sfService.models.todos.create(obj, instituteId);
+
+          delReccIds.push(consideration);
+          todoIds.push(createResponse.id);
+        } else {
+          delReccIds.push(consideration);
+          ResultList.push({
+            consideration: consideration,
+            status: 'Not Added',
+          });
+        }
+      } else {
+        ResultList.push({
+          consideration: consideration,
+          status: 'No Consideration Found!',
+        });
+      }
+    }
+    if (delReccIds.length > 0) {
+      const del = await this.sfService.models.recommendations.delete(delReccIds, instituteId);
+      console.log(del);
+      
+    }
+
+    return {
+      groupId,
+      todoIds,
+      ResultList,
+    };
+  }
+
+  /** adds opportunities in bulk to considerations
+   *  @param {userId} string user id
+   *  @param {assigneeId} string user id of the student the opportunities are to be recommended to
+   *  @param {opportunities} string[] a list of all opportunities to be added
+   * @returns {Object} status code and message
+   */
+   async shareConsideration(
+    userId: string,
+    opportunityIds: string[],
+    assigneesIds: string[],
+    instituteId: string
+  ) {
+    if (opportunityIds.length == 0 && assigneesIds.length == 0) {
+      throw new NotFoundException('Opportunity And Assignee Required');
+    }
+    const mapOfAlreadyRecommended = new Map();
+    const mapOfAlreadyEnrolled = new Map();
+    const allRecommended = await this.sfService.models.recommendations.get(
+      'Assignee, Event',
+      {
+        Recommended_by: userId,
+        Accepted: 'Pending',
+      },
+      {},
+      instituteId
+    );
+    const allEnrolled = await this.sfService.models.todos.get(
+      'Assignee, Opportunit_Id',
+      {},
+      {},
+      instituteId
+    );
+    allRecommended.map(event => {
+      const RecommendedUser = event.Assignee;
+      const RecommendedOpportunity = event.Event;
+      mapOfAlreadyRecommended.set(
+        RecommendedUser + '_' + RecommendedOpportunity,
+        1,
+      );
+    });
+    allEnrolled.map(event => {
+      const EnrolledUser = event.Assignee;
+      const EnrolledOpportunity = event.Opportunit_Id;
+      mapOfAlreadyEnrolled.set(EnrolledUser + '_' + EnrolledOpportunity, 1);
+    });
+
+    const unassignedUsers = [];
+    const Result = [];
+    if (opportunityIds.length == 1) {
+      const oppid = opportunityIds[0];
+      const op = await this.sfService.models.accounts.get('*', { Id: oppid }, {}, instituteId);
+      if (op[0].opportunityScope === 'Discrete') {
+        for (const asignId of assigneesIds) {
+          // create discrete opportunity
+          await this.sfService.models.opportunities.create({
+            Contact: asignId,
+            Account: oppid,
+          }, instituteId);
+          const res = await this.sfService.models.recommendations.create({
+            Assignee: asignId,
+            Recommended_by: userId,
+            Event: oppid,
+            Accepted: 'Pending',
+            Created_at: new Date(),
+          }, instituteId);
+          const notificationTitle = `Opportunity shared by user`;
+          const notificationMsg = `Opportunity has been shared by user`;
+          // try {
+          //   // create push notification
+          //   await this.firebaseService.sendNotification(
+          //     asignId,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetConsiderationNotificationData(
+          //         res['id'],
+          //       ),
+          //       type: 'Share opportunity',
+          //     },
+          //   );
+          // } catch (error) {
+          //   console.log('error', error);
+          // }
+          // create notification
+          await this.sfService.models.notifications.create({
+            Title: notificationTitle,
+            Contact: asignId,
+            Created_at: new Date(),
+            Is_Read: false,
+            Notification_By: userId,
+            Event_type: op[0].Category,
+            Type: 'New in Consideration',
+            Recommendation: res.id,
+            Opportunity: oppid,
+          }, instituteId);
+          const Message = 'Successfully Shared';
+          Result.push({ oppid, asignId, Message });
+        }
+        return {
+          statusCode: 200,
+          message: 'Success',
+          data: Result,
+        };
+      }
+    }
+    const getAllOpp = await this.sfService.models.accounts.get('Id, Category', {
+      Id: opportunityIds,
+    }, {}, instituteId);
+    const oppObj = {};
+    getAllOpp.map(opp => {
+      oppObj[opp.Id] = opp.Category;
+    });
+    for (const oppId of opportunityIds) {
+      const notRecommendedContactsIds = [];
+      for (const asignId of assigneesIds) {
+        const recommended = mapOfAlreadyRecommended.has(asignId + '_' + oppId);
+        const enrolled = mapOfAlreadyEnrolled.has(asignId + '_' + oppId);
+        if (recommended !== true && enrolled !== true) {
+          const res = await this.sfService.models.recommendations.create({
+            Assignee: asignId,
+            Recommended_by: userId,
+            Event: oppId,
+            Accepted: 'Pending',
+            Created_at: new Date(),
+          }, instituteId);
+          const notificationTitle = `Opportunity shared by user`;
+          const notificationMsg = `Opportunity has been shared by user`;
+          // try {
+          //   // create push notification
+          //   await this.firebaseService.sendNotification(
+          //     asignId,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetConsiderationNotificationData(
+          //         res['id'],
+          //       ),
+          //       type: 'Share opportunity',
+          //     },
+          //   );
+          // } catch (error) {
+          //   console.log('error', error);
+          // }
+          // create notification
+          await this.sfService.models.notifications.create({
+            Title: notificationTitle,
+            Contact: asignId,
+            Created_at: new Date(),
+            Is_Read: false,
+            Notification_By: userId,
+            Event_type: oppObj[oppId] || null,
+            Type: 'New in Consideration',
+            Recommendation: res.id,
+            Opportunity: oppId,
+          });
+          const Message = 'Successfully Shared';
+          Result.push({ oppId, asignId, Message });
+        } else {
+          let Message = '';
+          if (enrolled) {
+            Message = 'Already Enrolled';
+          } else {
+            Message = 'Already Recommended';
+          }
+          Result.push({ oppId, asignId, Message });
+        }
+      }
+    }
+
+    return {
+      statusCode: 200,
+      message: 'Success',
+      data: Result,
+    };
+    // unshareddata: unassignedUsers,
+  }
+
+  /** bulk decline considerations (recommendations)
+   *  @param {considerations} string[] a list of all consideration Ids to be dismissed
+   * @returns {Object} status code and message
+   */
+   async bulkDismissConsiderations(considerations: string[], instituteId: string) {
+    const TodoList = [];
+    const ResultList = [];
+    const delReccIds = [];
+    // logic for correcting some data in prod.
+    const hasTodo = await this.sfService.models.todos.get('*', {}, {}, instituteId);
+    hasTodo.map(activity => {
+      if (activity.Opportunit_Id !== null) {
+        TodoList.push(activity.Opportunit_Id);
+      }
+    });
+    for (let i = 0; i < considerations.length; i++) {
+      const groupId = uuidv4();
+      const considerationId = considerations[i];
+      const consideration = await this.sfService.models.recommendations.get('*', {
+        Id: considerationId,
+      }, {}, instituteId);
+
+      if (TodoList.indexOf(consideration[0].Event) < 0) {
+        const createResponse = await this.sfService.models.recommendations.update(
+          { Accepted: 'Declined' },
+          considerationId,
+          instituteId
+        );
+      } else {
+        delReccIds.push(considerationId);
+      }
+    }
+
+    if (delReccIds.length > 0) {
+      await this.sfService.models.recommendations.delete(delReccIds, instituteId);
+    }
+
+    return {
+      statusCode: 200,
+      message: 'Dismissed all recommendations!',
+      data: considerations,
+    };
+  }
+
+  async bulkOpportunitiestoTodo(
+    userId: string,
+    RecordTypeName: string,
+    opportunityTodoDto: OpportunityTodoDto,
+    instituteId: string
+  ): Promise<any> {
+    const { opportunityIds, assigneesIds, InstituteId } = opportunityTodoDto;
+    if (assigneesIds.length === 0 && InstituteId === '') {
+      throw new NotFoundException('Assignees Or Institute Id Are Mandatory');
+    }
+    const todoList = [];
+    const resultList = [];
+    const delConsIds = [];
+    const ConsiderationsObj = {};
+    if (assigneesIds.length !== 0) {
+      for (const oppId of opportunityIds) {
+        const groupId = uuidv4();
+        const opp = await this.sfService.models.accounts.get('*', {
+          Id: oppId,
+        }, {}, instituteId);
+        for (const asignId of assigneesIds) {
+          const considerations = await this.sfService.models.recommendations.get(
+            'Id, Event',
+            {
+              Assignee: asignId,
+              Accepted: 'Pending',
+            },
+            {}, 
+            instituteId
+          );
+          considerations.map(cons => {
+            ConsiderationsObj[cons.Event] = cons.Id;
+          });
+
+          const check = await this.sfService.models.todos.get('Id', {
+            Assignee: asignId,
+            Opportunit_Id: oppId,
+          }, {}, instituteId);
+          if (check.length === 0) {
+            if (ConsiderationsObj.hasOwnProperty(oppId)) {
+              delConsIds.push(ConsiderationsObj[oppId]);
+            }
+            const todoObj = {
+              To_do: opp[0].Account_Name,
+              Assignee: asignId,
+              Complete_By: opp[0].End_Date
+                ? new Date(opp[0].End_Date)
+                : null,
+              Created_at: new Date(),
+              Description: opp[0].Description,
+              Opportunit_Id: oppId,
+              Event_At: opp[0].Start_Date
+                ? new Date(opp[0].Start_Date)
+                : null,
+              Event_Venue: opp[0].Venue,
+              Group_Id: groupId,
+              Listed_by: opp[0].Listed_by,
+              Status: 'Approved',
+              Task_Status: 'Open',
+              Todo_Scope: opp[0].opportunityScope,
+              Type: opp[0].Category,
+            };
+            todoList.push(todoObj);
+            resultList.push({
+              assignee: asignId,
+              opportunity: oppId,
+              status: 'Added',
+            });
+          } else {
+            resultList.push({
+              assignee: asignId,
+              opportunity: oppId,
+              status: 'Not Added',
+            });
+          }
+        }
+      }
+      if (todoList.length > 0) {
+        await this.sfService.models.todos.create(todoList, instituteId);
+      }
+      if (delConsIds.length > 0) {
+        await this.sfService.models.recommendations.delete(delConsIds);
+      }
+      // add notification for recepients !
+      return { statusCode: 200, message: 'success', data: resultList };
+    } else if (InstituteId !== '') {
+      const personasIdsList = [],
+        notShareIdsList = [];
+      const personas = await this.sfService.models.affiliations.get(
+        'Contact.Id, Contact.dev_uuid, Contact.prod_uuid',
+        {
+          Organization: InstituteId,
+        },
+        {}, 
+        instituteId
+      );
+      personas.map(recipient => {
+        if (recipient.Contact.Id !== null) {
+          if (
+            recipient.Contact.dev_uuid !== null &&
+            recipient.Contact.prod_uuid !== null
+          ) {
+            personasIdsList.push(recipient.Contact.Id);
+          } else {
+            notShareIdsList.push(recipient.Contact.Id);
+          }
+        }
+      });
+      for (const oppId of opportunityIds) {
+        const groupId = uuidv4();
+        const opp = await this.sfService.models.accounts.get('*', {
+          Id: oppId,
+        }, {}, instituteId);
+        for (const asignId of personasIdsList) {
+          const considerations = await this.sfService.models.recommendations.get(
+            'Id, Event',
+            {
+              Assignee: asignId,
+              Accepted: 'Pending',
+            },
+            {},
+            instituteId
+          );
+          considerations.map(cons => {
+            ConsiderationsObj[cons.Event] = cons.Id;
+          });
+          if (opp[0].opportunityScope === 'Discrete') {
+            const check = await this.sfService.models.todos.get('Id', {
+              Assignee: asignId,
+              Opportunit_Id: oppId,
+            }, {}, instituteId);
+            const discreteAssigneeList = [];
+            const discreteAssignee = await this.sfService.models.opportunities.get(
+              'Contact',
+              { Account: oppId },
+              {},
+              instituteId
+            );
+            discreteAssignee.map(assignee => {
+              discreteAssigneeList.push(assignee.Contact);
+            });
+            if (
+              check.length === 0 &&
+              discreteAssigneeList.indexOf(asignId) >= 0
+            ) {
+              if (ConsiderationsObj.hasOwnProperty(oppId)) {
+                delConsIds.push(ConsiderationsObj[oppId]);
+              }
+              const todoObj = {
+                Assignee: asignId,
+                Complete_By: opp[0].End_Date
+                  ? new Date(opp[0].End_Date)
+                  : null,
+                Created_at: new Date(),
+                Opportunit_Id: oppId,
+                Description: opp[0].Description,
+                Event_At: opp[0].Start_Date
+                  ? new Date(opp[0].Start_Date)
+                  : null,
+                Event_Venue: opp[0].Venue,
+                Group_Id: groupId,
+                Listed_by: opp[0].Listed_by,
+                Status: 'Approved',
+                Task_Status: 'Open',
+                Todo_Scope: opp[0].opportunityScope,
+                Type: opp[0].Category,
+              };
+              todoList.push(todoObj);
+              resultList.push({
+                assignee: asignId,
+                opportunity: oppId,
+                status: 'Added',
+              });
+            } else {
+              resultList.push({
+                assignee: asignId,
+                opportunity: oppId,
+                status: 'Not Added',
+              });
+            }
+          } else if (opp[0].opportunityScope__c === 'Global') {
+            const check = await this.sfService.models.todos.get('Id', {
+              Assignee: asignId,
+              Opportunit_Id: oppId,
+            }, {}, instituteId);
+            if (check.length === 0) {
+              if (ConsiderationsObj.hasOwnProperty(oppId)) {
+                delConsIds.push(ConsiderationsObj[oppId]);
+              }
+              const todoObj = {
+                To_do: opp[0].Account_Name,
+                Assignee: asignId,
+                Opportunit_Id: oppId,
+                Complete_By: opp[0].End_Date
+                  ? new Date(opp[0].End_Date)
+                  : null,
+                Created_at: new Date(),
+                Description: opp[0].Description,
+                Event_At: opp[0].Start_Date
+                  ? new Date(opp[0].Start_Date)
+                  : null,
+                Event_Venue: opp[0].Venue,
+                Group_Id: groupId,
+                Listed_by: opp[0].Listed_by,
+                Status: 'Approved',
+                Task_Status: 'Open',
+                Todo_Scope: opp[0].opportunityScope,
+                Type: opp[0].Category,
+              };
+              todoList.push(todoObj);
+              resultList.push({
+                assignee: asignId,
+                opportunity: oppId,
+                status: 'Added',
+              });
+            } else {
+              resultList.push({
+                assignee: asignId,
+                opportunity: oppId,
+                status: 'Not Added',
+              });
+            }
+          }
+        }
+        for (const assignId of notShareIdsList) {
+          resultList.push({
+            assignee: assignId,
+            opportunity: oppId,
+            status: 'Not Added',
+          });
+        }
+      }
+      if (todoList.length > 0) {
+        await this.sfService.models.todos.create(todoList, instituteId);
+      }
+      if (delConsIds.length > 0) {
+        await this.sfService.models.recommendations.delete(delConsIds, instituteId);
+      }
+      return { statusCode: 200, message: 'success', data: resultList };
+    }
+    return { statusCode: 400, message: 'failure', data: [] };
+  }
 
   /** gets enrolled and interested opportunity users
    *  @param {opportunityId} string opportunity id
