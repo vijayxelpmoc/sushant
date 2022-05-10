@@ -1,4 +1,5 @@
-import { IsOptional, IsString } from 'class-validator';
+import { IsEnum, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateSfAdvisorDto {
   @IsOptional()
@@ -28,4 +29,26 @@ export class UpdateSfAdvisorDto {
   @IsOptional()
   @IsString()
   linkedin: string;
+}
+
+export class EventStatusDto {
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  eventId: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  @IsEnum({ Accept: 'Accept', Reject: 'Reject' })
+  status: string;
+
+  // @IsNotEmpty()
+  // @IsString()
+  // notificationId: string;
+
+  @ApiProperty()
+  @IsNotEmpty()
+  @IsString()
+  type: string;
 }

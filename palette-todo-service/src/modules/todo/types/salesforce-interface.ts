@@ -106,6 +106,7 @@ export interface SFTask {
   Type: string;
   Event_At: string;
   Event_Venue: string;
+  Assignee_accepted_status?: string;
   Opportunit_Id: string;
 }
 

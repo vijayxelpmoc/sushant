@@ -128,6 +128,10 @@ export class CreateTodoV2Dto {
   @IsOptional()
   @IsString()
   InstituteId: string;
+  
+  @IsOptional()
+  @IsString()
+  Todo_Scope: string;
 
   @IsOptional()
   @IsString()
