@@ -36,6 +36,8 @@ export class AdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getAdmin(@Request() req, @Query('instituteId') instituteId: string) {
+    console.log(req.user);
+    
     // // Cache the user profile as it's accessed multiple
     // // times throughout the application
     // const cacheKey = `admin_${req.user.id}`;
@@ -99,6 +101,8 @@ export class AdminController {
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
   ): Promise<any> {
+    // console.log(req.user);
+    
     return await this.adminService.getOpportunitydetail(id, instituteId);
   }
 

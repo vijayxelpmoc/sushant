@@ -28,7 +28,8 @@ export class AdminService {
   async getAdmin(id: string, instituteId: string) {
     const responseData: SFAdminContact[] =
       await this.sfService.generics.contacts.get(
-        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
+        // 'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
+        "Id,Name",
         {
           Id: id,
         },

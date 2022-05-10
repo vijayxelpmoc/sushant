@@ -1229,7 +1229,7 @@ export class UserNetworkService {
               instituteId,
             );
 
-          // console.log('elev', advisorObserverDetails);
+          // console.log('elev', advisorObserverDetail);
 
           advisorObserverDetails.map((observer) => {
             if (checkRepeatition.indexOf(observer.Id) == -1) {
