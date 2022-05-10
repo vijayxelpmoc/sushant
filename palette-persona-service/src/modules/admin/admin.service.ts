@@ -35,7 +35,7 @@ export class AdminService {
         {},
         instituteId,
       );
-    // console.log(responseData);
+    console.log(responseData);
 
     if (!responseData) {
       throw new NotFoundException(`Admin with ID "${id}" not found`);
@@ -202,9 +202,7 @@ export class AdminService {
     // notification details.
     const notification = await this.sfService.models.notifications.get(
       '*',
-      {
-        Id: notificationId,
-      },
+      {},
       {},
       instituteId,
     );
