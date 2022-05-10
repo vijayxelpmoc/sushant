@@ -236,7 +236,7 @@ export class TodoController {
     @Body('note') note,
     @Body('instituteId') instituteId: string,
   ) {
-    console.log(instituteId);
+    // console.log(instituteId);
 
     return await this.todoService.updateToDoStatus(
       req.user.id,
@@ -291,7 +291,7 @@ export class TodoController {
     @Request() req,
     @Query('instituteId') instituteId: string,
   ) {
-    console.log(req.user);
+    // console.log(req.user);
 
     return await this.todoService.getTodoRecepients(
       req.user.id,
@@ -423,7 +423,7 @@ export class TodoController {
     @Body('instituteId') instituteId: string,
     @Request() req,
   ) {
-    console.log(req.user);
+    // console.log(req.user);
 
     return await this.todoService.createTodoV2(
       createTodoDto,
