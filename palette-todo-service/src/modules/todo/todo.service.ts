@@ -1223,7 +1223,7 @@ export class TodoService {
       }
 
       // console.log("updateTodoDto",updateTodoDto);
-      
+
       // if block only for admin edit
       if (RecordType === 'Administrator') {
         updateObj['Opportunity_Id'] = null;
@@ -1364,7 +1364,6 @@ export class TodoService {
       }));
 
       // console.log("updateObjArray",updateObjArray);
-      
 
       updateObjArray.forEach(async (OBJ) => {
         // console.log("OBJ",OBJ);
@@ -2213,6 +2212,7 @@ export class TodoService {
                 acceptedStatus: todo.acceptedStatus,
               },
             ],
+            Assignee_accepted_status: todo.acceptedStatus,
             opportunity: todo.opportunity,
           };
           const obj = {
@@ -2245,6 +2245,7 @@ export class TodoService {
           createdAt: todo.createdAt,
           listedBy: todo.Listed_by,
           Assignee: [],
+          Assignee_accepted_status: todo.acceptedStatus,
           opportunity: todo.opportunity,
         };
 
