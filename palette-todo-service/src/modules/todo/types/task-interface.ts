@@ -3,23 +3,22 @@ export interface Task {
   groupId: string;
   Assignee: object;
   AssigneeName: string;
+  Assignee_accepted_status: string;
   profilePicture: string;
   Archived: boolean;
   name: string;
   description: string;
-  TaskStatus:string,
+  TaskStatus: string;
   status: string;
-  todoScope:string;
+  todoScope: string;
   type: string;
   eventAt: string;
   venue: string;
   completeBy: string;
   createdAt: string;
-  listedBy: {
-    Id: string;
-    Name: string;
-  };
-  opportunity:string
+  createdBy: string;
+  Listed_by: string;
+  opportunity: string;
 }
 
 export interface ResponseResources {
@@ -36,7 +35,7 @@ export interface ResponseTasksDetails {
     status: string;
     completeBy: string;
     createdAt: string;
-    listedBy: {
+    Listed_by: {
       Id: string;
       Name: string;
     };

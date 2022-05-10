@@ -104,11 +104,7 @@ functions:
           cors: true
       - http:
           method: PATCH
-          path: /todo/update/todo/{id}
-          request: 
-            parameters:
-              paths: 
-                id: true
+          path: /todo/update/todo
           cors: true
       - http:
           method: PATCH

@@ -18,7 +18,19 @@ export class UpdateTodoDto {
 
   @IsOptional()
   @IsString()
+  reminderAt: string;
+
+  @IsOptional()
+  @IsString()
   name: string;
+
+  @IsOptional()
+  @IsString()
+  Status: string;
+
+  @IsOptional()
+  @IsString()
+  Task_Status: string;
 
   @IsOptional()
   @IsString()
@@ -47,14 +59,13 @@ export class UpdateTodoDto {
   deletedResources: string[];
 
   @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  assignees: string[];
+
+  @IsOptional()
   @ValidateNested({ each: true })
   @Type(() => TodoResourceDto)
   @IsArray()
   newResources: TodoResourceDto[];
-}
-
-export class UpdateStatusDto {
-  @IsString()
-  @IsNotEmpty()
-  status: string;
 }
