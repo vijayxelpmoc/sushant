@@ -87,6 +87,7 @@ export class TodoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   async getTodos(@Request() req, @Query('instituteId') instituteId: string) {
+    // req.user.id = "0034x000012A8rnAAC";
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
@@ -235,7 +236,7 @@ export class TodoController {
     @Body('note') note,
     @Body('instituteId') instituteId: string,
   ) {
-    console.log(instituteId);
+    // console.log(instituteId);
 
     return await this.todoService.updateToDoStatus(
       req.user.id,
@@ -290,7 +291,7 @@ export class TodoController {
     @Request() req,
     @Query('instituteId') instituteId: string,
   ) {
-    console.log(req.user);
+    // console.log(req.user);
 
     return await this.todoService.getTodoRecepients(
       req.user.id,
@@ -357,25 +358,37 @@ export class TodoController {
    * @param updateTodoDto
    * fields with values that has to be updated
    */
-  @hasRoles(Role.Student, Role.Parent, Role.Advisor, Role.Faculty)
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Patch('/update/todo/:id') //12
+  @Patch('/update/todo')
   async updateTodo(
-    @Body() updateTodoDto: UpdateTodoDto,
-    @Param('id') id,
+    @Body('updatedTodo') updateTodoDto: UpdateTodoDto,
     @Request() req,
     @Body('instituteId') instituteId: string,
   ) {
     return await this.todoService.updateTodo(
       updateTodoDto,
       req.user.id,
-      id,
+      req.user.recordTypeName,
       instituteId,
     );
   }
 
   // reviewed
-  @hasRoles(Role.Student)
+  @hasRoles(
+    Role.Student,
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('update/bulk/status') //13
   async bulkUpdate(
@@ -410,7 +423,7 @@ export class TodoController {
     @Body('instituteId') instituteId: string,
     @Request() req,
   ) {
-    console.log(req.user);
+    // console.log(req.user);
 
     return await this.todoService.createTodoV2(
       createTodoDto,

@@ -33,7 +33,7 @@ export interface CreateTodo {
   eventAt?: string;
   completeBy?: string;
   assignee: string[];
-  listedBy: string;
+  Listed_by: string;
   instituteId: string;
 }
 

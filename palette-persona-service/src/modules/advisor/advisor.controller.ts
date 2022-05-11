@@ -8,6 +8,7 @@ import {
   Param,
   UseInterceptors,
   Query,
+  Post,
 } from '@nestjs/common';
 
 import {
@@ -25,8 +26,7 @@ import { UpdateSfAdvisorDto } from './dto/advisor-update-profile.dto';
 })
 export class AdvisorController {
   constructor(
-    private advisorService: AdvisorService,
-    // private cachingService: CachingService,
+    private advisorService: AdvisorService, // private cachingService: CachingService,
   ) {}
 
   @hasRoles(Role.Advisor)
@@ -56,22 +56,22 @@ export class AdvisorController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Patch('profile/update')
   async update(
-    @Request() req, 
+    @Request() req,
     @Body() updateSfAdvisorDto: UpdateSfAdvisorDto,
     @Body('instituteId') instituteId: string,
   ) {
     return this.advisorService.update(
-      req.user.id, 
+      req.user.id,
       updateSfAdvisorDto,
       instituteId,
     );
   }
- 
+
   /**
-  * Function to get the details of the advisor by ID
-  * @param id id of the advisor
-  * object Array of advisor details
-  */
+   * Function to get the details of the advisor by ID
+   * @param id id of the advisor
+   * object Array of advisor details
+   */
   @hasRoles(
     Role.Parent,
     Role.Administrator,
@@ -85,9 +85,57 @@ export class AdvisorController {
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
   ) {
-    const advisor = await this.advisorService.getAdvisor(
-      id,
+    const advisor = await this.advisorService.getAdvisor(id, instituteId);
+  }
+
+  // Guardian Opportunity Approvals
+  @hasRoles(Role.Advisor, Role.Administrator)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('opportunity/approvals')
+  async getOpportunityApprovals(
+    @Request() req,
+    @Query('instituteId') instituteId: string,
+  ) {
+    return await this.advisorService.getOpportunityApprovals(
+      req.user.id,
       instituteId,
     );
+  }
+
+  @hasRoles(Role.Advisor, Role.Administrator)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('opportunity/approvals/:id')
+  async getOpportunityDetail(
+    @Request() req,
+    @Param('id') id: string,
+    @Query('instituteId') instituteId: string,
+  ) {
+    return await this.advisorService.getOpportunitydetail(id, instituteId);
+  }
+
+  @hasRoles(Role.Advisor, Role.Administrator)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('opportunity/approvals/:id')
+  async opportunityApprovals(
+    @Request() req,
+    @Param('id') id: string,
+    @Body('status') status: string,
+    @Body('instituteId') instituteId: string,
+  ) {
+    if (status == 'Accept') {
+      return await this.advisorService.acceptOrRejectOpportunity(
+        id,
+        'In Review',
+        req.user.id,
+        instituteId,
+      );
+    } else {
+      return await this.advisorService.acceptOrRejectOpportunity(
+        id,
+        'Rejected',
+        req.user.id,
+        instituteId,
+      );
+    }
   }
 }
