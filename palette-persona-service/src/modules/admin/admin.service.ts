@@ -26,6 +26,8 @@ export class AdminService {
   }
 
   async getAdmin(id: string, instituteId: string) {
+    console.log(instituteId);
+    
     const responseData: SFAdminContact[] =
       await this.sfService.generics.contacts.get(
         // 'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
@@ -203,7 +205,9 @@ export class AdminService {
     // notification details.
     const notification = await this.sfService.models.notifications.get(
       '*',
-      {},
+      { 
+        // Id:notificationId
+      },
       {},
       instituteId,
     );
@@ -268,8 +272,8 @@ export class AdminService {
 
     // if id is of modification.
     const mods = await this.sfService.models.modifications.get( // error
-      'Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name, *',
-      // 'Opportunity_Id.Listed_by,*',
+      // 'Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name, *',
+      'Opportunity_Id.Listed_by,*',
       {
         Id: id,
       },

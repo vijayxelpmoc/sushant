@@ -46,8 +46,44 @@ functions:
           path: admin/profile/update
           cors: true
       - http:  
+          method: POST
+          path: admin/status
+          cors: true
+      - http:  
+          method: GET
+          path: admin/todo/approvals
+          cors: true
+      - http:  
+          method: GET
+          path: admin/todo/approvals/{id}
+          cors: true
+      - http:  
+          method: GET
+          path: admin/todo/approve/{id}
+          cors: true 
+      - http:  
+          method: GET
+          path: admin/todo/reject/{id}
+          cors: true
+      - http:  
+          method: GET
+          path: admin/approvals/{id}
+          cors: true
+      - http:  
           method: GET
           path: advisor/profile
+          cors: true
+      - http:  
+          method: GET
+          path: advisor/opportunity/approvals
+          cors: true
+      - http:  
+          method: GET
+          path: advisor/opportunity/approvals/{id}
+          cors: true
+      - http:  
+          method: POST
+          path: advisor/opportunity/approvals/{id}
           cors: true
       - http:  
           method: GET
