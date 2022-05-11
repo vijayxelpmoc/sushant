@@ -86,3 +86,11 @@ functions:
           method: POST
           path: users/profile/add/picture
           cors: true
+      - http:
+          method: GET
+          path: auth/programs
+          cors: true
+      - http:
+          method: GET
+          path: auth/programs/roles
+          cors: true
