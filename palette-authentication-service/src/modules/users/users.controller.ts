@@ -28,8 +28,9 @@ export class UsersController {
   async preRegister(
     @Body() preRegisterUserDto: PreRegisterUserDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
-    return this.usersService.preRegisterForPalette(preRegisterUserDto, instituteId);
+    return this.usersService.preRegisterForPalette(preRegisterUserDto, instituteId, programId);
   }
 
   @hasRoles(
@@ -46,11 +47,15 @@ export class UsersController {
     @Body() addProfilePictureDto: AddProfilePictureDto,
     @Req() req,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+    @Body('role') role: string,
   ) {
     return this.usersService.addProfilePicture(
       addProfilePictureDto,
       req.user.id,
       instituteId,
+      programId,
+      role,
     );
   }
 }

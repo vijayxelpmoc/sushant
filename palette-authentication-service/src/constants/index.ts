@@ -29,3 +29,9 @@ export const Responses = {
 export const EnvKeys = {
   PASSWORD_HASHING_KEY: "$2b$10$yDjv.HvX6K5mY.9ZPYAs5O",
 }
+
+export const AccountRecordType = {
+  ACTIVITY: 'Activity',
+  EDUCATIONAL_INSTITUTION: 'Educational Institution',
+  // ACTIVITY: 'activities',
+}

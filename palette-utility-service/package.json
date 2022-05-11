@@ -16,7 +16,7 @@
   },
   "dependencies": {
     "@gowebknot/palette-salesforce-service": "^1.0.14-stable",
-    "@gowebknot/palette-wrapper": "^1.0.5",
+    "@gowebknot/palette-wrapper": "^1.0.9",
     "@nestjs/common": "^8.1.1",
     "@nestjs/config": "^1.1.6",
     "@nestjs/core": "^8.1.1",

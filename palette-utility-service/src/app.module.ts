@@ -6,6 +6,8 @@ import { WrapperModule } from '@gowebknot/palette-wrapper';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UtilityModule } from './modules/utility/utility.module';
+import { SfModule } from '@gowebknot/palette-salesforce-service';
+import { NotificationsModule } from './modules/notifications/notifications.module';
 
 @Module({
   imports: [
@@ -20,7 +22,9 @@ import { UtilityModule } from './modules/utility/utility.module';
       envFilePath: '.env',
     }),
     WrapperModule,
+    SfModule.forRoot(),
     UtilityModule,
+    NotificationsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
