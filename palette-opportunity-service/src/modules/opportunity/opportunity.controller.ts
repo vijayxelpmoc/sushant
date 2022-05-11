@@ -214,30 +214,30 @@ export class OpportunityController {
     return await this.opportunityService.getSelfOpportunities(req.user.id, instituteId);
   }
 
-  /** adds opportunity to consideration
-   *  @param {Id} string opportunity id
-   *  @returns {Object} status code and message
-   */
-   @hasRoles(
-    Role.Student,
-    Role.Parent,
-    Role.Advisor,
-    Role.Faculty,
-    Role.Administrator,
-  )
-  @UseGuards(JwtAuthGuard, RolesGuard)
-  @Post('add/considerations/:opportunityId')
-  async ConsiderOpportunities(
-    @Request() req,
-    @Param('opportunityId') opportunityId: string,
-    @Body('instituteId') instituteId: string,
-  ): Promise<BasicResponse> {
-    return await this.opportunityService.addtoConsiderations(
-      req.user.id,
-      opportunityId,
-      instituteId,
-    );
-  }
+  // /** adds opportunity to consideration
+  //  *  @param {Id} string opportunity id
+  //  *  @returns {Object} status code and message
+  //  */
+  //  @hasRoles(
+  //   Role.Student,
+  //   Role.Parent,
+  //   Role.Advisor,
+  //   Role.Faculty,
+  //   Role.Administrator,
+  // )
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Post('add/considerations/:opportunityId')
+  // async ConsiderOpportunities(
+  //   @Request() req,
+  //   @Param('opportunityId') opportunityId: string,
+  //   @Body('instituteId') instituteId: string,
+  // ): Promise<BasicResponse> {
+  //   return await this.opportunityService.addtoConsiderations(
+  //     req.user.id,
+  //     opportunityId,
+  //     instituteId,
+  //   );
+  // }
 
   /** adds opportunity to todo
    *  @param {Id} string opportunity id

@@ -20,7 +20,7 @@ export class DataProcessorService {
   async process() {
     const credentials = await this.sfCredentialsService.get();
     const models = await this.sfModelsService.get();
-    const fields = await this.sfFieldsService.get();
+    const fields = await this.sfFieldsService.get();    
 
     const repeatedObjects: any = {};
 
