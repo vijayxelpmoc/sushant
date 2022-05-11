@@ -4,7 +4,6 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import {
-  SfService,
   Notifier,
   NotificationType,
   NotificationTypeEmail,
@@ -13,6 +12,7 @@ import {
 import { Errors, Responses } from '@src/constants';
 import { ContactInfoDto, FeedbackInfoDto, ReportIssueDto } from './dto';
 import { SFGuide } from './types';
+import { SfService } from '@gowebknot/palette-salesforce-service';
 
 @Injectable()
 export class UtilityService {

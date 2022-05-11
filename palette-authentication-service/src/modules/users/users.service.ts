@@ -2,6 +2,7 @@ import {
   Injectable,
   UnauthorizedException,
   ForbiddenException,
+  NotFoundException,
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import Cryptr from 'cryptr';
@@ -12,18 +13,20 @@ import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
 import { User, Roles } from './types';
 // const Cryptr = require('cryptr');
 import { EnvKeys } from '@src/constants';
+import { AuthService } from '../auth/auth.service';
 
 @Injectable()
 export class UsersService {
   // private _cryptr: Cryptr;
   constructor(
     private sfService: SfService,
-    private configService: ConfigService
+    private configService: ConfigService,
+    private authService: AuthService,
     ) {
     // this._cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
   }
 
-  async preRegisterForPalette(preRegisterUserDto: PreRegisterUserDto, instituteId: string) {
+  async preRegisterForPalette(preRegisterUserDto: PreRegisterUserDto, instituteId: string, programId: string) {
     const { email, password, ferpa, role } = preRegisterUserDto;
 
     const user: User = (
@@ -31,6 +34,8 @@ export class UsersService {
         'Id, Name, Palette_Email, Contact_Record_Type, Phone, IsRegisteredOnPalette, Palette_Key, Record_Type_Name',
         {
           Palette_Email: email,
+          Primary_Educational_Institution: programId,
+          Record_Type_Name: role,
         },
         {},
         instituteId,
@@ -91,7 +96,21 @@ export class UsersService {
     addProfilePictureDto: AddProfilePictureDto,
     userId: string,
     instituteId,
+    programId,
+    role,
   ) {
+    const user = await this.authService._getUser({
+        Primary_Educational_Institution: programId,
+        Record_Type_Name: role,
+      }, 
+      {}, 
+      instituteId
+    );
+
+    if (!user) {
+      throw new NotFoundException();
+    }
+
     await this.sfService.generics.contacts.update(userId, {
       Profile_Picture: addProfilePictureDto.url,
     }, 

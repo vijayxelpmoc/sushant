@@ -10,14 +10,14 @@ import { JwtService } from '@nestjs/jwt';
 import { v4 as uuid } from 'uuid';
 
 import {
+  Role,
   Notifier,
   NotificationType,
   EmailTemplates,
 } from '@gowebknot/palette-wrapper';
-
 // import { SfService, SFField } from '@gowebknot/palette-salesforce-service';
 
-import { Errors, Responses } from '@src/constants';
+import { AccountRecordType, Errors, Responses } from '@src/constants';
 import { User } from '@src/modules/users/types';
 import { OtpChecks } from '@src/modules/auth/types';
 import {
@@ -93,16 +93,17 @@ export class AuthService {
     const user: User = (
       await this.sfService.generics.contacts.get(_userFields, identifier, sort, instituteId)
     )[0];
-    console.log(user);
     
     return user;
   }
 
   // Service Methods
 
-  async validateUser(authValidateDto: AuthValidateDto, instituteId: string) {
+  async validateUser(authValidateDto: AuthValidateDto, instituteId: string,  programId: string, role: string) {
     const user = await this._getUser({
       Palette_Email: authValidateDto.email,
+      Primary_Educational_Institution: programId,
+      Record_Type_Name: role,
     },
     {},
     instituteId,
@@ -126,11 +127,14 @@ export class AuthService {
     };
   }
 
-  async login(authLoginDto: AuthLoginDto, instituteId: string) {
+  async login(authLoginDto: AuthLoginDto, instituteId: string, programId: string, role: string) {
     this.logger.log('NEW login Request');
   
-    const user = await this._getUser(
-      { Palette_Email: authLoginDto.email },
+    const user = await this._getUser({ 
+        Palette_Email: authLoginDto.email,
+        Primary_Educational_Institution: programId,
+        Record_Type_Name: role,
+      },
       {},
       instituteId,
     );
@@ -180,12 +184,16 @@ export class AuthService {
   async resetPassword(
     authResetPasswordDto: AuthResetPasswordDto,
     userId: string,
-    instituteId: string,
+    instituteId: string, 
+    programId: string, 
+    role: string,
   ) {
     const { oldPassword, newPassword } = authResetPasswordDto;
     // Get the old password of the user from salesforce
     const user = await this._getUser({ 
-        Id: userId 
+        Id: userId,
+        Primary_Educational_Institution: programId,
+        Record_Type_Name: role, 
       },
       {},
       instituteId,
@@ -222,10 +230,12 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(authForgotPasswordDto: AuthForgotPasswordDto, instituteId) {
+  async forgotPassword(authForgotPasswordDto: AuthForgotPasswordDto, instituteId: string, programId: string, role: string) {
     const user = await this._getUser(
       {
         Palette_Email: authForgotPasswordDto.email,
+        Primary_Educational_Institution: programId,
+        Record_Type_Name: role, 
       },
       {},
       instituteId,
@@ -278,6 +288,8 @@ export class AuthService {
   async forgotPasswordValidateOtp(
     authForgotPasswordValidateOtpDto: AuthForgotPasswordValidateOtpDto,
     instituteId: string,
+    programId: string,
+    role: string,
   ) {
     const { email, otp } = authForgotPasswordValidateOtpDto;
 
@@ -323,11 +335,15 @@ export class AuthService {
   async forgotPasswordSetNew(
     authForgotPasswordSetNewDto: AuthForgotPasswordSetNewDto,
     instituteId: string,
+    programId: string, 
+    role: string,
   ) {
     const { email, newPassword, senderValidationId } =
       authForgotPasswordSetNewDto;
     const user = await this._getUser({
         Palette_Email__c: email,
+        Primary_Educational_Institution: programId,
+        Record_Type_Name: role, 
       },
       {},
       instituteId
@@ -367,5 +383,58 @@ export class AuthService {
       subject: '[!IMP] Palette Password Reset OTP',
       body: 'Hello this is a test email',
     });
+  }
+
+
+  async getMultiplePrograms(instituteId: string): Promise<any> {
+    let EDUCATIONAL_INSTITUTION = AccountRecordType.EDUCATIONAL_INSTITUTION;
+    const programs = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', { Record_Type_Name: EDUCATIONAL_INSTITUTION }, {}, instituteId);
+
+    // console.log('programs', programs);
+    const institutePrograms = [];
+    programs.map(program => {
+      const programObj = {};
+      programObj['Id'] = program.Id;
+      programObj['Name'] = program.Account_Name;
+      programObj['Logo'] = program.program_logo;
+      institutePrograms.push(programObj);
+    });
+    
+    return { 
+      statusCode: 200, 
+      message: 'Programs fetched successfully', 
+      data: institutePrograms,
+    };
+  }
+
+  async getProgramRoles(instituteId: string): Promise<any> {
+    const Roles = [
+      Role.Administrator, 
+      Role.Advisor, 
+      Role.Faculty, 
+      Role.Observer, 
+      Role.Parent, 
+      Role.Student
+    ];
+  
+    return { 
+      statusCode: 200, 
+      message: 'Programs roles fetched successfully', 
+      data: Roles,
+    };
+  }
+
+  async getProgramOpportunities(instituteId: string, programId: string, role: string) {
+    console.log('instituteId', instituteId);
+    console.log('programId', programId);
+    console.log('role', role);
+    
+    const acc = await this.sfService.models.accounts.get('Id, Account_Name', { Program__c: programId }, {}, instituteId);
+    
+    return { 
+      statusCode: 200, 
+      message: 'Programs opportunities fetched successfully', 
+      data: acc,
+    };
   }
 }

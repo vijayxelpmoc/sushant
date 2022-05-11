@@ -1,4 +1,4 @@
-import { Body, Controller, Post, Patch, Req, UseGuards, Query, Get } from '@nestjs/common';
+import { Body, Controller, Post, Patch, Req, UseGuards, Query, Get, Param } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -23,6 +23,7 @@ import {
   AuthForgotPasswordValidateOtpDto,
   AuthForgotPasswordSetNewDto,
 } from './dto';
+import { QueryRequired } from '@src/decorators';
 
 @ApiTags('auth')
 @Controller({
@@ -35,16 +36,20 @@ export class AuthController {
   async validate(
     @Body() authValidateDto: AuthValidateDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+    @Body('role') role: string,
   ) {
-    return this.authService.validateUser(authValidateDto, instituteId);
+    return this.authService.validateUser(authValidateDto, instituteId, programId, role);
   }
 
   @Post('login')
   async login(
     @Body() authLoginDto: AuthLoginDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+    @Body('role') role: string,
   ) {
-    return this.authService.login(authLoginDto, instituteId);
+    return this.authService.login(authLoginDto, instituteId, programId, role);
   }
 
   @hasRoles(
@@ -61,26 +66,34 @@ export class AuthController {
     @Body() authResetPasswordDto: AuthResetPasswordDto,
     @Req() req,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+    @Body('role') role: string,
   ) {
-    return this.authService.resetPassword(authResetPasswordDto, req.user.id, instituteId);
+    return this.authService.resetPassword(authResetPasswordDto, req.user.id, instituteId, programId, role);
   }
 
   @Post('password/forgot')
   async forgotPassword(
     @Body() authForgotPasswordDto: AuthForgotPasswordDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+    @Body('role') role: string,
   ) {
-    return this.authService.forgotPassword(authForgotPasswordDto, instituteId);
+    return this.authService.forgotPassword(authForgotPasswordDto, instituteId, programId, role);
   }
 
   @Post('password/forgot/validate')
   async forgotPasswordValidate(
     @Body() authForgotPasswordValidateOtpDto: AuthForgotPasswordValidateOtpDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+    @Body('role') role: string,
   ) {
     return this.authService.forgotPasswordValidateOtp(
       authForgotPasswordValidateOtpDto, 
       instituteId,
+      programId, 
+      role
     );
   }
 
@@ -88,12 +101,37 @@ export class AuthController {
   async forgotPasswordSet(
     @Body() authForgotPasswordSetNewDto: AuthForgotPasswordSetNewDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+    @Body('role') role: string,
   ) {
-    return this.authService.forgotPasswordSetNew(authForgotPasswordSetNewDto, instituteId);
+    return this.authService.forgotPasswordSetNew(authForgotPasswordSetNewDto, instituteId, programId, role);
   }
 
   @Post('send')
   async send() {
     this.authService.sendMail();
+  }
+
+  @Get('programs')
+  async getPrograms(
+    @QueryRequired('instituteId') instituteId: string,
+  ): Promise<any> {
+    return await this.authService.getMultiplePrograms(instituteId);
+  }
+
+  @Get('programs/roles')
+  async getProgramRoles(
+    @QueryRequired('instituteId') instituteId: string,
+  ): Promise<any> {
+    return await this.authService.getProgramRoles(instituteId);
+  }
+
+  @Get('testing')
+  async getProgramOpp(
+    @QueryRequired('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
+    @QueryRequired('role') role: string,
+  ): Promise<any> {
+    return await this.authService.getProgramOpportunities(instituteId, programId, role);
   }
 }
