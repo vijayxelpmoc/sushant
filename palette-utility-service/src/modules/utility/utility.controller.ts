@@ -28,7 +28,6 @@ import { ContactInfoDto, ReportIssueDto, FeedbackInfoDto } from './dto';
 @ApiTags('utility')
 @Controller({
   path: 'util',
-  version: '1',
 })
 export class UtilityController {
   constructor(private readonly utilityService: UtilityService) {}
