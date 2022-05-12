@@ -31,6 +31,9 @@ export class AdvisorService {
         instituteId,
       );
 
+      console.log(responseData);
+      
+
     const {
       Id,
       Name,
@@ -191,11 +194,13 @@ export class AdvisorService {
     const notification = await this.sfService.models.notifications.get(
       '*',
       {
-        Id: notificationId,
+        Opportunity: notificationId,
       },
       {},
       instituteId,
     );
+    console.log(notification);
+    
     // select id based on notification type.
     let id = null;
     const type = notification[0].Type;
@@ -221,6 +226,8 @@ export class AdvisorService {
       {},
       instituteId,
     );
+    // console.log("res",res);
+    
     if (res.length !== 0) {
       res.map((event) => {
         const filteredDataObject = {
@@ -260,6 +267,8 @@ export class AdvisorService {
       {},
       instituteId,
     );
+    // console.log(mods);
+    
 
     if (mods.length !== 0) {
       mods.map((event) => {
@@ -345,17 +354,20 @@ export class AdvisorService {
         {},
         instituteId,
       )
-    )[0];
+    );
 
-    if (!requestedOpportunity) {
+    console.log(requestedOpportunity);
+    
+
+    if (!requestedOpportunity[0]) {
       throw new NotFoundException('Opportunity not found');
     }
 
     const response = await this.sfService.models.accounts.update(
-      opportunityId,
       {
         Approval_Status: status,
       },
+      opportunityId,
       instituteId,
     );
     let notificationTitle = ``;

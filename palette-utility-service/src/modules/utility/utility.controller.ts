@@ -1,4 +1,12 @@
-import { Body, Controller, Get, Post, UseGuards, Req } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Get,
+  Post,
+  UseGuards,
+  Req,
+  Query,
+} from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -37,8 +45,11 @@ export class UtilityController {
   @ApiOkResponse({ description: Responses.CONTACT_US_SUCCESS })
   @ApiInternalServerErrorResponse({ description: Errors.CONTACT_US_FAILED })
   @ApiBody({ type: ContactInfoDto })
-  async contact(@Body() contactInfoDto: ContactInfoDto) {
-    return this.utilityService.contactUs(contactInfoDto);
+  async contact(
+    @Body() contactInfoDto: ContactInfoDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.utilityService.contactUs(contactInfoDto, instituteId);
   }
 
   @hasRoles(
@@ -56,8 +67,11 @@ export class UtilityController {
     description: Errors.FEEDBACK_SUBMIT_FAILED,
   })
   @ApiBody({ type: FeedbackInfoDto })
-  async feedback(@Body() feedbackInfoDto: FeedbackInfoDto) {
-    return this.utilityService.addFeedback(feedbackInfoDto);
+  async feedback(
+    @Body() feedbackInfoDto: FeedbackInfoDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.utilityService.addFeedback(feedbackInfoDto, instituteId);
   }
 
   @hasRoles(
@@ -73,8 +87,11 @@ export class UtilityController {
   @ApiOkResponse({ description: Responses.REPORT_ISSUE_SUCCESS })
   @ApiInternalServerErrorResponse({ description: Errors.REPORT_ISSUE_FAILED })
   @ApiBody({ type: ReportIssueDto })
-  async reportIssue(@Body() reportIssueDto: ReportIssueDto) {
-    return this.utilityService.addReportIssue(reportIssueDto);
+  async reportIssue(
+    @Body() reportIssueDto: ReportIssueDto,
+    @Body('instituteId') instituteId: string,
+  ) {
+    return this.utilityService.addReportIssue(reportIssueDto, instituteId);
   }
 
   @hasRoles(
@@ -89,7 +106,7 @@ export class UtilityController {
   @Get('guides')
   @ApiOkResponse({ description: Responses.GUIDES_SUCCESS })
   @ApiNotFoundResponse({ description: Errors.GUIDES_NOT_FOUND })
-  getGuides(@Req() req) {
-    return this.utilityService.getGuides(req.user.RecordTypeName);
+  getGuides(@Req() req, @Query('instituteId') instituteId: string) {
+    return this.utilityService.getGuides(req.user.RecordTypeName, instituteId);
   }
 }

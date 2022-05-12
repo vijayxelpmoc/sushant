@@ -21,14 +21,17 @@ export class UtilityService {
     this._notifier = new Notifier();
   }
 
-  async contactUs(contactInfoDto: ContactInfoDto) {
+  async contactUs(contactInfoDto: ContactInfoDto, instituteId: string) {
     const { email, message, name } = contactInfoDto;
 
-    const response = await this.sfService.generics.contacts.create({
-      User_Name__c: name,
-      Message__c: message,
-      Email__c: email,
-    });
+    const response = await this.sfService.models.contactUs.create(
+      {
+        User_Name: name,
+        Message: message,
+        Email: email,
+      },
+      instituteId,
+    );
 
     if (response.success) {
       // Send a notification to the admin
@@ -57,17 +60,23 @@ export class UtilityService {
     throw new InternalServerErrorException(Errors.CONTACT_US_FAILED);
   }
 
-  async addReportIssue(reportIssueDto: ReportIssueDto) {
+  async addReportIssue(reportIssueDto: ReportIssueDto, instituteId: string) {
     const { email, message, name, screenshots } = reportIssueDto;
 
-    const response = await this.sfService.models.reportIssues.create({
-      User_Name__c: name,
-      Email__c: email,
-      Message__c: message,
-      Screenshot1__c: screenshots[0],
-      Screenshot2__c: screenshots[1],
-      Screenshot3__c: screenshots[2],
-    });
+    const response = await this.sfService.models.reportIssues.create(
+      {
+        User_Name: name,
+        Email: email,
+        Message: message,
+        Screenshot1: screenshots[0],
+        Screenshot2: screenshots[1],
+        Screenshot3: screenshots[2],
+      },
+      instituteId,
+    );
+
+    console.log(response);
+    
 
     if (response.success) {
       // Send a notification to the admin
@@ -101,15 +110,18 @@ export class UtilityService {
     throw new InternalServerErrorException(Errors.REPORT_ISSUE_FAILED);
   }
 
-  async addFeedback(feedbackInfoDto: FeedbackInfoDto) {
+  async addFeedback(feedbackInfoDto: FeedbackInfoDto, instituteId: string) {
     const { email, feedback, name, rating } = feedbackInfoDto;
 
-    const response = await this.sfService.models.feedbacks.create({
-      User_Name__c: name,
-      Email__c: email,
-      feedback__c: feedback,
-      Rating__c: rating,
-    });
+    const response = await this.sfService.models.feedback.create(
+      {
+        User_Name: name,
+        Email: email,
+        feedback: feedback,
+        Rating: rating,
+      },
+      instituteId,
+    );
 
     if (response.success) {
       // Send a notification to the admin
@@ -139,22 +151,26 @@ export class UtilityService {
     throw new InternalServerErrorException(Errors.FEEDBACK_SUBMIT_FAILED);
   }
 
-  async getGuides(role: string) {
+  async getGuides(role: string, instituteId: string) {
     const guides: SFGuide[] = await this.sfService.models.guides.get(
-      'Name, Guide_Description__c, Event_String__c, Role__c',
+      'Name, Guide_Description, Event_String, Role',
       {},
+      {},
+      instituteId,
     );
+
+    console.log(guides);
 
     if (!guides) {
       throw new NotFoundException(Errors.GUIDES_NOT_FOUND);
     }
 
     guides
-      .filter((guide) => guide.Role__c.split(';').includes(role))
+      .filter((guide) => guide.Role.split(';').includes(role))
       .map((guide) => ({
         name: guide.Name,
-        description: guide.Guide_Description__c,
-        eventString: guide.Event_String__c,
+        description: guide.Guide_Description,
+        eventString: guide.Event_String,
       }));
 
     return {

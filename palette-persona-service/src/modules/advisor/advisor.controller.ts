@@ -40,6 +40,8 @@ export class AdvisorController {
     // if (cachedAdvisor) {
     //   return cachedAdvisor;
     // }
+    console.log(req.user);
+
     const advisor = await this.advisorService.getAdvisor(
       req.user.id,
       instituteId,
@@ -96,6 +98,8 @@ export class AdvisorController {
     @Request() req,
     @Query('instituteId') instituteId: string,
   ) {
+    console.log(req.user);
+
     return await this.advisorService.getOpportunityApprovals(
       req.user.id,
       instituteId,
@@ -122,6 +126,7 @@ export class AdvisorController {
     @Body('status') status: string,
     @Body('instituteId') instituteId: string,
   ) {
+    console.log(status, instituteId);
     if (status == 'Accept') {
       return await this.advisorService.acceptOrRejectOpportunity(
         id,
