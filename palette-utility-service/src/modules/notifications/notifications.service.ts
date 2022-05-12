@@ -37,6 +37,10 @@ export class NotificationsService {
             instituteId
         );
 
+        if (myNotifications.length == 0) {
+          throw new NotFoundException(`No notification found`);
+        }
+
         const notificationsList: any = [];
         const allTodosObj: any = {};
 
