@@ -40,19 +40,19 @@ functions:
     events:
       - http:
           method: GET
-          path: /todo
+          path: todo
           cors: true
       - http:
           method: POST
-          path: /todo/event
+          path: todo/event
           cors: true
       - http:
           method: POST
-          path: /todo/draft
+          path: todo/draft
           cors: true
       - http:
           method: POST
-          path: /todo/requested/accept/{id} 
+          path: todo/requested/accept/{id} 
           request: 
             parameters:
               paths: 
@@ -60,7 +60,7 @@ functions:
           cors: true
       - http:
           method: POST
-          path: /todo/requested/reject/{id}
+          path: todo/requested/reject/{id}
           request: 
             parameters:
               paths: 
@@ -68,7 +68,7 @@ functions:
           cors: true
       - http:
           method: GET
-          path: /todo/detail/{id}
+          path: todo/detail/{id}
           request: 
             parameters:
               paths: 
@@ -76,11 +76,11 @@ functions:
           cors: true
       - http:
           method: POST
-          path: /todo/requested/bulk/accept
+          path: todo/requested/bulk/accept
           cors: true
       - http:
           method: PATCH
-          path: /todo/update/status/{id}
+          path: todo/update/status/{id}
           request: 
             parameters:
               paths: 
@@ -88,39 +88,39 @@ functions:
           cors: true
       - http:
           method: POST
-          path: /todo/requested/bulk/reject
+          path: todo/requested/bulk/reject
           cors: true
       - http:
           method: GET
-          path: /todo/recepients/get
+          path: todo/recepients/get
           cors: true
       - http:
           method: POST
-          path: /todo/todoresources
+          path: todo/todoresources
           cors: true
       - http:
           method: DELETE
-          path: /todo/deleteAll
+          path: todo/deleteAll
           cors: true
       - http:
           method: PATCH
-          path: /todo/update/todo
+          path: todo/update/todo
           cors: true
       - http:
           method: PATCH
-          path: /todo/update/bulk/status
+          path: todo/update/bulk/status
           cors: true
       - http:
           method: POST
-          path: /todo/create
+          path: todo/create
           cors: true
       - http:
           method: GET
-          path: /todo/requested/pending
+          path: todo/requested/pending
           cors: true
       - http:
           method: GET
-          path: /todo/task/{studentid}
+          path: todo/task/{studentid}
           request: 
             parameters:
               paths: 
@@ -128,6 +128,6 @@ functions:
           cors: true
       - http:
           method: PATCH
-          path: /todo/publish/draft
+          path: todo/publish/draft
           cors: true
 
