@@ -30,8 +30,8 @@ export class AdminService {
     
     const responseData: SFAdminContact[] =
       await this.sfService.generics.contacts.get(
-        // 'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
-        "Id,Name",
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
+        // "Id,Name",
         {
           Id: id,
         },
@@ -272,8 +272,8 @@ export class AdminService {
 
     // if id is of modification.
     const mods = await this.sfService.models.modifications.get( // error
-      // 'Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name, *',
-      'Opportunity_Id.Listed_by,*',
+      'Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name, *',
+      // 'Opportunity_Id.Listed_by,*',
       {
         Id: id,
       },
@@ -389,7 +389,7 @@ export class AdminService {
     const res = await this.sfService.models.todos.get(
       '*',
       {
-        Id: resNotif[0].Todo,
+        Id: resNotif[0].To_Do,
         // Todo_Scope: 'Global',
       },
       {},
