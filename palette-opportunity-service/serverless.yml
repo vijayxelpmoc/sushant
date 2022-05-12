@@ -176,6 +176,14 @@ functions:
           method: POST
           path: opportunity/event/wishlist/
           cors: true
+      - http:  
+          method: GET
+          path: opportunity/activities/institute/
+          cors: true
+      - http:  
+          method: GET
+          path: opportunity/explore/activities/
+          cors: true
 
 
 

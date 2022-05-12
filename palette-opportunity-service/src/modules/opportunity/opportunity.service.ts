@@ -47,6 +47,7 @@ import { SfService } from '@gowebknot/palette-salesforce-service';
 import { SFALlAccountFields } from '@src/types/sf-interface';
 import { draftInfoDto } from './dto/opportunities.dto';
 import { OpportunityTodoDto } from './dtos/opportunities.dto';
+import { getMappedActivityObject } from './opportunity.utils';
 @Injectable()
 export class OpportunityService {
 
@@ -3988,158 +3989,306 @@ export class OpportunityService {
     }
   }
 
-  // async getInstituteActivities(
-  //   instituteId?: string,
-  //   userId?: string,
-  //   instituteId: string
-  // ): Promise<ResponseInstituteEvents> {
-  //   //  all user considerations
-  //   const allInterestedUsers = await this.sfService.getRecommendation(
-  //     'Assignee__c,Recommended_by__c,Event__c',
-  //     {},
-  //   );
+  /**
+   * Return All the {Volunteering, Arts and Sports, Social Events} Activities of the Student's Institute
+   * @param studentId
+   */
+   async getStudentInstituteActivities(
+    studentId: string,
+    instituteId: string,
+  ): Promise<any> {
+    const contactDetail: any[] = await this.sfService.generics.contacts.get(
+      'Id, Primary_Educational_Institution',
+      {
+        Id: studentId,
+      },
+      {},
+      instituteId
+    );
+    if (
+      contactDetail.length === 0 ||
+      !contactDetail[0].Primary_Educational_Institution
+    ) {
+      throw new BadRequestException();
+    }
 
-  //   // al user todos
-  //   const allEnrolledUsers = await this.sfService.getPaletteActivity(
-  //     'Contact__c,Event__c',
-  //     {},
-  //   );
+    const InstituteId = contactDetail[0].Primary_Educational_Institution;
+    const responseActivities = await this.getInstituteActivities(
+      InstituteId,
+      studentId,
+      instituteId,
+    );
 
-  //   // getting opportunities
-  //   const allAccountsDetail = await this.sfService.getAccount(
-  //     'Id, Name, ParentId, Description, Start_Date__c, End_Date__c, Category__c, Venue__c , ShippingAddress, Phone, Website, Listed_by__c, Record_Type_Name__c,Status__c,opportunityScope__c, Removal_Status__c, Approval_Status__c',
-  //     {
-  //       Record_Type_Name__c: ['Activity', 'activities'],
-  //       Approval_Status__c: 'Approved',
-  //       Removal_Status__c: [null, 'In Review', 'Rejected'],
-  //       Visibility__c: 'Available',
-  //     },
-  //     { Created_at__c: -1 },
-  //   );
-  //   const accountsDetail = [];
+    return {
+      statusCode: 200,
+      data: responseActivities.data,
+    };
+  }
 
-  //   allAccountsDetail.map(event => {
-  //     if (
-  //       (event.opportunityScope__c === 'Discrete' ||
-  //         event.Approval_Status__c === 'Approved') &&
-  //       event.Removal_Status__c !== 'Approved'
-  //     ) {
-  //       accountsDetail.push(event);
-  //     }
-  //   });
-  //   // storing institute ids
-  //   const instituteIds = [];
-  //   if (instituteId) {
-  //     instituteIds.push(instituteId);
-  //   } else {
-  //     for (const account of accountsDetail) {
-  //       instituteIds.push(account.ParentId);
-  //     }
-  //   }
+  async getInstituteActivities(
+    InstituteId: string,
+    userId: string,
+    instituteId: string,
+  ): Promise<any> {
+    //  all user considerations
+    const allInterestedUsers = await this.sfService.models.recommendations.get(
+      'Assignee, Recommended_by, Event',
+      {},
+      {},
+      instituteId,
+    );
 
-  //   const parentAccounts = await this.sfService.getAccount('Id, Name', {
-  //     Id: instituteIds,
-  //   });
+    // all user todos
+    const allEnrolledUsers = await this.sfService.models.todos.get(
+      'Assignee, Opportunit_Id',
+      {},
+      {},
+      instituteId
+    );
 
-  //   const parentAccount: any = {};
+    // getting opportunities
+    const allAccountsDetail = await this.sfService.models.accounts.get(
+      'Id, Account_Name, Parent_Account, Description, Start_Date, End_Date, Category, Venue, ShippingAddress, Phone, Website, Listed_by, Record_Type_Name, Status, opportunityScope, Removal_Status, Approval_Status',
+      {
+        Record_Type_Name: ['Activity', 'activities'],
+        Approval_Status: 'Approved',
+        Removal_Status: [null, 'In Review', 'Rejected'],
+        Visibility: 'Available',
+      },
+      { Created_at: -1 },
+      instituteId
+    );
+    const accountsDetail = [];
 
-  //   parentAccounts.map(acc => {
-  //     parentAccount[acc.Id] = acc.Name;
-  //   });
+    allAccountsDetail.map(event => {
+      if (
+        (event.opportunityScope === 'Discrete' ||
+          event.Approval_Status === 'Approved') &&
+        event.Removal_Status !== 'Approved'
+      ) {
+        accountsDetail.push(event);
+      }
+    });
+    // storing institute ids
+    const instituteIds = [];
+    if (InstituteId) {
+      instituteIds.push(InstituteId);
+    } else {
+      for (const account of accountsDetail) {
+        instituteIds.push(account.Parent_Account);
+      }
+    }
 
-  //   if (accountsDetail.length === 0) {
-  //     return {
-  //       statusCode: 200,
-  //       data: [],
-  //     };
-  //   }
+    const parentAccounts = await this.sfService.models.accounts.get('Id, Account_Name', {
+      Id: instituteIds,
+    }, {}, instituteId);
 
-  //   // storing activities id to get their resources
-  //   const activitiesIds = [];
-  //   const instituteActivities: ActivityInstitute[] = [];
+    const parentAccount: any = {};
 
-  //   // filtering activities
-  //   accountsDetail.map(value => {
-  //     const filterObj = getMappedActivityObject(value);
-  //     const opportunityId = value.Id;
-  //     const interestedUsers = [];
-  //     const enrolledUsers = [];
-  //     for (let k = 0; k < allInterestedUsers.length; k++) {
-  //       if (
-  //         allInterestedUsers[k].Recommended_by__c == userId &&
-  //         allInterestedUsers[k].Event__c == opportunityId
-  //       ) {
-  //         interestedUsers.push(allInterestedUsers[k].Assignee__c);
-  //       }
-  //     }
-  //     for (let k = 0; k < allEnrolledUsers.length; k++) {
-  //       if (allEnrolledUsers[k].Event__c == opportunityId) {
-  //         enrolledUsers.push(allEnrolledUsers[k].Contact__c);
-  //       }
-  //     }
-  //     instituteActivities.push({
-  //       ...filterObj,
-  //       institute: {
-  //         Id: value.ParentId,
-  //         name: parentAccount[value.ParentId],
-  //       },
-  //       interestedUsers: interestedUsers,
-  //       enrolledUsers: enrolledUsers,
-  //     });
-  //     activitiesIds.push(value.Id);
-  //   });
+    parentAccounts.map(acc => {
+      parentAccount[acc.Id] = acc.Account_Name;
+    });
 
-  //   // getting resources by activities id
-  //   const resourcesData = await this.getResourcesByActivityId(activitiesIds);
-  //   // adding the activity and the resources together
-  //   const responseActivities: AllActivityResponseData[] = [];
+    if (accountsDetail.length === 0) {
+      return {
+        statusCode: 200,
+        data: [],
+      };
+    }
 
-  //   let wishListedActivities = {};
-  //   let recomendedActivities = {};
-  //   let getEnrolledInActivities = {};
-  //   if (userId) {
-  //     wishListedActivities = await this.getWishListedActivities(
-  //       activitiesIds,
-  //       userId,
-  //     );
-  //     recomendedActivities = await this.getRecomendedActivities(
-  //       activitiesIds,
-  //       userId,
-  //     );
-  //     getEnrolledInActivities = await this.getEnrolledInActivities(
-  //       activitiesIds,
-  //       userId,
-  //     );
-  //   }
+    // storing activities id to get their resources
+    const activitiesIds = [];
+    const instituteActivities: any[] = [];
 
-  //   // adding them into task and structuring the response
-  //   instituteActivities.map(activity => {
-  //     // when a student is accessing the events then send wishListed Boolean and also enrolled to see if the student is already enrolled in that event
-  //     if (userId) {
-  //       const wishListedEvent = wishListedActivities[`${activity.activity_id}`];
-  //       const recomendedEvent = recomendedActivities[`${activity.activity_id}`];
-  //       const getEnrolledInEvent =
-  //         getEnrolledInActivities[`${activity.activity_id}`];
-  //       const filteredToDoObj = {
-  //         activity: activity,
-  //         wishListedEvent: wishListedEvent || false,
-  //         recomendedEvent: recomendedEvent || true,
-  //         enrolledEvent: getEnrolledInEvent || false,
-  //         resources: resourcesData[`${activity.activity_id}`] || [],
-  //       };
-  //       responseActivities.push(filteredToDoObj);
-  //     } else {
-  //       // when parent advisor is accessing the events
-  //       const filteredToDoObj = {
-  //         activity: activity,
-  //         resources: resourcesData[`${activity.activity_id}`] || [],
-  //       };
-  //       responseActivities.push(filteredToDoObj);
-  //     }
-  //   });
-  //   return {
-  //     statusCode: 200,
-  //     data: responseActivities,
-  //   };
-  // }
+    // filtering activities
+    accountsDetail.map(value => {
+      const filterObj = getMappedActivityObject(value);
+      const opportunityId = value.Id;
+      const interestedUsers = [];
+      const enrolledUsers = [];
+      for (let k = 0; k < allInterestedUsers.length; k++) {
+        if (
+          allInterestedUsers[k].Recommended_by == userId &&
+          allInterestedUsers[k].Event == opportunityId
+        ) {
+          interestedUsers.push(allInterestedUsers[k].Assignee);
+        }
+      }
+      for (let k = 0; k < allEnrolledUsers.length; k++) {
+        if (allEnrolledUsers[k].Opportunit_Id == opportunityId) {
+          enrolledUsers.push(allEnrolledUsers[k].Assignee);
+        }
+      }
+      instituteActivities.push({
+        ...filterObj,
+        institute: {
+          Id: value.Parent_Account,
+          name: parentAccount[value.Parent_Account],
+        },
+        interestedUsers: interestedUsers,
+        enrolledUsers: enrolledUsers,
+      });
+      activitiesIds.push(value.Id);
+    });
+
+    // getting resources by activities id
+    const resourcesData = await this.getResourcesByActivityId(activitiesIds, true, instituteId);
+    // adding the activity and the resources together
+    const responseActivities: any[] = [];
+
+    let wishListedActivities = {};
+    let recomendedActivities = {};
+    let getEnrolledInActivities = {};
+    if (userId) {
+      wishListedActivities = await this.getWishListedActivities(
+        activitiesIds,
+        userId,
+        instituteId,
+      );
+      recomendedActivities = await this.getRecomendedActivities(
+        activitiesIds,
+        userId,
+        instituteId,
+      );
+      getEnrolledInActivities = await this.getEnrolledInActivities(
+        activitiesIds,
+        userId,
+        instituteId,
+      );
+    }
+
+    // adding them into task and structuring the response
+    instituteActivities.map(activity => {
+      // when a student is accessing the events then send wishListed Boolean and also enrolled to see if the student is already enrolled in that event
+      if (userId) {
+        const wishListedEvent = wishListedActivities[`${activity.activity_id}`];
+        const recomendedEvent = recomendedActivities[`${activity.activity_id}`];
+        const getEnrolledInEvent =
+          getEnrolledInActivities[`${activity.activity_id}`];
+        const filteredToDoObj = {
+          activity: activity,
+          wishListedEvent: wishListedEvent || false,
+          recomendedEvent: recomendedEvent || true,
+          enrolledEvent: getEnrolledInEvent || false,
+          resources: resourcesData[`${activity.activity_id}`] || [],
+        };
+        responseActivities.push(filteredToDoObj);
+      } else {
+        // when parent advisor is accessing the events
+        const filteredToDoObj = {
+          activity: activity,
+          resources: resourcesData[`${activity.activity_id}`] || [],
+        };
+        responseActivities.push(filteredToDoObj);
+      }
+    });
+    return {
+      statusCode: 200,
+      data: responseActivities,
+    };
+  }
+
+  /**
+   * Return All the resources for the events by id
+   * @param activitiesIds array of activities id
+   */
+   async getResourcesByActivityId(
+    activitiesIds: string[],
+    resourceIds: boolean,
+    instituteId: string,
+  ): Promise<any> {
+    const resources: any[] = await this.sfService.models.resourceConnections.get(
+      'Id, Resource_Connection_Name, Event, Resource.Id, Resource.Resource_Name, Resource.URL, Resource.Resource_Type',
+      {
+        Event: activitiesIds,
+      },
+      {},
+      instituteId
+    );
+    // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
+    const allResource = {};
+    const resourceConnectionsId = [];
+    resources.map(resource => {
+      const resourcesObj = {
+        name: resource.Resource.Resource_Name,
+        url: resource.Resource.URL,
+        type: resource.Resource.Resource_Type,
+      };
+      // if a record with a todo task is present then add the object into it or if not create one
+      const hashResource = allResource[`${resource.Event}`];
+      if (hashResource) {
+        hashResource.push(resourcesObj);
+        allResource[`${resource.Event}`] = hashResource;
+      } else {
+        const Allresources = [];
+        Allresources.push(resourcesObj);
+        allResource[`${resource.Event}`] = Allresources;
+      }
+      resourceConnectionsId.push(resource.Id);
+    });
+    if (resourceIds === true) {
+      return resourceConnectionsId;
+    }
+    return allResource;
+  }
+
+  /**
+   * Return All the resources true for the events which are wish Listed
+   * @param activitiesIds array of activities id
+   */
+   async getWishListedActivities(activitiesIds: string[], userId: string, instituteId: string) {
+    const wishListedActivities: any[] = await this.sfService.models.recommendations.get(
+      'Id, Recommendation_Name, Assignee, Recommended_by.Id, Recommended_by.Name, Recommended_by.Record_Type_Name, Event.Id, Event.Account_Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Accepted',
+      {
+        Assignee: userId,
+        Event: activitiesIds,
+        Accepted: 'Pending',
+        Recommended_by: userId,
+      },
+      {},
+      instituteId
+    );
+
+    const wishListedActivitiesResponse = {};
+    wishListedActivities.map(activityId => {
+      wishListedActivitiesResponse[activityId.Event.Id] = true;
+    });
+    return wishListedActivitiesResponse;
+  }
+
+  async getRecomendedActivities(activitiesIds: string[], userId: string, instituteId: string) {
+    const RecomendedActivities: any[] = await this.sfService.models.recommendations.get(
+      'Id, Recommendation_Name, Assignee, Recommended_by.Id, Recommended_by.Name, Recommended_by.Record_Type_Name, Event.Id, Event.Account_Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Accepted',
+      {
+        Assignee: userId,
+        Event: activitiesIds,
+        Accepted: 'Pending',
+      },
+    );
+
+    const RecomendedActivitiesResponse = {};
+    RecomendedActivities.map(activityId => {
+      if (activityId.Recommended_by__c !== userId) {
+        RecomendedActivitiesResponse[activityId.Event.Id] = true;
+      }
+    });
+    return RecomendedActivitiesResponse;
+  }
+
+  async getEnrolledInActivities(activitiesIds: string[], userId: string, instituteId: string) {
+    const paletteActivities = await this.sfService.models.todos.get(
+      'Opportunit_Id',
+      {
+        Assignee: userId,
+        Opportunit_Id: activitiesIds,
+      },
+      {},
+      instituteId
+    );
+    const paletteActivitiesResponse = [];
+    paletteActivities.map(activityId => {
+      paletteActivitiesResponse[activityId.Opportunit_Id] = true;
+    });
+    return paletteActivitiesResponse;
+  }
 }
