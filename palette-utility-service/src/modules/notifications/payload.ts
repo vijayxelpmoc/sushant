@@ -219,13 +219,16 @@ export class PayloadService {
     if (todoId == null || todoId == '') {
       throw new NotFoundException();
     }
+    console.log('todoId', todoId);
+    
     // get todo.
     const todo = await this.sfService.models.todos.get(
-      'Assignee.Id Assignee.Profile_Picture, Assignee.Name, Listed_by.Id, Listed_by.Name, Id, Group_Id, To_do, Description, Task_Status, Status, Assignee_accepted_status, Todo_Scope, Type, Event_At, Event_Venue, Complete_By, Created_at, Archived, Opportunit_Id',
+      'Assignee.Id, Assignee.Profile_Picture, Assignee.Name, Listed_by.Id, Listed_by.Name, Id, Group_Id, To_do, Description, Task_Status, Status, Assignee_accepted_status, Todo_Scope, Type, Event_At, Event_Venue, Complete_By, Created_at, Archived, Opportunit_Id',
       { Id: todoId },
       {},
       instituteId
     );
+
     if (todo.length == 0) {
       throw new NotFoundException();
     }
@@ -236,28 +239,31 @@ export class PayloadService {
       {},
       instituteId
     );
+
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
     const allResource = {};
-    resources.map(resource => {
-      if (resource.Resource) {
-        const resourcesObj = {
-          Id: resource.Resource.Id,
-          name: resource.Resource.Resource_Name,
-          url: resource.Resource.URL,
-          type: resource.Resource.Resource_Type,
-        };
-        // if a record with a todo task is present then add the object into it or if not create one
-        const hashResource = allResource[`${resource.Todo}`];
-        if (hashResource) {
-          hashResource.push(resourcesObj);
-          allResource[`${resource.Todo}`] = hashResource;
-        } else {
-          const Allresources = [];
-          Allresources.push(resourcesObj);
-          allResource[`${resource.Todo}`] = Allresources;
+    if (resources.lenght > 0) {
+      resources.map(resource => {
+        if (resource.Resource) {
+          const resourcesObj = {
+            Id: resource.Resource.Id,
+            name: resource.Resource.Resource_Name,
+            url: resource.Resource.URL,
+            type: resource.Resource.Resource_Type,
+          };
+          // if a record with a todo task is present then add the object into it or if not create one
+          const hashResource = allResource[`${resource.Todo}`];
+          if (hashResource) {
+            hashResource.push(resourcesObj);
+            allResource[`${resource.Todo}`] = hashResource;
+          } else {
+            const Allresources = [];
+            Allresources.push(resourcesObj);
+            allResource[`${resource.Todo}`] = Allresources;
+          }
         }
-      }
-    });
+      });
+    }
 
     const todoDataObj = {
       todo: {
@@ -291,7 +297,7 @@ export class PayloadService {
         ],
         opportunity: todo[0].Opportunit_Id,
       },
-      resources: allResource > 0 ? allResource[todo[0].Id] : [],
+      resources: allResource.hasOwnProperty(todo[0].Id) ? allResource[todo[0].Id] : [],
     };
     return todoDataObj;
   }
