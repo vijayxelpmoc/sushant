@@ -206,7 +206,7 @@ export class AdminService {
     const notification = await this.sfService.models.notifications.get(
       '*',
       { 
-        // Id:notificationId
+        Id:notificationId
       },
       {},
       instituteId,
