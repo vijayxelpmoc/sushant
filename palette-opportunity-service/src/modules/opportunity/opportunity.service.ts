@@ -10,6 +10,7 @@ import {
   AllCommentsDto,
   DraftInfoDto,
   OpportunitiesInfoDto,
+  WishListDto,
 } from './dtos/opportunities.dto';
 import { BasicResponse } from './types/login-interface';
 import {
@@ -972,7 +973,7 @@ export class OpportunityService {
           // try {
           //   // create push notification
           //   await this.firebaseService.sendNotification(
-          //     admin.hed__Contact__r.Id,
+          //     admin.hed__Contact.Id,
           //     notificationTitle,
           //     notificationMsg,
           //     {
@@ -1132,7 +1133,7 @@ export class OpportunityService {
               // try {
               //   // create push notification
               //   await this.firebaseService.sendNotification(
-              //     adv.hed__Contact__r.Id,
+              //     adv.hed__Contact.Id,
               //     notificationTitle,
               //     notificationMsg,
               //     {
@@ -1619,7 +1620,7 @@ export class OpportunityService {
                   // try {
                   //   // push notification
                   //   await this.firebaseService.sendNotification(
-                  //     admin.hed__Contact__r.Id,
+                  //     admin.hed__Contact.Id,
                   //     notificationTitle,
                   //     notificationMsg,
                   //     {
@@ -2472,7 +2473,7 @@ export class OpportunityService {
             // try {
             //   // create push notification
             //   await this.firebaseService.sendNotification(
-            //     admin.hed__Contact__r.Id,
+            //     admin.hed__Contact.Id,
             //     notificationTitle,
             //     notificationMsg,
             //     {
@@ -3572,4 +3573,573 @@ export class OpportunityService {
     }
     throw new BadRequestException(`Not Authorized!`);
   }
+
+  /**
+   * this will get all the recommendations for a parent
+   * @param userId - id of the user
+   * returns all the recommendation for a parent
+   */
+   async getAdminRecommendedEvents(userId: string, instituteId: string): Promise<any> {
+    const recommendedEvents: any[] = await this.sfService.models.recommendations.get(
+      'Id, Recommendation_Name, Assignee, Recommended_by.Id, Recommended_by.Name, Recommended_by.Record_Type_Name, Event.Id, Event.Account_Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Event.Phone, Event.Website, Event.opportunityScope, Event.Modification, Event.Removal_Status, Accepted',
+      { Assignee: userId, Accepted: 'Pending' },
+      { Created_at: -1 },
+      instituteId
+    );
+    if (recommendedEvents.length === 0) {
+      throw new NotFoundException('No recommend events found');
+    }
+
+    const responseRecommendedRecords: any[] = [];
+    const recommendationRecords = {};
+
+    for (let i = 0; i < recommendedEvents.length; i++) {
+      const r = recommendedEvents[i];
+      let getmodificationStatus = null;
+      if (r.Event.Modification != null) {
+        const getmodification = await this.sfService.models.modifications.get(
+          'Status',
+          {
+            Id: r.Event.Modification,
+          }, {}, instituteId
+        );
+        getmodificationStatus = getmodification[0].Status;
+      }
+      const responseObj = {
+        Id: r.Id,
+        recommendedBy: {
+          Id: r.Recommended_by.Id,
+          Name: r.Recommended_by ? r.Recommended_by.Name : null,
+          Role: r.Recommended_by
+            ? r.Recommended_by.Record_Type_Name
+            : null,
+        },
+        event: {
+          Id: r.Event.Id,
+          Name: r.Event ? r.Event.Account_Name : null,
+          Description: r.Event ? r.Event.Description : null,
+          Category: r.Event
+            ? r.Event.Category
+              ? r.Event.Category
+              : 'Other'
+            : null,
+          StartDate: r.Event ? r.Event.Start_Date : null,
+          EndDate: r.Event ? r.Event.End_Date : null,
+          Venue: r.Event ? r.Event.Venue : null,
+          Phone: r.Event ? r.Event.Phone : null,
+          Website: r.Event ? r.Event.Website : null,
+          OpportunityScope: r.Event ? r.Event.opportunityScope : null,
+          RemovalStatus: r.Event ? r.Event.Removal_Status : null,
+          ModificationStatus: getmodificationStatus,
+        },
+      };
+
+      if (!recommendationRecords[responseObj.event.Id]) {
+        recommendationRecords[responseObj.event.Id] = [];
+      }
+
+      recommendationRecords[responseObj.event.Id].push(responseObj);
+    }
+
+    for (const key of Object.keys(recommendationRecords)) {
+      const event = recommendationRecords[key][0].event;
+      const responseObj = {
+        Id: [],
+        event,
+        recommendedBy: [],
+      };
+
+      for (const rec of recommendationRecords[key]) {
+        responseObj.Id.push(rec.Id);
+        responseObj.recommendedBy.push(rec.recommendedBy);
+      }
+
+      responseRecommendedRecords.push(responseObj);
+    }
+    return { statusCode: 200, data: responseRecommendedRecords };
+  }
+
+  /**
+   * this will get all the recommendations for a parent
+   * @param userId - id of the user
+   * returns all the recommendation for a parent
+   */
+   async getAdvisorRecommendedEvents(userId: string, instituteId: string): Promise<any> {
+    const recommendedEvents: any[] = await this.sfService.models.recommendations.get(
+      'Id, Recommendation_Name, Assignee, Recommended_by.Id, Recommended_by.Name, Recommended_by.Record_Type_Name, Event.Id, Event.Account_Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Event.Phone, Event.Website, Event.opportunityScope, Event.Modification, Event.Removal_Status, Accepted',
+      { Assignee: userId, Accepted: 'Pending' },
+      { Created_at: -1 },
+      instituteId
+    );
+    if (recommendedEvents.length === 0) {
+      throw new NotFoundException('No recommend events found');
+    }
+    const responseRecommendedRecords: any[] = [];
+    const recommendationRecords = {};
+
+    for (let i = 0; i < recommendedEvents.length; i++) {
+      const r = recommendedEvents[i];
+      let getmodificationStatus = null;
+      if (r.Event.Modification != null) {
+        const getmodification = await this.sfService.models.modifications.get(
+          'Status',
+          {
+            Id: r.Event.Modification,
+          },
+          {},
+          instituteId
+        );
+        getmodificationStatus = getmodification[0].Status;
+      }
+
+      const responseObj = {
+        Id: r.Id,
+        recommendedBy: {
+          Id: r.Recommended_by ? r.Recommended_by.Id : null,
+          Name: r.Recommended_by ? r.Recommended_by.Name : null,
+          Role: r.Recommended_by
+            ? r.Recommended_by.Record_Type_Name
+            : null,
+        },
+        event: {
+          Id: r.Event.Id,
+          Name: r.Event ? r.Event.Account_Name : null,
+          Description: r.Event ? r.Event.Description : null,
+          Category: r.Event
+            ? r.Event.Category
+              ? r.Event.Category
+              : 'Other'
+            : null,
+          StartDate: r.Event ? r.Event.Start_Date : null,
+          EndDate: r.Event ? r.Event.End_Date : null,
+          Venue: r.Event ? r.Event.Venue : null,
+          Phone: r.Event ? r.Event.Phone : null,
+          Website: r.Event ? r.Event.Website : null,
+          OpportunityScope: r.Event ? r.Event.opportunityScope : null,
+          RemovalStatus: r.Event ? r.Event.Removal_Status : null,
+          ModificationStatus: getmodificationStatus,
+        },
+      };
+
+      if (!recommendationRecords[responseObj.event.Id]) {
+        recommendationRecords[responseObj.event.Id] = [];
+      }
+
+      recommendationRecords[responseObj.event.Id].push(responseObj);
+    }
+
+    for (const key of Object.keys(recommendationRecords)) {
+      const event = recommendationRecords[key][0].event;
+      const responseObj = {
+        Id: [],
+        event,
+        recommendedBy: [],
+      };
+
+      for (const rec of recommendationRecords[key]) {
+        responseObj.Id.push(rec.Id);
+        responseObj.recommendedBy.push(rec.recommendedBy);
+      }
+
+      responseRecommendedRecords.push(responseObj);
+    }
+    return { statusCode: 200, data: responseRecommendedRecords };
+  }
+
+  /**
+   * this will get all the recommendations for a students
+   * @param userId - id of the user
+   * returns all the recommendation for a student
+   */
+   async getStudentRecommendedEvents(userId: string, instituteId: string): Promise<any> {
+    const recommendedEvents: any[] = await this.sfService.models.recommendations.get(
+      'Id, Recommendation_Name, Assignee, Recommended_by.Id, Recommended_by.Name, Recommended_by.Record_Type_Name, Event.Id, Event.Account_Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Event.Phone, Event.Website, Event.opportunityScope, Event.Removal_Status, Event.Modification, Accepted, Created_at',
+      { Assignee: userId, Accepted: 'Pending' },
+      { Created_at: -1 },
+      instituteId
+    );
+    if (recommendedEvents.length === 0) {
+      throw new NotFoundException('no recommend events found');
+    }
+
+    const responseRecommendedRecords: any[] = [];
+    const recommendationRecords = {};
+
+    for (let i = 0; i < recommendedEvents.length; i++) {
+      const r = recommendedEvents[i];
+      let getmodificationStatus = null;
+      if (r.Event.Modification != null) {
+        const getmodification = await this.sfService.models.modifications.get(
+          'Status',
+          {
+            Id: r.Event.Modification,
+          },
+          {},
+          instituteId
+        );
+        getmodificationStatus = getmodification[0].Status;
+      }
+      const responseObj = {
+        Id: r.Id,
+        recommendedBy: {
+          Id: r.Recommended_by ? r.Recommended_by.Id : null,
+          Name: r.Recommended_by ? r.Recommended_by.Name : null,
+          Role: r.Recommended_by
+            ? r.Recommended_by.Record_Type_Name
+            : null,
+        },
+        event: {
+          Id: r.Event.Id,
+          Name: r.Event ? r.Event.Account_Name : null,
+          Description: r.Event ? r.Event.Description : null,
+          Category: r.Event
+            ? r.Event.Category
+              ? r.Event.Category
+              : 'Other'
+            : null,
+          StartDate: r.Event ? r.Event.Start_Date : null,
+          EndDate: r.Event ? r.Event.End_Date : null,
+          Venue: r.Event ? r.Event.Venue : null,
+          Phone: r.Event ? r.Event.Phone : null,
+          Website: r.Event ? r.Event.Website : null,
+          OpportunityScope: r.Event ? r.Event.opportunityScope : null,
+          RemovalStatus: r.Event ? r.Event.Removal_Status : null,
+          ModificationStatus: getmodificationStatus,
+        },
+      };
+
+      if (!recommendationRecords[responseObj.event.Id]) {
+        recommendationRecords[responseObj.event.Id] = [];
+      }
+
+      recommendationRecords[responseObj.event.Id].push(responseObj);
+    }
+
+    for (const key of Object.keys(recommendationRecords)) {
+      const event = recommendationRecords[key][0].event;
+      const responseObj = {
+        Id: [],
+        event,
+        recommendedBy: [],
+      };
+
+      for (const rec of recommendationRecords[key]) {
+        responseObj.Id.push(rec.Id);
+        responseObj.recommendedBy.push(rec.recommendedBy);
+      }
+
+      responseRecommendedRecords.push(responseObj);
+    }
+    return { statusCode: 200, data: responseRecommendedRecords };
+  }
+
+  /**
+   * this will get all the recommendations for a parent
+   * @param userId - id of the user
+   * returns all the recommendation for a parent
+   */
+   async getParentRecommendedEvents(userId: string, instituteId: string): Promise<any> {
+    const recommendedEvents: any[] = await this.sfService.models.recommendations.get(
+      'Id, Recommendation_Name, Assignee, Recommended_by.Id, Recommended_by.Name, Recommended_by.Record_Type_Name, Event.Id, Event.Account_Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Event.Phone, Event.Website, Event.opportunityScope, Event.Removal_Status, Event.Modification, Accepted, Created_at',
+      { Assignee: userId, Accepted: 'Pending' },
+      { Created_at: -1 },
+      instituteId
+    );
+    if (recommendedEvents.length === 0) {
+      throw new NotFoundException('No recommend events found');
+    }
+
+    const responseRecommendedRecords: any[] = [];
+    const recommendationRecords = {};
+
+    for (let i = 0; i < recommendedEvents.length; i++) {
+      const r = recommendedEvents[i];
+      let getmodificationStatus = null;
+      if (r.Event.Modification != null) {
+        const getmodification = await this.sfService.models.modifications.get(
+          'Status__c',
+          {
+            Id: r.Event.Modification,
+          },
+          {},
+          instituteId
+        );
+        getmodificationStatus = getmodification[0].Status;
+      }
+      const responseObj = {
+        Id: r.Id,
+        recommendedBy: {
+          Id: r.Recommended_by ? r.Recommended_by.Id : null,
+          Name: r.Recommended_by ? r.Recommended_by.Name : null,
+          Role: r.Recommended_by
+            ? r.Recommended_by.Record_Type_Name
+            : null,
+        },
+        event: {
+          Id: r.Event.Id,
+          Name: r.Event ? r.Event.Account_Name : null,
+          Description: r.Event ? r.Event.Description : null,
+          Category: r.Event
+            ? r.Event.Category
+              ? r.Event.Category
+              : 'Other'
+            : null,
+          StartDate: r.Event ? r.Event.Start_Date : null,
+          EndDate: r.Event ? r.Event.End_Date : null,
+          Venue: r.Event ? r.Event.Venue : null,
+          Phone: r.Event ? r.Event.Phone : null,
+          Website: r.Event ? r.Event.Website : null,
+          OpportunityScope: r.Event ? r.Event.opportunityScope : null,
+          RemovalStatus: r.Event ? r.Event.Removal_Status : null,
+          ModificationStatus: getmodificationStatus,
+        },
+      };
+      if (!recommendationRecords[responseObj.event.Id]) {
+        recommendationRecords[responseObj.event.Id] = [];
+      }
+
+      recommendationRecords[responseObj.event.Id].push(responseObj);
+    }
+
+    for (const key of Object.keys(recommendationRecords)) {
+      const event = recommendationRecords[key][0].event;
+      const responseObj = {
+        Id: [],
+        event,
+        recommendedBy: [],
+      };
+
+      for (const rec of recommendationRecords[key]) {
+        responseObj.Id.push(rec.Id);
+        responseObj.recommendedBy.push(rec.recommendedBy);
+      }
+
+      responseRecommendedRecords.push(responseObj);
+    }
+    return { statusCode: 200, data: responseRecommendedRecords };
+  }
+
+  /**
+   * wishlist or unlists the events from recommendations of the student
+   * @param { wishListDto, userId} userId is the user, and Dto has eventID and boolean wishlist that indicate if we want to list or unlist the event
+   * @returns { statusCode, message}
+   */
+   async wishListEvent(
+    userId: string,
+    wishListDto: WishListDto,
+    instituteId: string
+  ): Promise<any> {
+    const { eventId, wishList } = wishListDto;
+
+    // getting the recommendation record if there
+    const recommendedEvents: any[] = await this.sfService.models.recommendations.get(
+      'Id, Recommendation_Name, Assignee, Recommended_by.Id, Recommended_by.Name, Recommended_by.Record_Type_Name, Event.Id, Event.Account_Name, Event.Description, Event.Start_Date, Event.End_Date, Event.Category, Event.Venue, Event.Phone, Event.Website, Event.opportunityScope, Event.Removal_Status, Event.Modification, Accepted, Created_at',
+      { Assignee: userId, Event: eventId },
+      {},
+      instituteId
+    );
+
+    if (wishList === true) {
+      // checking if the recommendation is already created if it is this is an bad request
+      if (recommendedEvents.length === 0) {
+        // creating recommendation if there are no recommendation record
+        await this.sfService.models.recommendations.create({
+          Assignee: userId,
+          Recommended_by: userId,
+          Event: eventId,
+          Accepted: 'Pending',
+        }, instituteId);
+        return {
+          statusCode: 200,
+          message: 'event wish listed successfully!',
+        };
+      }
+      // getting the recommendation record it to directly delete it
+      const RecommendationId: string = recommendedEvents[0].Id;
+      // updating recommendation when its already there
+      await this.sfService.models.recommendations.update({
+        Assignee: userId,
+        Recommended_by: userId,
+        Event: eventId,
+        Accepted: 'Pending',
+      }, RecommendationId, instituteId);
+      return {
+        statusCode: 200,
+        message: 'event wish listed successfully!',
+      };
+    }
+
+    if (wishList === false) {
+      // checking if a recommendation exists if not this a bad request we cant delete anything
+      if (recommendedEvents.length === 0) {
+        throw new BadRequestException('no wish listed event found to unlist');
+      }
+      // getting the recommendation record it to directly delete it
+      const RecommendationId: string = recommendedEvents[0].Id;
+
+      // deleting the recommendation
+      await this.sfService.models.recommendations.update({
+        Accepted: 'Declined',
+      }, RecommendationId, instituteId);
+      return {
+        statusCode: 200,
+        message: 'event wish unlisted successfully!',
+      };
+    }
+  }
+
+  // async getInstituteActivities(
+  //   instituteId?: string,
+  //   userId?: string,
+  //   instituteId: string
+  // ): Promise<ResponseInstituteEvents> {
+  //   //  all user considerations
+  //   const allInterestedUsers = await this.sfService.getRecommendation(
+  //     'Assignee__c,Recommended_by__c,Event__c',
+  //     {},
+  //   );
+
+  //   // al user todos
+  //   const allEnrolledUsers = await this.sfService.getPaletteActivity(
+  //     'Contact__c,Event__c',
+  //     {},
+  //   );
+
+  //   // getting opportunities
+  //   const allAccountsDetail = await this.sfService.getAccount(
+  //     'Id, Name, ParentId, Description, Start_Date__c, End_Date__c, Category__c, Venue__c , ShippingAddress, Phone, Website, Listed_by__c, Record_Type_Name__c,Status__c,opportunityScope__c, Removal_Status__c, Approval_Status__c',
+  //     {
+  //       Record_Type_Name__c: ['Activity', 'activities'],
+  //       Approval_Status__c: 'Approved',
+  //       Removal_Status__c: [null, 'In Review', 'Rejected'],
+  //       Visibility__c: 'Available',
+  //     },
+  //     { Created_at__c: -1 },
+  //   );
+  //   const accountsDetail = [];
+
+  //   allAccountsDetail.map(event => {
+  //     if (
+  //       (event.opportunityScope__c === 'Discrete' ||
+  //         event.Approval_Status__c === 'Approved') &&
+  //       event.Removal_Status__c !== 'Approved'
+  //     ) {
+  //       accountsDetail.push(event);
+  //     }
+  //   });
+  //   // storing institute ids
+  //   const instituteIds = [];
+  //   if (instituteId) {
+  //     instituteIds.push(instituteId);
+  //   } else {
+  //     for (const account of accountsDetail) {
+  //       instituteIds.push(account.ParentId);
+  //     }
+  //   }
+
+  //   const parentAccounts = await this.sfService.getAccount('Id, Name', {
+  //     Id: instituteIds,
+  //   });
+
+  //   const parentAccount: any = {};
+
+  //   parentAccounts.map(acc => {
+  //     parentAccount[acc.Id] = acc.Name;
+  //   });
+
+  //   if (accountsDetail.length === 0) {
+  //     return {
+  //       statusCode: 200,
+  //       data: [],
+  //     };
+  //   }
+
+  //   // storing activities id to get their resources
+  //   const activitiesIds = [];
+  //   const instituteActivities: ActivityInstitute[] = [];
+
+  //   // filtering activities
+  //   accountsDetail.map(value => {
+  //     const filterObj = getMappedActivityObject(value);
+  //     const opportunityId = value.Id;
+  //     const interestedUsers = [];
+  //     const enrolledUsers = [];
+  //     for (let k = 0; k < allInterestedUsers.length; k++) {
+  //       if (
+  //         allInterestedUsers[k].Recommended_by__c == userId &&
+  //         allInterestedUsers[k].Event__c == opportunityId
+  //       ) {
+  //         interestedUsers.push(allInterestedUsers[k].Assignee__c);
+  //       }
+  //     }
+  //     for (let k = 0; k < allEnrolledUsers.length; k++) {
+  //       if (allEnrolledUsers[k].Event__c == opportunityId) {
+  //         enrolledUsers.push(allEnrolledUsers[k].Contact__c);
+  //       }
+  //     }
+  //     instituteActivities.push({
+  //       ...filterObj,
+  //       institute: {
+  //         Id: value.ParentId,
+  //         name: parentAccount[value.ParentId],
+  //       },
+  //       interestedUsers: interestedUsers,
+  //       enrolledUsers: enrolledUsers,
+  //     });
+  //     activitiesIds.push(value.Id);
+  //   });
+
+  //   // getting resources by activities id
+  //   const resourcesData = await this.getResourcesByActivityId(activitiesIds);
+  //   // adding the activity and the resources together
+  //   const responseActivities: AllActivityResponseData[] = [];
+
+  //   let wishListedActivities = {};
+  //   let recomendedActivities = {};
+  //   let getEnrolledInActivities = {};
+  //   if (userId) {
+  //     wishListedActivities = await this.getWishListedActivities(
+  //       activitiesIds,
+  //       userId,
+  //     );
+  //     recomendedActivities = await this.getRecomendedActivities(
+  //       activitiesIds,
+  //       userId,
+  //     );
+  //     getEnrolledInActivities = await this.getEnrolledInActivities(
+  //       activitiesIds,
+  //       userId,
+  //     );
+  //   }
+
+  //   // adding them into task and structuring the response
+  //   instituteActivities.map(activity => {
+  //     // when a student is accessing the events then send wishListed Boolean and also enrolled to see if the student is already enrolled in that event
+  //     if (userId) {
+  //       const wishListedEvent = wishListedActivities[`${activity.activity_id}`];
+  //       const recomendedEvent = recomendedActivities[`${activity.activity_id}`];
+  //       const getEnrolledInEvent =
+  //         getEnrolledInActivities[`${activity.activity_id}`];
+  //       const filteredToDoObj = {
+  //         activity: activity,
+  //         wishListedEvent: wishListedEvent || false,
+  //         recomendedEvent: recomendedEvent || true,
+  //         enrolledEvent: getEnrolledInEvent || false,
+  //         resources: resourcesData[`${activity.activity_id}`] || [],
+  //       };
+  //       responseActivities.push(filteredToDoObj);
+  //     } else {
+  //       // when parent advisor is accessing the events
+  //       const filteredToDoObj = {
+  //         activity: activity,
+  //         resources: resourcesData[`${activity.activity_id}`] || [],
+  //       };
+  //       responseActivities.push(filteredToDoObj);
+  //     }
+  //   });
+  //   return {
+  //     statusCode: 200,
+  //     data: responseActivities,
+  //   };
+  // }
 }
