@@ -260,3 +260,13 @@ export class AllCommentsDto {
   @ApiProperty()
   data: CommentsDto[];
 }
+
+export class WishListDto {
+  @IsNotEmpty()
+  @IsString()
+  eventId: string;
+
+  @IsNotEmpty()
+  @IsBoolean()
+  wishList: boolean;
+}

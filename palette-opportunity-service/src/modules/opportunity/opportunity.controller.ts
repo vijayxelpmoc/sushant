@@ -16,18 +16,12 @@ import {
   DeleteOpportunityDto,
   DraftInfoDto,
   SetDraftOpportunityStatusDto,
+  WishListDto,
 } from './dtos/opportunities.dto';
 
 import { OpportunitiesInfoDto, OpportunityTodoDto } from './dtos/opportunities.dto';
 import { OpportunityService } from './opportunity.service';
 import { BasicResponse } from './types/login-interface';
-import {
-  ApiBearerAuth,
-  ApiBody,
-  ApiParam,
-  ApiResponse,
-  ApiUnauthorizedResponse,
-} from '@nestjs/swagger';
 import {
   Role,
   hasRoles,
@@ -783,6 +777,88 @@ export class OpportunityController {
       instituteId
     );
   }
+
+  /**
+   * function to get all the recommend events
+   *@param req accessToken
+   * return list of recommended events
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Administrator,
+    Role.Parent,
+    Role.Advisor,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('/event/recommend')
+  async getRecommendedEvents(
+    @Request() req, 
+    @Query('instituteId') instituteId: string,
+  ): Promise<any> {
+    let role = req.user.recordTypeName;
+    if (role == Role.Administrator) {
+      return await this.opportunityService.getAdminRecommendedEvents(req.user.id, instituteId);
+    } else if (role == Role.Advisor) {
+      return await this.opportunityService.getAdvisorRecommendedEvents(req.user.id, instituteId);
+    } else if (role == Role.Student) {
+      return await this.opportunityService.getStudentRecommendedEvents(req.user.id, instituteId);
+    } else if (role == Role.Parent) {
+      return await this.opportunityService.getParentRecommendedEvents(req.user.id, instituteId);
+    } else {
+      throw new NotFoundException();
+    }
+  }
+
+  /**
+   * wishlist or unlists the events from recommendations of the student
+   * @returns { statusCode, message}
+   */
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Observer,
+    Role.Administrator,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Post('/event/wishlist')
+  async whishListEvent(
+    @Request() req,
+    @Body('wishListDto') wishListDto: WishListDto,
+    @Body('instituteId') instituteId: string,
+  ): Promise<any> {
+    return await this.opportunityService.wishListEvent(
+      req.user.id,
+      wishListDto,
+      instituteId
+    );
+  }
+
+  // /**
+  //  * Return the List of All Activities except for student persona
+  //  * @param null
+  //  * returns the events
+  //  */
+  // @hasRoles(
+  //   Role.Parent,
+  //   Role.Advisor,
+  //   Role.Faculty,
+  //   Role.Observer,
+  //   Role.Administrator,
+  // )
+  // @UseGuards(JwtAuthGuard, RolesGuard)
+  // @Get('explore/activities')
+  // getExploreViewActivities(
+  //   @Request() req, 
+  //   @Query('instituteId') instituteId: string,
+  // ): Promise<any> {
+  //   return this.opportunityService.getInstituteActivities(
+  //     null,
+  //     req.user.id,
+  //     instituteId,
+  //   );
+  // }
 }
 
 // YML DATA
@@ -793,7 +869,7 @@ export class OpportunityController {
 //     lambdaPort: 4002
 
 
-// CON : /event/recommend
-// OPP : /student/event/wishlist
+// CON : /event/recommend [done 4 apis]
+// OPP : /student/event/wishlist [done]
 // OPP : /student/activities/institute
 // OPP : /student/explore/activities

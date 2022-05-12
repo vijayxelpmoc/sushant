@@ -425,16 +425,16 @@ export class AuthService {
   }
 
   async getProgramOpportunities(instituteId: string, programId: string, role: string) {
-    console.log('instituteId', instituteId);
-    console.log('programId', programId);
-    console.log('role', role);
+    // console.log('instituteId', instituteId);
+    // console.log('programId', programId);
+    // console.log('role', role);
     
-    const acc = await this.sfService.models.accounts.get('Id, Account_Name', { Program__c: programId }, {}, instituteId);
+    // const acc = await this.sfService.models.accounts.get('Id, Account_Name', { Program__c: programId }, {}, instituteId);
     
-    return { 
-      statusCode: 200, 
-      message: 'Programs opportunities fetched successfully', 
-      data: acc,
-    };
+    // return { 
+    //   statusCode: 200, 
+    //   message: 'Programs opportunities fetched successfully', 
+    //   data: acc,
+    // };
   }
 }
