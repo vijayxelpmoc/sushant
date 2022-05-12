@@ -1710,14 +1710,13 @@ export class TodoService {
     // console.log('filters', filters);
 
     const allToDo: SFTask[] = await this.sfService.models.todos.get(
-      // 'Id, Archived, Assignee, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, Name, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id',
-      'Id, Archived, Assignee,Assignee.Name, Assignee.Profile_Picture,Parent_Account, Complete_By, Created_at, Description, Task_Status, Status, To_do,Todo_Scope, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id,Opportunit_Id,Assignee_accepted_status',
+      'Id, Archived, Assignee.Id ,Assignee.Name, Assignee.Profile_Picture, Parent_Account, Complete_By, Created_at, Description, Task_Status, Status, To_do, Todo_Scope, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id, Opportunit_Id, Assignee_accepted_status',
       filters,
       {},
       instituteId,
     );
 
-    // console.log('allToDo', allToDo[0]);
+    console.log('allToDo', allToDo);
 
     // not getting the Created_By name so getting the names of the user by the ids
     const createdUserIds = [];
@@ -1807,7 +1806,6 @@ export class TodoService {
     });
 
     const response = { filteredTasks: filteredToDos, taskIds: toDoIds };
-    // console.log(response);
 
     return response;
   }

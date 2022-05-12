@@ -869,7 +869,6 @@ export class OpportunityController {
 //     lambdaPort: 4002
 
 
-// CON : /event/recommend [done 4 apis]
-// OPP : /student/event/wishlist [done]
+
 // OPP : /student/activities/institute
 // OPP : /student/explore/activities

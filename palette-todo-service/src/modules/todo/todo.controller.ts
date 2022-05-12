@@ -41,7 +41,6 @@ import { SfService } from '@gowebknot/palette-salesforce-service';
 
 @Controller({
   path: 'todo',
-  // version: '1',
 })
 export class TodoController {
   constructor(
@@ -86,8 +85,10 @@ export class TodoController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
-  async getTodos(@Request() req, @Query('instituteId') instituteId: string) {
-    // req.user.id = "0034x000012A8rnAAC";
+  async getTodos(
+    @Request() req, 
+    @Query('instituteId') instituteId: string
+  ) {
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
