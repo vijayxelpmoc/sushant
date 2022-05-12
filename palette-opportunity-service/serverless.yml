@@ -169,7 +169,7 @@ functions:
                 opportunityId: true
           cors: true
       - http:  
-          method: POST
+          method: GET
           path: opportunity/event/recommend/
           cors: true
       - http:  
