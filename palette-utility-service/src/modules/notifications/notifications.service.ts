@@ -11,17 +11,20 @@ import {
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { Errors, Responses } from '@src/constants';
 import { BasicDataResponse, BasicResponse } from './dtos/index';
+import { PayloadService } from './payload';
 
 @Injectable()
 export class NotificationsService {
     _notifier: Notifier;
-    constructor(private sfService: SfService) {
+    constructor(
+        private sfService: SfService,
+        private payloadService: PayloadService,    
+    ) {
         this._notifier = new Notifier();
     }
 
-    /**
-     * Gets user notifications
-     * @returns list
+    /** Gets user notifications
+     * @returns statusCode message & list
      */
     async getNotifications(id: string, instituteId: string): Promise<BasicDataResponse> {
         // getting notification details.
@@ -80,4 +83,224 @@ export class NotificationsService {
         });
         return { statusCode: 200, message: 'success', data: notificationsList };
     }
+
+    /**
+     * Updates notification is read status to true
+     * @returns message and status code
+     */
+    async readNotifications(userId: string, instituteId: string): Promise<BasicResponse> {
+        // getting not read user notifications
+        const mylist = await this.sfService.models.notifications.get('Id', {
+            Is_Read: false,
+            Contact: userId,
+        });
+
+        if (mylist.length) {
+        for (const element of mylist) {
+            // updating is read status
+            await this.sfService.models.notifications.update({
+            Is_Read: true,
+            }, element['Id'], instituteId);
+        }
+        }
+        return { statusCode: 200, message: 'ReadAllNotifications' };
+    }
+
+    async readNotification(
+        userId: string,
+        notificationId: string,
+        instituteId: string
+    ): Promise<BasicResponse> {
+        // getting not read user notification
+        const singleNotification = await this.sfService.models.notifications.get('Id', {
+            Contact: userId,
+            Id: notificationId,
+        }, {}, instituteId);
+        if (singleNotification.lenght !== 0) {
+            await this.sfService.models.notifications.update({
+                Is_Read: true,
+            }, notificationId, instituteId);
+        }
+        return { statusCode: 200, message: 'Success' };
+    }
+
+    async deleteAllNotifications(Id: string, instituteId: string) {
+        const notifications = await this.sfService.models.notifications.get('Id', {
+          Contact: Id,
+        }, {}, instituteId);
+    
+        const notificationIds: string[] = notifications.map(notification => {
+          return notification.Id;
+        });
+        
+        if (notificationIds.length >= 199) {
+            throw new NotFoundException('Maximum 200 notifications can be deleted at once!');
+        }
+        
+        await this.sfService.models.notifications.delete(notificationIds, instituteId);
+        return { statusCode: 200, message: 'Deleted' };
+    }
+
+
+    async getNotificationDetail(
+        notificationId: string,
+        userId: string,
+        instituteId: string,
+      ): Promise<BasicDataResponse> {
+        // notification details.
+        const notification = await this.sfService.models.notifications.get('*', {
+          Id: notificationId,
+        }, {}, instituteId);
+    
+        if (notification.lenght == 0) {
+          throw new NotFoundException('Not found!');
+        }
+        const type = notification[0].Type;
+    
+        let dataObj = undefined;
+        switch (type) {
+          case 'New To-Do': {
+            // todo obj
+            dataObj = await this.payloadService.GetTodoNotificationData(
+              notification[0].To_Do,
+              instituteId,
+            );
+            break;
+          }
+          case 'To-Do Status Update': {
+            // todo obj
+            dataObj = await this.payloadService.GetTodoNotificationData(
+              notification[0].To_Do,
+              instituteId,
+            );
+            break;
+          }
+          case 'Reminder': {
+            // todo obj
+            dataObj = await this.payloadService.GetTodoNotificationData(
+              notification[0].To_Do,
+              instituteId,
+            );
+            break;
+          }
+          case 'New in Consideration': {
+            // cons onj
+            dataObj = await this.payloadService.GetConsiderationNotificationData(
+              notification[0].Recommendation,
+              instituteId,
+            );
+            break;
+          }
+          case 'New Opportunity': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+          case 'Opportunity Review': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+          case 'New Comment': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+          case 'Opportunity Removed': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+          case 'Opportunity Modified': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+          case 'To-Do Modified': {
+            // todo obj
+            dataObj = await this.payloadService.GetTodoNotificationData(
+              notification[0].To_Do,
+              instituteId,
+            );
+            break;
+          }
+          case 'To-Do Approved': {
+            // todo obj
+            dataObj = await this.payloadService.GetTodoNotificationData(
+              notification[0].To_Do,
+              instituteId,
+            );
+            break;
+          }
+          case 'To-Do Rejected': {
+            // todo obj
+            dataObj = await this.payloadService.GetTodoNotificationData(
+              notification[0].To_Do,
+              instituteId,
+            );
+            break;
+          }
+          case 'Opportunity Approved': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+          case 'Opportunity Rejected': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+          case 'Opportunity Modification Rejected': {
+            // modification obj
+            dataObj = await this.payloadService.GetModificationNotificationData(
+              notification[0].Modification,
+              instituteId,
+            );
+            break;
+          }
+          case 'Opportunity Removal Rejected': {
+            // opp obj
+            dataObj = await this.payloadService.GetOpportunityNotificationData(
+              notification[0].Opportunity,
+              userId,
+              instituteId,
+            );
+            break;
+          }
+        }
+    
+        return {
+          statusCode: 200,
+          message: 'Fetched notification detail successfully.',
+          data: dataObj,
+        };
+      }
 }
