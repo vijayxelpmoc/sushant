@@ -194,7 +194,7 @@ export class AdvisorService {
     const notification = await this.sfService.models.notifications.get(
       '*',
       {
-        Opportunity: notificationId,
+        Id: notificationId,
       },
       {},
       instituteId,
@@ -205,13 +205,13 @@ export class AdvisorService {
     let id = null;
     const type = notification[0].Type;
     // for mofification id will be.
-    if (notification[0].Type === 'Opportunity Modification Request') {
+    if (type === 'Opportunity Modification Request') {
       id = notification[0].Modification;
     }
     // for opportunity id will be.
     if (
-      notification[0].Type === 'Opportunity Approval Request' ||
-      notification[0].Type === 'Opportunity Removal Request'
+      type === 'Opportunity Approval Request' ||
+      type === 'Opportunity Removal Request'
     ) {
       id = notification[0].Opportunity;
     }
@@ -246,7 +246,7 @@ export class AdvisorService {
             type === 'Opportunity Removal Request'
               ? event.Removal_Status
               : event.Approval_Status,
-          type: notification[0].Type,
+          type: type,
         };
         // listing obj.
         filteredData.push(filteredDataObject);

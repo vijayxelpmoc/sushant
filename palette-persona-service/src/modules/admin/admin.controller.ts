@@ -94,6 +94,7 @@ export class AdminController {
    *  @param {id} string opportunity id
    *  @returns {Object} status code and message and opportunity information
    */
+  //done
   @hasRoles(Role.Administrator, Role.Advisor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('approvals/:id') // 1 error
@@ -106,6 +107,7 @@ export class AdminController {
     return await this.adminService.getOpportunitydetail(id, instituteId);
   }
 
+  // done
   @hasRoles(Role.Administrator)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('todo/approvals')
@@ -157,7 +159,7 @@ export class AdminController {
     return await this.adminService.getTodoDetail(id, instituteId);
   }
 
-  // Approve Todo
+  // Approve Todo done
   @hasRoles(Role.Administrator)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('todo/approve/:id') // App
@@ -168,7 +170,7 @@ export class AdminController {
     return await this.adminService.approveTodo(id, instituteId);
   }
 
-  // Reject Todo
+  // Reject Todo done
   @hasRoles(Role.Administrator)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('todo/reject/:id') //App
