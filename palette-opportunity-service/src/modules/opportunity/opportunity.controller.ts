@@ -825,7 +825,7 @@ export class OpportunityController {
   @Post('/event/wishlist')
   async whishListEvent(
     @Request() req,
-    @Body('wishListDto') wishListDto: WishListDto,
+    @Body() wishListDto: WishListDto,
     @Body('instituteId') instituteId: string,
   ): Promise<any> {
     return await this.opportunityService.wishListEvent(
