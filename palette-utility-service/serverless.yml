@@ -37,19 +37,19 @@ functions:
     events:
       - http:
           method: POST
-          path: v1/util/contact
+          path: util/contact
           cors: true
       - http:
           method: POST
-          path: v1/util/feedback
+          path: util/feedback
           cors: true
       - http:
           method: POST
-          path: v1/util/report/issue
+          path: util/report/issue
           cors: true
       - http:
           method: GET
-          path: v1/util/guides
+          path: util/guides
           cors: true
       - http:
           method: GET
