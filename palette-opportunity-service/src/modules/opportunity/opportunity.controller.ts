@@ -835,30 +835,48 @@ export class OpportunityController {
     );
   }
 
-  // /**
-  //  * Return the List of All Activities except for student persona
-  //  * @param null
-  //  * returns the events
-  //  */
-  // @hasRoles(
-  //   Role.Parent,
-  //   Role.Advisor,
-  //   Role.Faculty,
-  //   Role.Observer,
-  //   Role.Administrator,
-  // )
-  // @UseGuards(JwtAuthGuard, RolesGuard)
-  // @Get('explore/activities')
-  // getExploreViewActivities(
-  //   @Request() req, 
-  //   @Query('instituteId') instituteId: string,
-  // ): Promise<any> {
-  //   return this.opportunityService.getInstituteActivities(
-  //     null,
-  //     req.user.id,
-  //     instituteId,
-  //   );
-  // }
+  /**
+   * Return the Activity List of Student Institute using studentId
+   * @param req
+   */
+   @hasRoles(Role.Student)
+   @UseGuards(JwtAuthGuard, RolesGuard)
+   @Get('activities/institute')
+   async getInstituteActivitiesByStudentId(
+     @Request() req, 
+     @Query('instituteId') instituteId: string,
+    ) {
+     const studentId = req.user.id;
+     return await this.opportunityService.getStudentInstituteActivities(
+       studentId,
+       instituteId,
+     );
+   }
+
+  /**
+   * Return the List of All Activities except for student persona
+   * @param null
+   * returns the events
+   */
+  @hasRoles(
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Observer,
+    Role.Administrator,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('explore/activities')
+  getExploreViewActivities(
+    @Request() req, 
+    @Query('instituteId') instituteId: string,
+  ): Promise<any> {
+    return this.opportunityService.getInstituteActivities(
+      null,
+      req.user.id,
+      instituteId,
+    );
+  }
 }
 
 // YML DATA

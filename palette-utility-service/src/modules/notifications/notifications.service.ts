@@ -97,7 +97,7 @@ export class NotificationsService {
         const mylist = await this.sfService.models.notifications.get('Id', {
             Is_Read: false,
             Contact: userId,
-        });
+        }, {}, instituteId);
 
         if (mylist.length) {
         for (const element of mylist) {

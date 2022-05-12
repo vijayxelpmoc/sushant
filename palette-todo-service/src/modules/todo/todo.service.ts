@@ -1709,14 +1709,12 @@ export class TodoService {
   async getTasks(filters, instituteId: string) {
     // console.log('filters', filters);
 
-    const allToDo: SFTask[] = await this.sfService.models.todos.get(
+    const allToDo: any[] = await this.sfService.models.todos.get(
       'Id, Archived, Assignee.Id ,Assignee.Name, Assignee.Profile_Picture, Parent_Account, Complete_By, Created_at, Description, Task_Status, Status, To_do, Todo_Scope, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id, Opportunit_Id, Assignee_accepted_status',
       filters,
       {},
       instituteId,
     );
-
-    console.log('allToDo', allToDo);
 
     // not getting the Created_By name so getting the names of the user by the ids
     const createdUserIds = [];
@@ -1781,7 +1779,7 @@ export class TodoService {
     allToDo.map((todo) => {
       const filteredToDoObject: Task = {
         Id: todo.Id,
-        Assignee: todo.Assignee && todo.Assignee,
+        Assignee: todo.Assignee && todo.Assignee.Id,
         AssigneeName: todo.Assignee && todo.Assignee.Name,
         Assignee_accepted_status: todo.Assignee_accepted_status,
         profilePicture: todo.Assignee && todo.Assignee.Profile_Picture,
@@ -2305,20 +2303,23 @@ export class TodoService {
     let tasksLen = tasks.filteredTasks.length;
 
     while (i < listedTasks.filteredTasks.length) {
-      tasks.filteredTasks[tasksLen] = listedTasks.filteredTasks[i];
-      tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
-      i += 1;
-      tasksLen += 1;
+      if (tasks.taskIds.indexOf(listedTasks.taskIds[i]) == -1) {
+        tasks.filteredTasks[tasksLen] = listedTasks.filteredTasks[i];
+        tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
+        tasksLen += 1;
+      }
+      i += 1;      
     }
 
     i = 0;
     while (i < globalTasks.filteredTasks.length) {
-      tasks.filteredTasks[tasksLen] = globalTasks.filteredTasks[i];
-      tasks.taskIds[tasksLen] = globalTasks.taskIds[i];
+      if (tasks.taskIds.indexOf(globalTasks.taskIds[i]) == -1) {
+        tasks.filteredTasks[tasksLen] = globalTasks.filteredTasks[i];
+        tasks.taskIds[tasksLen] = globalTasks.taskIds[i];
+        tasksLen += 1;
+      }
       i += 1;
-      tasksLen += 1;
     }
-    // console.log(`tasks`, tasks.filteredTasks[0]);
 
     return this.getTodoAndResource(tasks, instituteId);
   }
