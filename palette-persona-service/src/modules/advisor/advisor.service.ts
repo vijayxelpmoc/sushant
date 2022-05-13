@@ -31,8 +31,9 @@ export class AdvisorService {
         instituteId,
       );
 
-      console.log(responseData);
-      
+    if (!responseData) {
+      throw new NotFoundException(`Advisor with ID "${id}" not found`);
+    }
 
     const {
       Id,
@@ -58,15 +59,11 @@ export class AdvisorService {
       Profile_Picture,
     } = responseData[0];
 
-    if (!responseData) {
-      throw new NotFoundException(`Advisor with ID "${id}" not found`);
-    }
-
     const getInstitute = await this.sfService.models.affiliations.get(
       'Organization',
       {
         Contact: id,
-        // Role: 'Advisor',
+        Role: 'Advisor',
       },
       {},
       instituteId,

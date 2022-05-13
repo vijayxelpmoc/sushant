@@ -28,19 +28,15 @@ export class ObserverService {
    *  @param {string} id - The id of the admin
    * @returns {Object} AdminBEResponse Interface
    */
-  async getObserver(
-    id: string,
-    instituteId: string,
-  ): Promise<ObserverBEResponse> {
-    const responseData: SFObserverContact[] =
-      await this.sfService.generics.contacts.get(
-        'Id, Name, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture',
-        {
-          Id: id,
-        },
-        {},
-        instituteId,
-      );
+   async getObserver(id: string, instituteId: string): Promise<ObserverBEResponse> {
+    const responseData: SFObserverContact[] = await this.sfService.generics.contacts.get(
+      'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name',
+      {
+        Id: id,
+      },
+      {},
+      instituteId
+    );
 
     if (!responseData) {
       throw new NotFoundException(`Observer with ID "${id}" not found`);
@@ -49,6 +45,8 @@ export class ObserverService {
     const {
       Id,
       Name,
+      prod_uuid,
+      dev_uuid,
       Phone,
       Palette_Email,
       MailingCity,
@@ -64,24 +62,29 @@ export class ObserverService {
       Github,
       LinkedIn_URL,
       Profile_Picture,
+      Account_Name,
     } = responseData[0];
 
-    const institutesListRaw: ObserverSFInstitutesList[] =
-      await this.sfService.models.affiliations.get(
-        'Id, Affiliation_Name, Organization, Affiliation_Type, Contact, End_Date, Start_Date, Role, Tenure, Description, Designation',
-        {
-          Contact: id,
-        },
-        {},
-        instituteId,
-      );
+    const institutesListRaw: ObserverSFInstitutesList[] = await this.sfService.models.affiliations.get(
+      'Id, Affiliation_Name, Organization, Affiliation_Type, Contact.Id, End_Date, Start_Date, Role,  Description, Designation',
+      {
+        Contact: id,
+      },
+      {},
+      instituteId
+    );
 
-    const institutesList: ObserverInstitute[] =
-      await this.observerInstituteMapping(institutesListRaw, instituteId);
+    const institutesList: ObserverInstitute[] = await this.observerInstituteMapping(
+      id,
+      institutesListRaw,
+      instituteId
+    );
 
     const ObserverData: ObserverBEResponse = {
       Id: Id,
       name: Name,
+      firebase_uuid:
+        process.env.NODE_ENV === 'development' ? dev_uuid : prod_uuid,
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,
@@ -100,32 +103,36 @@ export class ObserverService {
       linkedin_link: LinkedIn_URL,
     };
 
-    const response: any = {
-      statusCode: 200,
-      message: Responses.OBSERVER_DATA,
-      Data: ObserverData,
-    };
-    return response;
+    return ObserverData;
   }
 
   async observerInstituteMapping(
+    userId: string,
     institutesListRaw: ObserverSFInstitutesList[],
     instituteId: string,
   ): Promise<ObserverInstitute[]> {
     return await Promise.all(
-      institutesListRaw.map(async (c) => {
+      institutesListRaw.map(async c => {
+        const getInstitute = await this.sfService.models.affiliations.get('*', {
+          Contact: userId,
+          Role: 'Observer',
+        }, {}, instituteId);
+
+        const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+
         const name = await this.sfService.models.accounts.get(
-          'Account_Name',
+          'Account_Name, program_logo, Id',
           {
-            Id: c.Organization,
+            Id: Institute_Id,
           },
           {},
-          instituteId,
+          instituteId
         );
         const instituteObj = {
-          institute_id: c.Id,
-          institute_name: name[0].Account_Name,
-          designation: c.Designation,
+          // institute_id: c.Id,
+          institute_id: name[0].Id,
+          institute_name: name[0].Name,
+          instituteLogo: name[0].program_logo__c,
         };
         return instituteObj;
       }),
