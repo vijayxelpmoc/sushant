@@ -26,8 +26,8 @@ export class AdminService {
   }
 
   async getAdmin(id: string, instituteId: string) {
-    console.log(instituteId);
-    
+    // console.log(instituteId);
+
     const responseData: SFAdminContact[] =
       await this.sfService.generics.contacts.get(
         'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
@@ -38,7 +38,7 @@ export class AdminService {
         {},
         instituteId,
       );
-    console.log(responseData);
+    // console.log(responseData);
 
     if (!responseData) {
       throw new NotFoundException(`Admin with ID "${id}" not found`);
@@ -205,14 +205,14 @@ export class AdminService {
     // notification details.
     const notification = await this.sfService.models.notifications.get(
       '*',
-      { 
-        Id:notificationId
+      {
+        Id: notificationId,
       },
       {},
       instituteId,
     );
-    console.log("notification",notification);
-    
+    // console.log('notification', notification);
+
     // select id based on notification type.
     let id = null;
     const type = notification[0].Type;
@@ -238,8 +238,8 @@ export class AdminService {
       {},
       instituteId,
     );
-    console.log("res",res);
-    
+    // console.log('res', res);
+
     if (res.length !== 0) {
       res.map((event) => {
         const filteredDataObject = {
@@ -271,16 +271,34 @@ export class AdminService {
     }
 
     // if id is of modification.
-    const mods = await this.sfService.models.modifications.get( // error
-      'Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name, *',
-      // 'Opportunity_Id.Listed_by,*',
+    const mods = await this.sfService.models.modifications.get(
+      // error
+      // 'Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name, *',
+      'Opportunity_Id.Listed_by,*',
       {
         Id: id,
       },
       {},
       instituteId,
     );
-    console.log("mods",mods);
+    // console.log('mods', mods);
+
+    const oppor = await this.sfService.models.accounts.get (
+      "Listed_by,Listed_by.Name,Listed_by.Id,Listed_by.Profile_Picture",
+      {Id: mods[0].Opportunity_Id},
+      {},
+      instituteId
+    )
+    // console.log(oppor[0].Listed_by);
+    
+
+    // const user = await this.sfService.generics.contacts.get(
+    //   'Name,Profile_Picture',
+    //   { Id: mods[0].Listed_by },
+    //   {},
+    //   instituteId,
+    // )[0];
+    // // console.log(user);
     
 
     if (mods.length !== 0) {
@@ -288,10 +306,10 @@ export class AdminService {
         const filteredDataObj = {
           Id: event.Id,
           creatorName: event.Opportunity_Id
-            ? event.Opportunity_Id.Listed_by.Name
+            ? oppor[0].Listed_by.Name
             : null,
           creatorProfilePic: event.Opportunity_Id
-            ? event.Opportunity_Id.Listed_by.Profile_Picture
+            ? oppor[0].Listed_by.Profile_Picture
             : null,
           createdAt: event.Created_at,
           eventName: event.Account_Name,
@@ -326,8 +344,8 @@ export class AdminService {
     //   {},
     //   instituteId,
     // );
-    // console.log(notification);
-    
+    // // console.log(notification);
+
     const res = await this.sfService.models.todos.get(
       '*',
       {
@@ -337,8 +355,7 @@ export class AdminService {
       {},
       instituteId,
     );
-    console.log(res);
-    
+    // console.log(res);
 
     if (res.length === 0) {
       throw new NotFoundException();
@@ -512,7 +529,7 @@ export class AdminService {
         //     },
         //   );
         // } catch (err) {
-        //   console.log(`err`, err);
+        //   // console.log(`err`, err);
         // }
         // create SF notification for creator
         await this.sfService.models.notifications.create(
@@ -573,7 +590,7 @@ export class AdminService {
         //     },
         //   );
         // } catch (err) {
-        //   console.log(`err`, err);
+        //   // console.log(`err`, err);
         // }
         // create SF notification for creator.
         await this.sfService.models.notifications.create(
@@ -617,7 +634,7 @@ export class AdminService {
             //     },
             //   );
             // } catch (err) {
-            //   console.log(`err`, err);
+            //   // console.log(`err`, err);
             // }
             // creating Sf notification.
             await this.sfService.models.notifications.create(
@@ -681,7 +698,7 @@ export class AdminService {
           //     },
           //   );
           // } catch (err) {
-          //   console.log('err', err);
+          //   // console.log('err', err);
           // }
           // create SF notification for creator.
           await this.sfService.models.notifications.create(
@@ -771,7 +788,7 @@ export class AdminService {
       //     },
       //   );
       // } catch (err) {
-      //   console.log(`err`, err);
+      //   // console.log(`err`, err);
       // }
       // create sf notification for creator.
       await this.sfService.models.notifications.create(
@@ -797,7 +814,7 @@ export class AdminService {
         {},
         instituteId,
       );
-      console.log('recc', recc);
+      // console.log('recc', recc);
       notificationTitle = `Opportunity ${opp[0].Name}`;
       notificationMsg = `Opportunity ${opp[0].Name} has been updated.`;
       if (recc.length !== 0) {
@@ -823,7 +840,7 @@ export class AdminService {
           //     },
           //   );
           // } catch (err) {
-          //   console.log(`err`, err);
+          //   // console.log(`err`, err);
           // }
           // create notification for assignees.
           await this.sfService.models.notifications.create(
@@ -887,7 +904,7 @@ export class AdminService {
           //     },
           //   );
           // } catch (err) {
-          //   console.log(`err`, err);
+          //   // console.log(`err`, err);
           // }
           // create notification for assignees
           await this.sfService.models.notifications.create(
@@ -971,7 +988,7 @@ export class AdminService {
         //     },
         //   );
         // } catch (err) {
-        //   console.log(`err`, err);
+        //   // console.log(`err`, err);
         // }
         // create sf notification for creator.
         await this.sfService.models.notifications.create(
@@ -1020,7 +1037,7 @@ export class AdminService {
         //     },
         //   );
         // } catch (err) {
-        //   console.log(`err`, err);
+        //   // console.log(`err`, err);
         // }
         // create sf notification for creator.
         await this.sfService.models.notifications.create(
@@ -1097,7 +1114,7 @@ export class AdminService {
       //     },
       //   );
       // } catch (err) {
-      //   console.log(`err`, err);
+      //   // console.log(`err`, err);
       // }
       // create sf notification for creator.
       await this.sfService.models.notifications.create(
