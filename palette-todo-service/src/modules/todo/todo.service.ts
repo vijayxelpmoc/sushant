@@ -1710,7 +1710,7 @@ export class TodoService {
     // console.log('filters', filters);
 
     const allToDo: any[] = await this.sfService.models.todos.get(
-      'Id, Archived, Assignee.Id ,Assignee.Name, Assignee.Profile_Picture, Parent_Account, Complete_By, Created_at, Description, Task_Status, Status, To_do, Todo_Scope, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id, Opportunit_Id, Assignee_accepted_status',
+      'Id, Archived, Assignee.Id, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, To_do, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id, Assignee_accepted_status, Todo_Scope, Status, Opportunit_Id, Reminder_at',
       filters,
       {},
       instituteId,
@@ -1775,28 +1775,30 @@ export class TodoService {
 
     // adding the ids and the tasks data together and filtering the response
     const toDoIds = [];
-    const filteredToDos: Task[] = [];
+    const filteredToDos: any[] = [];
     allToDo.map((todo) => {
-      const filteredToDoObject: Task = {
+      const filteredToDoObject: any = {
         Id: todo.Id,
         Assignee: todo.Assignee && todo.Assignee.Id,
         AssigneeName: todo.Assignee && todo.Assignee.Name,
-        Assignee_accepted_status: todo.Assignee_accepted_status,
         profilePicture: todo.Assignee && todo.Assignee.Profile_Picture,
         groupId: todo.Group_Id,
+        reminderAt: todo.Reminder_at,
         Archived: todo.Archived,
         name: todo.To_do,
-        description: todo.Description,
-        status: todo.Status,
-        TaskStatus: todo.Task_Status,
+        acceptedStatus: todo.Assignee_accepted_status,
         todoScope: todo.Todo_Scope,
+        description: todo.Description,
+        TaskStatus: todo.Task_Status,
+        status: todo.Status,
         type: todo.Type,
         eventAt: todo.Event_At,
         venue: todo.Event_Venue,
         completeBy: todo.Complete_By,
         createdAt: todo.Created_at,
-        createdBy: createdUser[`${todo.Created_By}`],
-        Listed_by: todo.Listed_by,
+        Listed_by: createdUser[`${todo.Listed_by}`]
+        ? createdUser[`${todo.Listed_by}`]
+        : createdUser[`${todo.Created_By}`],
         opportunity: todo.Opportunit_Id,
       };
       filteredToDos.push(filteredToDoObject);
@@ -1804,7 +1806,6 @@ export class TodoService {
     });
 
     const response = { filteredTasks: filteredToDos, taskIds: toDoIds };
-
     return response;
   }
 
@@ -2230,7 +2231,7 @@ export class TodoService {
           name: todo.name,
           description: todo.description,
           reminderAt: todo.reminderAt,
-          TaskStatus: todo.TaskStatus,
+          taskStatus: todo.TaskStatus,
           status: todo.status,
           acceptedStatus: todo.acceptedStatus,
           todoScope: todo.todoScope,
@@ -2321,6 +2322,8 @@ export class TodoService {
       i += 1;
     }
 
+    console.log(tasks);
+    
     return this.getTodoAndResource(tasks, instituteId);
   }
 
