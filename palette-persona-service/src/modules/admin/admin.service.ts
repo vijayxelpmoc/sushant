@@ -3,7 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
-import { Notifier } from '@gowebknot/palette-wrapper';
+import { Notifier, Role } from '@gowebknot/palette-wrapper';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { Errors, Responses } from '@src/constants';
 import {
@@ -252,6 +252,8 @@ export class AdminService {
           category: event.Category,
           phone: event.Phone,
           venue: event.Venue,
+          valid: event.Valid || null,
+          role: Role.Administrator,
           website:event.Website,
           startDate: event.Start_Date,
           endDate: event.End_Date,
@@ -318,6 +320,7 @@ export class AdminService {
           category: event.Category,
           phone: event.Phone,
           venue: event.Venue,
+          role: Role.Administrator,
           valid: event.Valid,
           website: event.Website,
           startDate: event.Start_Date,
