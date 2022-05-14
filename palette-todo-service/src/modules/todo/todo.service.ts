@@ -375,7 +375,7 @@ export class TodoService {
           Todo_Scope: 'Global',
           // If Admin is creating a global todo, then the status is Approved
           Status: isAdmin ? 'Approved' : 'In Review',
-          Parentid: todo.InstituteId,
+          Parent_Account: todo.InstituteId,
           Assignee_accepted_status: 'Accepted',
           Is_Admin_Reviewed: 'No',
         },
@@ -386,7 +386,7 @@ export class TodoService {
         const admins = await this.sfService.models.affiliations.get(
           'Id',
           {
-            Account: todo.InstituteId,
+            Organization: todo.InstituteId,
             Role: 'Admin',
           },
           {},

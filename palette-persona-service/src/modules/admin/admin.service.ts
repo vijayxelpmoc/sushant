@@ -231,14 +231,15 @@ export class AdminService {
     const filteredData = [];
     // get opportunity details.
     const res = await this.sfService.models.accounts.get(
-      'Listed_by.Name, Listed_by.Profile_Picture, *',
+      '*,Listed_by.Id, Listed_by.Name, Listed_by.Profile_Picture',
       {
         Id: id,
       },
       {},
       instituteId,
     );
-    // console.log('res', res);
+    console.log('res', res[0]);
+
 
     if (res.length !== 0) {
       res.map((event) => {

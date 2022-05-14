@@ -142,7 +142,7 @@ export class TodoController {
     return await this.todoService.acceptOrRejectRequestedTodo(
       req.user.id,
       id,
-      'Approved',
+      'Accepted',
       instituteId,
     );
   }
@@ -448,6 +448,8 @@ export class TodoController {
     @Request() req,
     @Query('instituteId') instituteId: string,
   ) {
+    console.log(req.user);
+    
     return await this.todoService.getRequestedTodosV2(req.user.id, instituteId);
   }
 
