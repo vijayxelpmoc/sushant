@@ -4264,6 +4264,8 @@ export class OpportunityService {
         Event: activitiesIds,
         Accepted: 'Pending',
       },
+      {},
+      instituteId
     );
 
     const RecomendedActivitiesResponse = {};

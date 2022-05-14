@@ -1,13 +1,14 @@
 export interface ObserverInstitute {
   institute_id: string;
   institute_name: string;
-  designation: string;
+  instituteLogo: string;
 }
 
 export interface ObserverBEResponse {
   Id: string;
   name: string;
   phone: string;
+  firebase_uuid: string;
   email: string;
   profilePicture: string;
   institutes: ObserverInstitute[];
@@ -48,6 +49,8 @@ export interface SFObserverContact {
   attributes: Attributes;
   Id: string;
   Name: string;
+  prod_uuid: string;
+  dev_uuid: string;
   Phone: string;
   Palette_Email: string;
   MailingCity: string;
@@ -63,6 +66,7 @@ export interface SFObserverContact {
   Github: string;
   LinkedIn_URL: string;
   Profile_Picture: string;
+  Account_Name
 }
 
 export interface ObserverUpdateResponse {
