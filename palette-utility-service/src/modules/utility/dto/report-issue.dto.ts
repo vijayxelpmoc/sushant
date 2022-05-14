@@ -15,6 +15,21 @@ export class ReportIssueDto {
 
   @ApiProperty({ type: String, required: true })
   @IsNotEmpty()
+  @IsString()
+  category: string;
+
+  @ApiProperty({ type: String, required: true })
+  @IsNotEmpty()
+  @IsString()
+  type: string;
+  
+  @ApiProperty({ type: String, required: true })
+  @IsNotEmpty()
+  @IsString()
+  needed_by: string;
+
+  @ApiProperty({ type: String, required: true })
+  @IsNotEmpty()
   @IsEmail()
   email: string;
 
