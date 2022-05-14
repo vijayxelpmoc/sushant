@@ -248,10 +248,11 @@ export class AdminService {
           creatorName: event.Listed_by.Name,
           creatorProfilePic: event.Listed_by.Profile_Picture,
           createdAt: event.Created_at,
-          eventName: event.Name,
+          eventName: event.Account_Name,
           category: event.Category,
           phone: event.Phone,
           venue: event.Venue,
+          website:event.Website,
           startDate: event.Start_Date,
           endDate: event.End_Date,
           description: event.Description,
@@ -274,15 +275,15 @@ export class AdminService {
     // if id is of modification.
     const mods = await this.sfService.models.modifications.get(
       // error
-      // 'Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name, *',
-      'Opportunity_Id.Listed_by,*',
+      // '*,Opportunity_Id.Listed_by, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by.Name',
+      '*',
       {
         Id: id,
       },
       {},
       instituteId,
     );
-    // console.log('mods', mods);
+    console.log('mods', mods);
 
     const oppor = await this.sfService.models.accounts.get (
       "Listed_by,Listed_by.Name,Listed_by.Id,Listed_by.Profile_Picture",
@@ -317,6 +318,8 @@ export class AdminService {
           category: event.Category,
           phone: event.Phone,
           venue: event.Venue,
+          valid: event.Valid,
+          website: event.Website,
           startDate: event.Start_Date,
           endDate: event.End_Date,
           description: event.Description,
