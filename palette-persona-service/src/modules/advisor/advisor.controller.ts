@@ -75,6 +75,7 @@ export class AdvisorController {
    * object Array of advisor details
    */
   @hasRoles(
+    Role.Student,
     Role.Parent,
     Role.Administrator,
     Role.Advisor,

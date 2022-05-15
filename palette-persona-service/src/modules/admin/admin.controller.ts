@@ -75,6 +75,7 @@ export class AdminController {
    * object Array of administrator details
    */
   @hasRoles(
+    Role.Student,
     Role.Parent,
     Role.Administrator,
     Role.Advisor,

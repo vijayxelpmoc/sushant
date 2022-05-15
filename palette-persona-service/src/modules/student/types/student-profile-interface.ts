@@ -22,3 +22,10 @@ export interface WorkExperience {
   startDate: string;
   endDate: string;
 }
+
+export interface StudentInstituteName {
+  attributes: Attributes;
+  Id: string;
+  Account_Name: string;
+  program_logo: string;
+}
