@@ -49,6 +49,7 @@ export class StudentController {
   }
 
   @hasRoles(
+    Role.Student,
     Role.Parent,
     Role.Administrator,
     Role.Advisor,
@@ -61,7 +62,6 @@ export class StudentController {
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
   ) {
-    // return 'ok';
     return await this.studentService.getStudent(id, instituteId);
   }
 

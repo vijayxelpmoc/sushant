@@ -6,7 +6,7 @@ import {
 import { SfService } from '@gowebknot/palette-salesforce-service';
 
 import { SFContact } from '@src/types';
-import { SFStudentWorkExperience, WorkExperience } from './types';
+import { SFStudentWorkExperience, StudentInstituteName, WorkExperience } from './types';
 import { StudentUpdateProfileDto } from './dto';
 import { Errors, Responses } from '@src/constants';
 
@@ -16,32 +16,29 @@ export class StudentService {
 
   // Internal Util Method
 
-  private async _mapStudentWorkExperience(
-    experiences: SFStudentWorkExperience[],
+  async _mapStudentWorkExperience(
+    workExp: any[],
     instituteId: string,
-  ): Promise<Array<WorkExperience>> {
+  ): Promise<Array<any>> {
     return await Promise.all(
-      experiences.map(async (exp) => {
-        const organization = (
-          await this.sfService.models.accounts.get(
-            'Name',
-            {
-              Id: exp.Organization,
-            },
-            {},
-            instituteId,
-          )
-        )[0];
-
-        return {
-          organization,
-          role: exp.Role,
-          startDate: exp.Start_Date,
-          endDate: exp.End_Date,
+      workExp.map(async c => {
+        const orgName: StudentInstituteName[] = await this.sfService.models.accounts.get(
+          'Account_Name',
+          {
+            Id: c.Organization,
+          },
+        );
+        const workObj: any = {
+          organizationName: orgName[0].Account_Name,
+          role: c.Role,
+          startDate: c.Start_Date,
+          endDate: c.End_Date,
         };
+        return workObj;
       }),
     );
   }
+  
 
   private _mapStudentProfile(
     student: SFContact,
@@ -119,85 +116,161 @@ export class StudentService {
     return studentProfile;
   }
 
-  // Service Methods
-
-  async getStudent(id: string, instituteId: string) {
-    const student: SFContact = (
-      await this.sfService.generics.contacts.get(
-        'Id, Name, prod_uuid, dev_uuid, Birthdate, Gender, Grade, Student_ID, Phone, Palette_Email, Interests, skills, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Primary_Educational_Institution, Profile_Picture, Account_Name',
-        {
-          Id: id,
-        },
-        {},
-        instituteId,
-      )
-    )[0];
-    if (!student) {
-      throw new NotFoundException('Student not found');
-    }
-
-    // Get Student institute details
-    const studentInstitute = (
-      await this.sfService.models.affiliations.get(
-        'Organization',
-        {
-          Contact: id,
-          Role: 'Student',
-        },
-        {},
-        instituteId,
-      )
-    )[0];
-    const institute = (
-      await this.sfService.models.accounts.get(
-        'Id, Account_Name, program_logo',
-        {
-          Id: studentInstitute.Organization,
-        },
-        {},
-        instituteId,
-      )
-    )[0];
-
-    // Student Exp, Skills, Interests
-    const studentWorkExperience: SFStudentWorkExperience[] =
-      await this.sfService.models.affiliations.get(
-        'Id, Name, Organization, Affiliation_Type, Contact, End_Date, Start_Date, Role, Tenure, Description, Job_Type, Designation',
-        {
-          Contact: id,
-          // Affiliation_Type: 'Educational Institution',
-        },
-        {},
-        instituteId,
-      );
-
-    const experiences = await this._mapStudentWorkExperience(
-      studentWorkExperience,
+  /** sends student details on the basis of the id
+   *  @param {string} id - The id of the student
+   * @returns {Object} StudentBEResponse Interface
+   */
+   async getStudent(id: string, instituteId: string): Promise<any> {
+    const responseData: SFContact[] = await this.sfService.generics.contacts.get(
+      'Id, Name, prod_uuid, dev_uuid, Birthdate, Gender, Grade, Student_ID, Phone, Palette_Email, Interests, skills, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Primary_Educational_Institution, Profile_Picture, Account_Name',
+      {
+        Id: id,
+      },
+      {},
       instituteId,
     );
 
-    const interests = (student.Interests && student.Interests.split(',')) || null;
+    if (!responseData) {
+      throw new NotFoundException(`student with ID "${id}" not found`);
+    }
 
-    const skills = (student.skills && student.skills.split(',')) || null;
+    const {
+      Id,
+      Name,
+      prod_uuid,
+      dev_uuid,
+      Birthdate,
+      Gender,
+      Grade,
+      Student_ID,
+      Phone,
+      Palette_Email,
+      Interests,
+      skills,
+      MailingCity,
+      MailingCountry,
+      MailingState,
+      MailingPostalCode,
+      MailingStreet,
+      Facebook,
+      Whatsapp,
+      Instagram,
+      Website,
+      Website_Title,
+      Github,
+      LinkedIn_URL,
+      Primary_Educational_Institution,
+      Profile_Picture,
+      Account_Name,
+    } = responseData[0];
+
+
+    const getInstitute = await this.sfService.models.affiliations.get(
+      'Organization',
+      {
+        Contact: id,
+        Role: 'Student',
+      },
+      {},
+      instituteId,
+    );
+    const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+    // const Institute_Id = responseData[0].Primary_Educational_Institution__c;
+    const institute:
+      | StudentInstituteName[]
+      | null = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', {
+      Id: Institute_Id,
+    }, {}, instituteId);
+
+    const instituteName: string | null =
+      institute === null ? null : institute.map(c => c.Account_Name).toString();
+
+    const workExp: any[] = await this.sfService.models.affiliations.get(
+      'Id, Affiliation_Name, Organization, Affiliation_Type, Contact, End_Date, Start_Date, Role, Tenure, Description, Job_Type, Designation',
+      {
+        Contact: Id,
+        Affiliation_Type: 'Business Organization',
+      },
+      {},
+      instituteId,
+    );
+    const studentWorkExperience: any[] = await this._mapStudentWorkExperience(
+      workExp,
+      instituteId,
+    );
+
+    const studentInterests: string[] =
+      Interests === null ? null : Interests.split(',');
+    const studentSkills: string[] =
+      skills === null ? null : skills.split(',');
+
+    const studentData: any = {
+      Id: Id,
+      name: Name,
+      firebase_uuid:
+        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
+      DOB: Birthdate,
+      gender: Gender,
+      education: [
+        {
+          instituteId: institute[0].Id,
+          instituteLogo: institute[0].program_logo,
+          institute_name: institute[0].Account_Name,
+          course: Grade,
+          roll_no: Student_ID,
+        },
+      ],
+      phone: Phone,
+      email: Palette_Email,
+      profilePicture: Profile_Picture,
+      work_experience: studentWorkExperience,
+      interests: studentInterests,
+      mailingCity: MailingCity,
+      mailingCountry: MailingCountry,
+      mailingState: MailingState,
+      mailingStreet: MailingStreet,
+      mailingPostalCode: MailingPostalCode,
+      facebook_link: Facebook,
+      whatsapp_link: Whatsapp,
+      instagram_link: Instagram,
+      website_link: Website,
+      website_Title: Website_Title,
+      github_link: Github,
+      linkedin_link: LinkedIn_URL,
+      skills: studentSkills,
+      projects: [],
+      activities: [],
+    };
 
     return {
       statusCode: 200,
       message: Responses.PROFILE_FETCHED,
-      data: this._mapStudentProfile(
-        student,
-        institute,
-        experiences,
-        interests,
-        skills,
-      ),
+      data: studentData,
     };
   }
 
-  async updateStudentProfile(
-    id: string,
+  /** sends student update details on the basis of the id and updatesfStudentDto bodies
+   *  @param {string} id - The id of the student & UpdatesfStudentDto
+   * @returns {Object} StudentUpdateBEResponse Interface
+   */
+   async updateStudentProfile(
+    id: number,
     updateProfileDto: StudentUpdateProfileDto,
-    instituteId,
-  ) {
+    instituteId: string,
+  ): Promise<any> {
+    const responseData: any[] = await this.sfService.generics.contacts.get(
+      'Id, Name, prod_uuid, dev_uuid, Birthdate, Gender, Grade, Student_ID, Phone, Palette_Email, Interests, skills, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Primary_Educational_Institution, Profile_Picture, Account_Name',
+      {
+        Id: id,
+      },
+      {},
+      instituteId,
+    );
+
+    if (!responseData) {
+      throw new NotFoundException(`student with ID "${id}" not found`);
+    }
+
     const {
       interests,
       skills,
@@ -210,21 +283,8 @@ export class StudentService {
       linkedin,
     } = updateProfileDto;
 
-    const student = (
-      await this.sfService.generics.contacts.get(
-        'Name',
-        {
-          Id: id,
-        },
-        {},
-        instituteId,
-      )
-    )[0];
-    if (!student) {
-      throw new NotFoundException('Student not found');
-    }
-
-    const updatedStudent = {};
+    const { Id } = responseData[0];
+    const updatedStudent: any = {};
 
     if (interests) {
       if (interests.join(',').length > 250) {
@@ -248,12 +308,13 @@ export class StudentService {
     github && (updatedStudent['Github'] = github);
     linkedin && (updatedStudent['LinkedIn_URL'] = linkedin);
 
-    await this.sfService.generics.contacts.update(
-      id,
+
+    
+    const updateUser: any = await this.sfService.generics.contacts.update(
+      Id,
       updatedStudent,
       instituteId,
     );
-
     return {
       statusCode: 200,
       message: Responses.PROFILE_UPDATED,

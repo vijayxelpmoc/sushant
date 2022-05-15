@@ -84,7 +84,7 @@ export class ObserverService {
       Id: Id,
       name: Name,
       firebase_uuid:
-        process.env.NODE_ENV === 'development' ? dev_uuid : prod_uuid,
+        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,
@@ -104,7 +104,7 @@ export class ObserverService {
     };
 
     return ObserverData;
-  }
+  } 
 
   async observerInstituteMapping(
     userId: string,
@@ -131,8 +131,8 @@ export class ObserverService {
         const instituteObj = {
           // institute_id: c.Id,
           institute_id: name[0].Id,
-          institute_name: name[0].Name,
-          instituteLogo: name[0].program_logo__c,
+          institute_name: name[0].Account_Name,
+          instituteLogo: name[0].program_logo,
         };
         return instituteObj;
       }),
