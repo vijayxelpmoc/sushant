@@ -1226,7 +1226,7 @@ export class TodoService {
 
       // if block only for admin edit
       if (RecordType === 'Administrator') {
-        updateObj['Opportunity_Id'] = null;
+        updateObj['Opportunit_Id'] = null;
         updateObj['Status'] = 'Approved';
 
         const edittedData = [];
@@ -1797,8 +1797,8 @@ export class TodoService {
         completeBy: todo.Complete_By,
         createdAt: todo.Created_at,
         Listed_by: createdUser[`${todo.Listed_by}`]
-        ? createdUser[`${todo.Listed_by}`]
-        : createdUser[`${todo.Created_By}`],
+          ? createdUser[`${todo.Listed_by}`]
+          : createdUser[`${todo.Created_By}`],
         opportunity: todo.Opportunit_Id,
       };
       filteredToDos.push(filteredToDoObject);
@@ -2309,7 +2309,7 @@ export class TodoService {
         tasks.taskIds[tasksLen] = listedTasks.taskIds[i];
         tasksLen += 1;
       }
-      i += 1;      
+      i += 1;
     }
 
     i = 0;
@@ -2323,7 +2323,7 @@ export class TodoService {
     }
 
     console.log(tasks);
-    
+
     return this.getTodoAndResource(tasks, instituteId);
   }
 
