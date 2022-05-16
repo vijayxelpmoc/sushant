@@ -88,7 +88,7 @@ export class AdvisorController {
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
   ) {
-    const advisor = await this.advisorService.getAdvisor(id, instituteId);
+    return await this.advisorService.getAdvisor(id, instituteId);
   }
 
   // Guardian Opportunity Approvals

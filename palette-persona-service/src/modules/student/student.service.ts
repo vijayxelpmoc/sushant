@@ -113,7 +113,12 @@ export class StudentService {
       projects: [],
       activities: [],
     };
-    return studentProfile;
+
+    return {
+      statusCode: 200,
+      message: Responses.PROFILE_FETCHED,
+      data: studentProfile,
+    };
   }
 
   /** sends student details on the basis of the id

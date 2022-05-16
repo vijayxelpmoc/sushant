@@ -1028,8 +1028,6 @@ export class UserNetworkService {
         instituteId,
       );
 
-      // console.log('fifth', advisorStudentDetails);
-
       if (advisorStudentDetails.length > 0) {
         advisorStudentDetails.map((student) => {
           if (checkRepeatition.indexOf(student.Id) == -1) {
@@ -1078,7 +1076,6 @@ export class UserNetworkService {
           {},
           instituteId,
         );
-        // console.log('sixth', guardians);
 
         if (guardians.length > 0) {
           const advisorGuardianIds = guardians.map((guardian) => {
@@ -1087,7 +1084,7 @@ export class UserNetworkService {
 
           const advisorParentDetails =
             await this.sfService.generics.contacts.get(
-              'Name, Id, Profile_Picture, IsRegisteredOnPalette',
+              'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorGuardianIds],
               },
@@ -1155,7 +1152,7 @@ export class UserNetworkService {
 
           const advisorAdvisorDetails =
             await this.sfService.generics.contacts.get(
-              'Name, Id, Profile_Picture, IsRegisteredOnPalette',
+              'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorAdvisorIds],
               },
@@ -1189,7 +1186,7 @@ export class UserNetworkService {
                   isRegistered: advisor.IsRegisteredOnPalette,
                   profilePicture: advisor.Profile_Picture,
                   relationship: 'Advisor',
-                  firebase_uuid: advisor.prod_uuid,
+                  firebase_uuid: advisor.dev_uuid,
                   shareOpportuity: true,
                   createOpportunity: false,
                   createTodo: true,
@@ -1221,7 +1218,7 @@ export class UserNetworkService {
 
           const advisorObserverDetails =
             await this.sfService.generics.contacts.get(
-              'Name, Id, Profile_Picture, IsRegisteredOnPalette',
+              'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorObserverIds],
               },
@@ -1255,7 +1252,7 @@ export class UserNetworkService {
                   isRegistered: observer.IsRegisteredOnPalette,
                   profilePicture: observer.Profile_Picture,
                   relationship: 'Observer',
-                  firebase_uuid: observer.prod_uuid,
+                  firebase_uuid: observer.dev_uuid,
                   shareOpportuity: true,
                   createOpportunity: false,
                   createTodo: true,
@@ -1334,7 +1331,7 @@ export class UserNetworkService {
               isRegistered: admin.IsRegisteredOnPalette,
               profilePicture: admin.Profile_Picture,
               relationship: 'Admin',
-              firebase_uuid: admin.prod_uuid,
+              firebase_uuid: admin.dev_uuid,
               shareOpportuity: true,
               createTodo: true,
               createOpportunity: false,
