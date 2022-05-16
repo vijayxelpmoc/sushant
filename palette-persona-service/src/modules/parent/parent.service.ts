@@ -185,7 +185,7 @@ export class ParentService {
     } = responseData[0];
 
     const studentList: ParentStudentListSF[] = await this.sfService.models.relationships.get(
-      'Id, Name, Contact.Id, Type, Relationship_Explanation.Id, Related_Contact.Id, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
+      'Id, Name, Contact.Id, Type, Relationship_Explanation, Related_Contact.Id, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
       {
         Related_Contact: Id,
         Type: GuardianSubRoles,
