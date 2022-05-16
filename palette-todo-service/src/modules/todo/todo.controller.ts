@@ -86,12 +86,16 @@ export class TodoController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get()
   async getTodos(
-    @Request() req, 
-    @Query('instituteId') instituteId: string
+    @Request() req,
+    @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
+    console.log(programId);
+    
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
@@ -111,6 +115,7 @@ export class TodoController {
   async createTodoDraft(
     @Body() createTodoDto: CreateTodoV2Dto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
     @Request() req,
   ) {
     // error
@@ -118,6 +123,7 @@ export class TodoController {
       createTodoDto,
       req.user.id,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
@@ -138,11 +144,13 @@ export class TodoController {
     @Request() req,
     @Param('id') id: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.todoService.acceptOrRejectRequestedTodo(
       req.user.id,
       id,
       'Accepted',
+      programId,
       instituteId,
     );
   }
@@ -164,11 +172,13 @@ export class TodoController {
     @Request() req,
     @Param('id') id,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.todoService.acceptOrRejectRequestedTodo(
       req.user.id,
       id,
       'Rejected',
+      programId,
       instituteId,
     );
   }
@@ -186,13 +196,15 @@ export class TodoController {
     @Request() req,
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
-    return await this.todoService.getTodoV2(req.user.id, id, instituteId);
+    return await this.todoService.getTodoV2(req.user.id, id,programId, instituteId);
   }
 
   /*
    * Bulk Accept Todo
    */
+  // test
   @hasRoles(
     Role.Student,
     Role.Parent,
@@ -206,16 +218,18 @@ export class TodoController {
     @Request() req,
     @Body('todoIds') todoIds: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.todoService.acceptOrRejectRequestedTodoBulk(
       req.user.id,
       todoIds,
       'Accepted',
+      programId,
       instituteId,
     );
   }
 
-  // reviewed
+  // test
   /**
    * function to update the todo
    * @param updateTodoDto
@@ -236,6 +250,7 @@ export class TodoController {
     @Body('status') status,
     @Body('note') note,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     // console.log(instituteId);
 
@@ -244,12 +259,13 @@ export class TodoController {
       id,
       status,
       req.user.recordTypeName,
+      programId,
       instituteId,
       note,
     );
   }
 
-  // reviewed
+  // test
   /*
    * Bulk Reject Todo
    */
@@ -266,11 +282,13 @@ export class TodoController {
     @Request() req,
     @Body('todoIds') todoIds: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.todoService.acceptOrRejectRequestedTodoBulk(
       req.user.id,
       todoIds,
       'Rejected',
+      programId,
       instituteId,
     );
   }
@@ -291,12 +309,14 @@ export class TodoController {
   async getTodoRecepients(
     @Request() req,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
     // console.log(req.user);
 
     return await this.todoService.getTodoRecepients(
       req.user.id,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
@@ -319,11 +339,15 @@ export class TodoController {
     @Body() createTodoResourcesDto: CreateTodoResourcesDto,
     @Request() req,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
+    console.log(programId);
+    
     return await this.todoService.createTodoResources(
       createTodoResourcesDto,
       req.user.id,
       true, // isNewTodo - True
+      programId,
       instituteId,
     );
   }
@@ -346,14 +370,17 @@ export class TodoController {
   async deleteAllTodos(
     @Request() req,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
     return this.todoService.deleteAllTodos(
       req.user.id,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
 
+  // test
   /**
    * function to update the todo
    * @param updateTodoDto
@@ -372,16 +399,18 @@ export class TodoController {
     @Body('updatedTodo') updateTodoDto: UpdateTodoDto,
     @Request() req,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.todoService.updateTodo(
       updateTodoDto,
       req.user.id,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
 
-  // reviewed
+  // test
   @hasRoles(
     Role.Student,
     Role.Student,
@@ -397,12 +426,14 @@ export class TodoController {
     @Body('todoIds') todoIds: string[],
     @Body('status') status: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.todoService.updateTodoStatusBulk(
       req.user.id,
       todoIds,
       status,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
@@ -422,6 +453,7 @@ export class TodoController {
   async createTodo(
     @Body() createTodoDto: CreateTodoV2Dto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
     @Request() req,
   ) {
     // console.log(req.user);
@@ -430,6 +462,7 @@ export class TodoController {
       createTodoDto,
       req.user.id,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
@@ -447,10 +480,11 @@ export class TodoController {
   async getRequestedTodos(
     @Request() req,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
     console.log(req.user);
-    
-    return await this.todoService.getRequestedTodosV2(req.user.id, instituteId);
+
+    return await this.todoService.getRequestedTodosV2(req.user.id,programId, instituteId);
   }
 
   // reviewed
@@ -468,10 +502,12 @@ export class TodoController {
   async getToDo(
     @Param('studentid') studentid: string,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
     const response = await this.todoService.getThirdPartyTodosV2(
       studentid,
       'Student',
+      programId,
       instituteId,
     );
     return response;
@@ -490,7 +526,8 @@ export class TodoController {
     @Request() req,
     @Body('Id') Id: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
-    return await this.todoService.publishDraftTodo(Id, instituteId);
+    return await this.todoService.publishDraftTodo(Id,programId, instituteId);
   }
 }

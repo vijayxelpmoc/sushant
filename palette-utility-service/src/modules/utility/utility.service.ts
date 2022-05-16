@@ -11,7 +11,7 @@ import {
 } from '@gowebknot/palette-wrapper';
 
 import { Errors, Responses } from '@src/constants';
-import { ContactInfoDto, FeedbackInfoDto, ReportIssueDto } from './dto';
+import { ContactInfoDto, FeedbackInfoDto, GetGuidesResponse, GetGuidesSFResponse, ReportIssueDto } from './dto';
 import { SFGuide } from './types';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { HttpService } from '@nestjs/axios';
@@ -258,33 +258,56 @@ export class UtilityService {
   }
 
   async getGuides(role: string, instituteId: string) {
-    const guides: SFGuide[] = await this.sfService.models.guides.get(
-      'Name, Guide_Description, Event_String, Role',
+    const responseData: Array<
+      GetGuidesSFResponse
+    > = await this.sfService.models.guides.get(
+      '*',
       {},
       {},
-      instituteId,
+      instituteId
     );
+    console.log(responseData[0]);
+    
 
-    console.log(guides);
-
-    if (!guides) {
-      throw new NotFoundException(Errors.GUIDES_NOT_FOUND);
+    if (responseData.length === 0) {
+      return {
+        statusCode: 200,
+        message: 'no guides found.',
+        data: [],
+      };
     }
+    // role has multiple role concatenated with ; so we split and check if the guide is for the user with requested role and send those only
+    const filteredGuides = [];
+    responseData.map(guide => {
+      const guideRoles = guide.Role.split(';');
+      console.log(guideRoles.includes(role));
+      
+      if (guideRoles.includes(role)) filteredGuides.push(guide);
+    });
 
-    guides
-      .filter((guide) => guide.Role.split(';').includes(role))
-      .map((guide) => ({
-        name: guide.Name,
-        description: guide.Guide_Description,
-        eventString: guide.Event_String,
-      }));
+    console.log("filteredGuides",filteredGuides);
+    
 
-    return {
+    const guidesResponse: Array<GetGuidesResponse> = filteredGuides.map(c => {
+      return {
+        name: c.Guide_Name,
+        description: c.Guide_Description,
+        event_string: c.Event_String,
+      };
+    });
+
+    console.log(guidesResponse[0]);
+    
+
+    const guidesResponseValue = {
       statusCode: 200,
-      message: Responses.GUIDES_SUCCESS,
-      data: guides,
+      message: 'Retrieved Successfully',
+      data: guidesResponse,
     };
+
+    return guidesResponseValue;
   }
+  
 
   public sendReportEmail(
     email: string[],
