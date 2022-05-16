@@ -28,7 +28,7 @@ export class ObserverService {
    *  @param {string} id - The id of the admin
    * @returns {Object} AdminBEResponse Interface
    */
-   async getObserver(id: string, instituteId: string): Promise<ObserverBEResponse> {
+   async getObserver(id: string, instituteId: string): Promise<any> {
     const responseData: SFObserverContact[] = await this.sfService.generics.contacts.get(
       'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name',
       {
@@ -103,7 +103,11 @@ export class ObserverService {
       linkedin_link: LinkedIn_URL,
     };
 
-    return ObserverData;
+    return {
+      statusCode: 200,
+      message: Responses.PROFILE_FETCHED,
+      data: ObserverData,
+    };
   } 
 
   async observerInstituteMapping(
