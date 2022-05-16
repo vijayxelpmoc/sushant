@@ -26,7 +26,7 @@ export class ParentService {
    *  @param {string} id - The id of the parent
    * @returns {Object} ParentBEResponse Interface
    */
-   async getParent(id: string, instituteId: string): Promise<ParentBEResponse> {
+   async getParent(id: string, instituteId: string): Promise<any> {
     const responseData: SFParentContact[] = await this.sfService.generics.contacts.get(
       'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name, Primary_Educational_Institution',
       {
@@ -134,7 +134,12 @@ export class ParentService {
       github_link: Github,
       linkedin_link: LinkedIn_URL,
     };
-    return parentData;
+
+    return {
+      statusCode: 200,
+      message: Responses.PROFILE_FETCHED,
+      data: parentData,
+    };
   }
 
   /** updates parent profile details
