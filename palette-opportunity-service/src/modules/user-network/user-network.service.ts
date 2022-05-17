@@ -87,6 +87,7 @@ export class UserNetworkService {
           message: 'Contacts list',
           contacts: adminNetwork,
         };
+        // here
       case 'Advisor':
         const advisorNetwork = await this.getAdvisorContact(
           userId,
@@ -1592,6 +1593,8 @@ export class UserNetworkService {
       userId,
       instituteId,
     );
+    console.log("observer",observer.data.mentors, observer.data.students);
+    
     const institute = await this.sfService.models.affiliations.get(
       '*',
       {
@@ -1614,26 +1617,35 @@ export class UserNetworkService {
       instituteId,
     );
 
-    for (let i = 0; i < observerInsti.length; i++) {
-      if (observerInsti[i].Contact.Id !== userId) {
-        const temp = await this.sfService.generics.contacts.get(
-          '*',
-          {
-            Id: observerInsti[i].Contact.Id,
-          },
-          {},
-          instituteId,
-        );
+    // console.log("observerInsti",observerInsti);
+    
+    const observerInstiIds = observerInsti.map((inst) => {
+      return inst.Contact;
+    });
 
+    // console.log("observerInstIds",observerInstiIds);
+    
+    const temp = await this.sfService.generics.contacts.get(
+      '*',
+      {
+        Id: [...observerInstiIds],
+      },
+      {},
+      instituteId,
+    );
+    
+    for (let i = 0; i < temp.length; i++) {
+      if (observerInsti[i].Contact !== userId) {
+        
         if (process.env.NODE_ENV === 'prod') {
           const obj = {
-            id: temp[0].Id,
-            name: temp[0].Name,
-            isRegistered: temp[0].IsRegisteredOnPalette,
-            profilePicture: temp[0].Profile_Picture,
-            relationship: observerInsti[i].Role,
+            id: temp[i].Id,
+            name: temp[i].Name,
+            isRegistered: temp[i].IsRegisteredOnPalette,
+            profilePicture: temp[i].Profile_Picture,
+            relationship: temp[i].Role,
             createOpportunity: false,
-            firebase_uuid: temp[0].prod_uuid,
+            firebase_uuid: temp[i].prod_uuid,
             shareOpportuity: true,
             createTodo: true,
             chat: true,
