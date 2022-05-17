@@ -935,7 +935,3 @@ export class OpportunityController {
 //     httpPort: 4000
 //     lambdaPort: 4002
 
-
-
-// OPP : /student/activities/institute
-// OPP : /student/explore/activities
