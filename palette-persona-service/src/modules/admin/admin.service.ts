@@ -240,7 +240,6 @@ export class AdminService {
     );
     console.log('res', res[0]);
 
-
     if (res.length !== 0) {
       res.map((event) => {
         const filteredDataObject = {
@@ -254,7 +253,7 @@ export class AdminService {
           venue: event.Venue,
           valid: event.Valid || null,
           role: Role.Administrator,
-          website:event.Website,
+          website: event.Website,
           startDate: event.Start_Date,
           endDate: event.End_Date,
           description: event.Description,
@@ -287,14 +286,13 @@ export class AdminService {
     );
     console.log('mods', mods);
 
-    const oppor = await this.sfService.models.accounts.get (
-      "Listed_by,Listed_by.Name,Listed_by.Id,Listed_by.Profile_Picture",
-      {Id: mods[0].Opportunity_Id},
+    const oppor = await this.sfService.models.accounts.get(
+      'Listed_by,Listed_by.Name,Listed_by.Id,Listed_by.Profile_Picture,Listed_by.Phone',
+      { Id: mods[0].Opportunity_Id },
       {},
-      instituteId
-    )
+      instituteId,
+    );
     // console.log(oppor[0].Listed_by);
-    
 
     // const user = await this.sfService.generics.contacts.get(
     //   'Name,Profile_Picture',
@@ -303,15 +301,12 @@ export class AdminService {
     //   instituteId,
     // )[0];
     // // console.log(user);
-    
 
     if (mods.length !== 0) {
       mods.map((event) => {
         const filteredDataObj = {
           Id: event.Id,
-          creatorName: event.Opportunity_Id
-            ? oppor[0].Listed_by.Name
-            : null,
+          creatorName: event.Opportunity_Id ? oppor[0].Listed_by.Name : null,
           creatorProfilePic: event.Opportunity_Id
             ? oppor[0].Listed_by.Profile_Picture
             : null,
@@ -343,18 +338,8 @@ export class AdminService {
 
   // Global Todo
   async getTodos(instituteId: string): Promise<any> {
-    // const notification = await this.sfService.models.notifications.get(
-    //   '*',
-    //   {
-    //     // Id: notificationId,
-    //   },
-    //   {},
-    //   instituteId,
-    // );
-    // // console.log(notification);
-
     const res = await this.sfService.models.todos.get(
-      '*',
+      '*,Listed_by.Phone,Listed_by.Id',
       {
         Status: 'In Review',
         Todo_Scope: 'Global',
@@ -363,6 +348,60 @@ export class AdminService {
       instituteId,
     );
     // console.log(res);
+
+    const tasksId = res.map((e) => e.Id);
+
+    const allResource = {};
+
+    // tasksId.forEach(async (taskId) => {
+    const resources: any[] =
+      await this.sfService.models.resourceConnections.get(
+        'Resource.Resource_Name,Resource.URL, Resource.Resource_Type,*',
+        // 'Id,Name, Todo, Resource.Resource_Name,Resource.Id, Resource.URL, Resource.Resource_Type',
+        // 'Resource_Connection_Name, Todo, Resource',
+        {
+          Todo: tasksId,
+        },
+        {},
+        instituteId,
+      );
+    console.log(resources);
+
+    const resIds = resources.map((e) => e.Resource);
+
+    const resor = await this.sfService.models.resources.get(
+      '*',
+      {
+        Id: [...resIds],
+      },
+      {},
+      instituteId,
+    );
+    console.log(resor);
+
+    resources !== [] &&
+      resources.map((resource) => {
+        if (resource.Resource) {
+          const resourcesObj = {
+            Id: resource.Resource.Id,
+            name: resource.Resource.Resource_Name,
+            url: resource.Resource.URL,
+            type: resource.Resource.Resource_Type,
+          };
+          console.log("resourcesObj",resourcesObj);
+
+          // if a record with a todo task is present then add the object into it or if not create one
+          const hashResource = allResource[`${resource.Todo}`];
+          if (hashResource) {
+            hashResource.push(resourcesObj);
+            allResource[`${resource.Todo}`] = hashResource;
+          } else {
+            const AllResources = [];
+            AllResources.push(resourcesObj);
+            allResource[`${resource.Todo}`] = AllResources;
+          }
+        }
+      });
 
     if (res.length === 0) {
       throw new NotFoundException();
@@ -376,13 +415,15 @@ export class AdminService {
         description: todo.Description,
         taskStatus: todo.Task_Status,
         type: todo.Type,
+        phone: todo.Listed_by && todo.Listed_by.Phone,
         completeBy: todo.Complete_By,
-        listedBy: todo.Listed_by,
+        listedBy: todo.Listed_by && todo.Listed_by.Id,
         eventAt: todo.Event_At || null,
         eventVenue: todo.Event_Venue || null,
         approvalStatus: todo.Status,
-        instituteId: todo.ParentId,
+        instituteId: todo.Parent_Account,
         createdAt: todo.Created_at,
+        resources: allResource[todo.Id],
       });
     });
 
@@ -406,6 +447,8 @@ export class AdminService {
       instituteId,
     );
 
+    console.log(resNotif);
+
     if (resNotif.length === 0) {
       throw new NotFoundException();
     }
@@ -419,6 +462,7 @@ export class AdminService {
       {},
       instituteId,
     );
+    console.log(res);
 
     const user = await this.sfService.generics.contacts.get(
       '*',
@@ -428,21 +472,23 @@ export class AdminService {
       {},
       instituteId,
     );
+    console.log(user);
 
     const filteredData = {
       id: res[0]['Id'],
-      name: res[0]['Name'],
+      name: res[0]['To_do'],
       description: res[0]['Description'],
-      taskStatus: res[0]['Task_status'],
+      taskStatus: res[0]['Task_Status'],
       type: res[0]['Type'],
+      phone: res[0]['Phone'],
       completeBy: res[0]['Complete_By'],
       listedBy: res[0]['Listed_by'],
       eventAt: res[0]['Event_At'] || null,
       eventVenue: res[0]['Event_Venue'] || null,
       approvalStatus: res[0]['Status'],
-      instituteId: res[0]['ParentId'],
-      creatorPic: user[0].Profile_Picture,
-      creatorName: user[0].Name,
+      instituteId: res[0]['Parent_Account'],
+      creatorPic: user.length !== 0 ? user[0].Profile_Picture : null,
+      creatorName: user.length !== 0 ? user[0].Name : null,
       createdAt: res[0].Created_at ? res[0].Created_at : res[0].CreatedDate,
     };
 

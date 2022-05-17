@@ -223,7 +223,7 @@ export class AdvisorService {
       {},
       instituteId,
     );
-    // console.log("res",res);
+    console.log("res",res);
     
     if (res.length !== 0) {
       res.map((event) => {
@@ -301,9 +301,9 @@ export class AdvisorService {
   }
 
   // Opportunity Approvals
-  async getOpportunityApprovals(userId: string, instituteId: string) {
+  async getOpportunityApprovals(userId: string,role:string, instituteId: string) {
     const opportunities = await this.sfService.models.accounts.get(
-      '*',
+    '*,Listed_by.Profile_Picture,Listed_by.Name',
       {
         Approval_Status: 'AdvisorReview',
         // Removal_Status: null || 'Rejected',
@@ -311,16 +311,21 @@ export class AdvisorService {
       {},
       instituteId,
     );
+    console.log(opportunities);
+    
     const approvalList = [];
     opportunities.map((opportunity) => {
       const dataObj = {
         Id: opportunity.Id,
-        eventName: opportunity.Name,
+        eventName: opportunity.Account_Name,
+        creatorName: opportunity.Listed_by.Name,
+        creatorProfilePic: opportunity.Listed_by.Profile_Picture,
         description: opportunity.Description,
         venue: opportunity.Venue,
         website: opportunity.Website,
         eventDate: opportunity.Start_Date,
         phone: opportunity.Phone,
+        role: role,
         Type: opportunity.Category,
         approvalStatus: opportunity.Approval_Status,
         expirationDate: opportunity.End_Date,
