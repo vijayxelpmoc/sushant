@@ -2,6 +2,7 @@ import { Module } from '@nestjs/common';
 import { ConfigModule } from '@nestjs/config';
 import Joi from 'joi';
 import { WrapperModule } from '@gowebknot/palette-wrapper';
+import { SfModule } from '@gowebknot/palette-salesforce-service';
 
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
@@ -18,6 +19,7 @@ import { FirebaseModule } from './modules/firebase/firebase.module';
       }),
       envFilePath: '.env',
     }),
+    SfModule.forRoot(),
     WrapperModule,
     FirebaseModule,
   ],
