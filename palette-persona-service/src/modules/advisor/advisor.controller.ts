@@ -103,6 +103,7 @@ export class AdvisorController {
 
     return await this.advisorService.getOpportunityApprovals(
       req.user.id,
+      req.user.recordTypeName,
       instituteId,
     );
   }
