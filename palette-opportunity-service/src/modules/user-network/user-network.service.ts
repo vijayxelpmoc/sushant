@@ -31,7 +31,12 @@ export class UserNetworkService {
     this.notifier = new Notifier();
   }
 
-  async getContactsList(userId: string, role: string, instituteId: string) {
+  async getContactsList(
+    userId: string,
+    role: string,
+    programId: string,
+    instituteId: string,
+  ) {
     const contacts = [];
     // console.log(userId, role);
 
@@ -51,6 +56,7 @@ export class UserNetworkService {
       '*',
       {
         Contact: userId,
+        Organization: programId,
       },
       {},
       instituteId,
@@ -65,7 +71,13 @@ export class UserNetworkService {
       case 'Student':
         const Roles = []; // all roles
         const getStudentNetwork = await (
-          await this.getStudentsContact([userId], Roles, true, instituteId)
+          await this.getStudentsContact(
+            [userId],
+            Roles,
+            true,
+            instituteId,
+            programId,
+          )
         ).contacts;
 
         return {
@@ -79,6 +91,7 @@ export class UserNetworkService {
           userId,
           true,
           instituteId,
+          programId,
           [],
         );
 
@@ -87,12 +100,13 @@ export class UserNetworkService {
           message: 'Contacts list',
           contacts: adminNetwork,
         };
-        // here
+      // here
       case 'Advisor':
         const advisorNetwork = await this.getAdvisorContact(
           userId,
           true,
           instituteId,
+          programId,
           [],
         );
 
@@ -106,6 +120,7 @@ export class UserNetworkService {
         const guardianNetwork = await this.getGuardianContact(
           userId,
           instituteId,
+          programId,
           true,
           [],
         );
@@ -120,6 +135,7 @@ export class UserNetworkService {
           userId,
           true,
           instituteId,
+          programId,
           [],
         );
 
@@ -142,8 +158,9 @@ export class UserNetworkService {
     RecordTypeName,
     opportunityId,
     instituteId: string,
+    programId: string,
   ): Promise<any> {
-    // console.log(userId, RecordTypeName, opportunityId, instituteId);
+    console.log(userId, RecordTypeName, opportunityId, instituteId,programId);
 
     // RecordTypeName = 'Advisor';
     const considerations = {};
@@ -154,6 +171,7 @@ export class UserNetworkService {
       '*',
       {
         Id: opportunityId,
+        Program: programId,
       },
       {},
       instituteId,
@@ -183,6 +201,7 @@ export class UserNetworkService {
       {
         Event: opportunityId,
         Recommended_by: userId,
+        Program: programId,
       },
       {},
       instituteId,
@@ -197,6 +216,7 @@ export class UserNetworkService {
       'Id, Assignee',
       {
         Opportunit_Id: opportunityId,
+        Program: programId,
       },
       {},
       instituteId,
@@ -213,6 +233,7 @@ export class UserNetworkService {
         {
           Account: opportunityId,
           Contact: userId,
+          Program: programId,
         },
         {},
         instituteId,
@@ -239,6 +260,7 @@ export class UserNetworkService {
                 userId,
                 insId,
                 instituteId,
+                programId,
                 considerations,
                 todos,
                 'Discrete',
@@ -254,6 +276,7 @@ export class UserNetworkService {
                 userId,
                 insId,
                 instituteId,
+                programId,
                 considerations,
                 todos,
                 'Discrete',
@@ -269,6 +292,7 @@ export class UserNetworkService {
                 userId,
                 insId,
                 instituteId,
+                programId,
                 considerations,
                 todos,
                 'Discrete',
@@ -292,6 +316,7 @@ export class UserNetworkService {
               userId,
               insId,
               instituteId,
+              programId,
               considerations,
               todos,
             ),
@@ -306,6 +331,7 @@ export class UserNetworkService {
               userId,
               insId,
               instituteId,
+              programId,
               considerations,
               todos,
             ),
@@ -320,6 +346,7 @@ export class UserNetworkService {
               userId,
               insId,
               instituteId,
+              programId,
               considerations,
               todos,
             ),
@@ -334,6 +361,7 @@ export class UserNetworkService {
               userId,
               insId,
               instituteId,
+              programId,
               considerations,
               todos,
             ),
@@ -350,6 +378,7 @@ export class UserNetworkService {
     userId: string,
     insId: string,
     instituteId: string,
+    programId: string,
     considerations?: any,
     todos?: string[],
     scope?: string,
@@ -365,6 +394,7 @@ export class UserNetworkService {
       'Contact.Id, Contact.Name, Contact.Profile_Picture, Contact.dev_uuid, Contact.prod_uuid',
       {
         Related_Contact: userId,
+        Program: programId,
         // Type: MentorSubRoles,
       },
       {},
@@ -411,6 +441,7 @@ export class UserNetworkService {
         'Related_Contact.id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.dev_uuid, Related_Contact.prod_uuid',
         {
           Contact: studentsId[i],
+          Program: programId,
           //   Type: GuardianSubRoles,
         },
         {},
@@ -447,6 +478,7 @@ export class UserNetworkService {
         'Related_Contact.id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.dev_uuid, Related_Contact.prod_uuid',
         {
           Contact: studentsId[i],
+          Program: programId,
           //   Type: MentorSubRoles,
         },
         {},
@@ -482,7 +514,7 @@ export class UserNetworkService {
     const admins = await this.sfService.models.affiliations.get(
       'Contact.Id, Contact.Name, Contact.Profile_Picture, Contact.dev_uuid, Contact.prod_uuid',
       {
-        Organization: insId,
+        Organization: programId,
         Role: 'Admin',
       },
       {},
@@ -516,6 +548,7 @@ export class UserNetworkService {
     userId: string,
     insId: string,
     instituteId: string,
+    programId: string,
     considerations?: any,
     todos?: string[],
     scope?: string,
@@ -530,6 +563,7 @@ export class UserNetworkService {
       'Contact.Id, Contact.Name, Contact.Profile_Picture, Contact.dev_uuid, Contact.prod_uuid',
       {
         Related_Contact: userId,
+        Program: programId,
         // Type: GuardianSubRoles,
       },
       {},
@@ -566,6 +600,7 @@ export class UserNetworkService {
         'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.dev_uuid, Related_Contact.prod_uuid',
         {
           Contact: studentsId[i],
+          Program: programId,
           //   Type: GuardianSubRoles,
         },
         {},
@@ -597,6 +632,7 @@ export class UserNetworkService {
         'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.dev_uuid, Related_Contact.prod_uuid',
         {
           Contact: studentsId[i],
+          Program: programId,
           //   Type: MentorSubRoles,
         },
         {},
@@ -628,7 +664,7 @@ export class UserNetworkService {
     const admins = await this.sfService.models.affiliations.get(
       'Contact.Id, Contact.Name, Contact.Profile_Picture, Contact.dev_uuid, Contact.prod_uuid',
       {
-        Organization: insId,
+        Organization: programId,
         Role: 'Admin',
       },
       {},
@@ -662,6 +698,7 @@ export class UserNetworkService {
     userId: string,
     insId: string,
     instituteId: string,
+    programId: string,
     considerations?: any,
     todos?: string[],
     scope?: string,
@@ -672,7 +709,7 @@ export class UserNetworkService {
     const personas = await this.sfService.models.affiliations.get(
       'Contact.Id, Contact.Name, Contact.Profile_Picture, Role, Contact.dev_uuid, Contact.prod_uuid',
       {
-        Organization: insId,
+        Organization: programId,
       },
       {},
       instituteId,
@@ -739,6 +776,7 @@ export class UserNetworkService {
     userId: string,
     insId: string,
     instituteId: string,
+    programId: string,
     considerations?: any,
     todos?: string[],
     // scope?: string,
@@ -777,6 +815,7 @@ export class UserNetworkService {
       'Related_Contact.id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.dev_uuid, Related_Contact.prod_uuid',
       {
         Contact: userId,
+        Program: programId,
         // Type: ...GuardianSubRoles,
         // Type: GuardianSubRoles,
       },
@@ -809,6 +848,7 @@ export class UserNetworkService {
       'Related_Contact.id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.dev_uuid, Related_Contact.prod_uuid',
       {
         Contact: userId,
+        Program: programId,
         // Type: MentorSubRoles,
       },
       {},
@@ -839,7 +879,7 @@ export class UserNetworkService {
     const admins = await this.sfService.models.affiliations.get(
       'Contact.Id, Contact.Name, Contact.Profile_Picture, Contact.Primary_Educational_Institution, Contact.dev_uuid, Contact.prod_uuid',
       {
-        Organization: insId,
+        Organization: programId,
         Role: 'Admin',
       },
       {},
@@ -874,6 +914,7 @@ export class UserNetworkService {
     roles: string[],
     allRoles: boolean,
     instituteId: string,
+    programId: string,
   ) {
     const allContacts = [];
     const checkRepetitionIds = [];
@@ -886,6 +927,7 @@ export class UserNetworkService {
           'Related_Contact, Type',
           {
             Contact: userId,
+            Program: programId,
           },
           {},
           instituteId,
@@ -896,6 +938,7 @@ export class UserNetworkService {
           {
             Contact: userId,
             Type: roles,
+            Program: programId,
           },
           {},
           instituteId,
@@ -911,6 +954,8 @@ export class UserNetworkService {
           '*',
           {
             Id: [...parentIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
           },
           {},
           instituteId,
@@ -950,6 +995,7 @@ export class UserNetworkService {
         {
           //   Account: studentProfile.education[0].instituteId,
           Role: ['Admin'],
+          Organization: programId,
         },
         {},
         instituteId,
@@ -964,6 +1010,8 @@ export class UserNetworkService {
           'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette',
           {
             Id: [...mentorIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
           },
           {},
           instituteId,
@@ -1003,6 +1051,7 @@ export class UserNetworkService {
     userId: string,
     allRoles: boolean,
     instituteId: string,
+    programId: string,
     roles?: string[],
   ) {
     const advisorContactsList = [];
@@ -1024,6 +1073,8 @@ export class UserNetworkService {
         '*',
         {
           Id: [...advisorStudentIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -1073,6 +1124,7 @@ export class UserNetworkService {
           {
             Contact: advisorStudentIds,
             Type: GuardianSubRoles,
+            Program: programId,
           },
           {},
           instituteId,
@@ -1088,6 +1140,8 @@ export class UserNetworkService {
               'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorGuardianIds],
+                Role: [...roles],
+                Primary_Educational_Institution: programId,
               },
               {},
               instituteId,
@@ -1139,6 +1193,7 @@ export class UserNetworkService {
           {
             Contact: advisorStudentIds,
             Type: MentorSubRoles,
+            Program: programId,
           },
           {},
           instituteId,
@@ -1156,6 +1211,8 @@ export class UserNetworkService {
               'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorAdvisorIds],
+                Role: [...roles],
+                Primary_Educational_Institution: programId,
               },
               {},
               instituteId,
@@ -1205,6 +1262,7 @@ export class UserNetworkService {
           {
             Contact: advisorStudentIds,
             Type: ObserverSubRoles,
+            Program: programId,
           },
           {},
           instituteId,
@@ -1222,6 +1280,8 @@ export class UserNetworkService {
               'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorObserverIds],
+                Role: [...roles],
+                Primary_Educational_Institution: programId,
               },
               {},
               instituteId,
@@ -1274,6 +1334,7 @@ export class UserNetworkService {
         {
           Affiliation_Type: 'Educational Institution',
           Contact: advisor.data.mentor.Id,
+          Organization: programId,
         },
         {},
         instituteId,
@@ -1283,7 +1344,7 @@ export class UserNetworkService {
     const advisorInsti = await this.sfService.models.affiliations.get(
       '*',
       {
-        Organization: advisorInstituteDetails[0].Organization,
+        Organization: programId,
         Role: ['Admin'],
       },
       {},
@@ -1301,6 +1362,8 @@ export class UserNetworkService {
         '*',
         {
           Id: [...adminIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -1351,6 +1414,7 @@ export class UserNetworkService {
   async getGuardianContact(
     userId: string,
     instituteId: string,
+    programId: string,
     allRoles?: boolean,
     roles?: string[],
   ) {
@@ -1372,6 +1436,8 @@ export class UserNetworkService {
         '*',
         {
           Id: [...parentStudentIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -1428,6 +1494,7 @@ export class UserNetworkService {
         'Type,Related_Contact',
         {
           Contact: [...parentStudentIds],
+          Program: programId,
           // Type: GuardianSubRoles,
         },
         {},
@@ -1455,6 +1522,8 @@ export class UserNetworkService {
           'Id, Name, IsRegisteredOnPalette, Profile_Picture, prod_uuid, dev_uuid ',
           {
             Id: [...parentGuardiansIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
           },
           {},
           instituteId,
@@ -1528,6 +1597,8 @@ export class UserNetworkService {
           'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name',
           {
             Id: [...parentStudentMentorIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
           },
           {},
           instituteId,
@@ -1585,6 +1656,7 @@ export class UserNetworkService {
     userId: string,
     allRoles: boolean,
     instituteId: string,
+    programId: string,
     roles?: string[],
   ) {
     const observerContactList = [];
@@ -1593,13 +1665,14 @@ export class UserNetworkService {
       userId,
       instituteId,
     );
-    console.log("observer",observer.data.mentors, observer.data.students);
-    
+    console.log('observer', observer.data.mentors, observer.data.students);
+
     const institute = await this.sfService.models.affiliations.get(
       '*',
       {
         Contact: userId,
         Affiliation_Type: 'Educational Institution',
+        Organization: programId,
       },
       {},
       instituteId,
@@ -1610,7 +1683,7 @@ export class UserNetworkService {
     const observerInsti = await this.sfService.models.affiliations.get(
       '*',
       {
-        Organization: observerInstituteId,
+        Organization: programId,
         Role: ['Admin', 'Advisor', 'Observer'],
       },
       {},
@@ -1618,25 +1691,26 @@ export class UserNetworkService {
     );
 
     // console.log("observerInsti",observerInsti);
-    
+
     const observerInstiIds = observerInsti.map((inst) => {
       return inst.Contact;
     });
 
     // console.log("observerInstIds",observerInstiIds);
-    
+
     const temp = await this.sfService.generics.contacts.get(
       '*',
       {
         Id: [...observerInstiIds],
+        Role: [...roles],
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
     );
-    
+
     for (let i = 0; i < temp.length; i++) {
       if (observerInsti[i].Contact !== userId) {
-        
         if (process.env.NODE_ENV === 'prod') {
           const obj = {
             id: temp[i].Id,
@@ -1678,6 +1752,8 @@ export class UserNetworkService {
       '*',
       {
         Id: [...observerStudentIds],
+        Role: [...roles],
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -1722,6 +1798,7 @@ export class UserNetworkService {
       {
         Contact: [...observerStudentIds],
         Type: GuardianSubRoles,
+        Program: programId,
       },
       {},
       instituteId,
@@ -1735,6 +1812,8 @@ export class UserNetworkService {
       '*',
       {
         Id: [...observerGuardianIds],
+        Role: [...roles],
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -1779,6 +1858,7 @@ export class UserNetworkService {
     userId: string,
     allRoles: boolean,
     instituteId: string,
+    programId: string,
     roles?: string[],
   ) {
     const adminDetails = await this.adminService.getAdminInstituteDetails(
@@ -1800,6 +1880,8 @@ export class UserNetworkService {
         '*',
         {
           Id: [...allOtherAdminsId],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -1839,6 +1921,8 @@ export class UserNetworkService {
         '*',
         {
           Id: [...adminStudentIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -1893,6 +1977,8 @@ export class UserNetworkService {
         'Id, Name, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid, Record_Type_Name',
         {
           Id: [...adminMentorIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -1952,6 +2038,8 @@ export class UserNetworkService {
         '*',
         {
           Id: [...adminParentIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -2006,6 +2094,8 @@ export class UserNetworkService {
         '*',
         {
           Id: [...adminObserverIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
