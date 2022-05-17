@@ -90,10 +90,6 @@ functions:
           cors: true
       - http:  
           method: POST
-          path: opportunity/draft
-          cors: true
-      - http:  
-          method: POST
           path: opportunity/draft/live
           cors: true
       - http:  
