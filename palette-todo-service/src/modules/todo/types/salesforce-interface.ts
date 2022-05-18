@@ -77,6 +77,7 @@ export interface SFTodo {
   Reminder_at?: string;
   Assignee_accepted_status?: string;
   Opportunit_Id?: string;
+  Program:string,
 }
 
 interface Attributes {

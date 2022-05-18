@@ -1,10 +1,7 @@
-import { Controller } from '@nestjs/common';
-import { ApiTags } from '@nestjs/swagger';
-
+import { Body, Controller, Post, Patch, Req, UseGuards, Query, Get, Param } from '@nestjs/common';
 import { FirebaseService } from './services/firebase.service';
 import { FirebaseChatBackupService } from './services/firebase-chat-backup.service';
 
-@ApiTags('firebase')
 @Controller({
   path: 'firebase',
 })

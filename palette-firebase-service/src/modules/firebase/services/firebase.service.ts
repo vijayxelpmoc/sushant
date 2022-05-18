@@ -1,4 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+  Logger,
+} from '@nestjs/common';
+import {
+  Role,
+  Notifier,
+  NotificationType,
+  EmailTemplates,
+} from '@gowebknot/palette-wrapper';
 import * as admin from 'firebase-admin';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 
@@ -7,8 +18,9 @@ import { Errors } from '@src/constants';
 
 @Injectable()
 export class FirebaseService {
-  constructor(private sfService: SfService) {
-  }
+  constructor(
+    private sfService: SfService,
+  ) {}
 
   /*
    * [TODO] - Methods to be implemented

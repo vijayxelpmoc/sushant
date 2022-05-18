@@ -37,12 +37,14 @@ export class UserNetworkController {
   async getContactsList(
     @Request() req,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
     // console.log(instituteId);
 
     return await this.userNetworkService.getContactsList(
       req.user.id,
       req.user.recordTypeName,
+      programId,
       instituteId,
     );
   }
@@ -64,12 +66,14 @@ export class UserNetworkController {
     @Request() req,
     @Param('opportunityId') opportunityId: string,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ): Promise<any> {
     return await this.userNetworkService.getOppShareRecipients(
       req.user.id,
       req.user.recordTypeName,
       opportunityId,
       instituteId,
+      programId
     );
   }
 }
