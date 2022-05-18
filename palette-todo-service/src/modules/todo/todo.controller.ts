@@ -95,8 +95,8 @@ export class TodoController {
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
-      instituteId,
       programId,
+      instituteId,
     );
   }
 
