@@ -95,8 +95,8 @@ export class TodoController {
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
-      programId,
       instituteId,
+      programId,
     );
   }
 
@@ -198,7 +198,12 @@ export class TodoController {
     @Query('instituteId') instituteId: string,
     @Query('programId') programId: string,
   ) {
-    return await this.todoService.getTodoV2(req.user.id, id,programId, instituteId);
+    return await this.todoService.getTodoV2(
+      req.user.id,
+      id,
+      programId,
+      instituteId,
+    );
   }
 
   /*
@@ -316,8 +321,8 @@ export class TodoController {
     return await this.todoService.getTodoRecepients(
       req.user.id,
       req.user.recordTypeName,
-      programId,
       instituteId,
+      programId,
     );
   }
 
@@ -405,8 +410,8 @@ export class TodoController {
       updateTodoDto,
       req.user.id,
       req.user.recordTypeName,
-      programId,
       instituteId,
+      programId,
     );
   }
 
@@ -433,8 +438,8 @@ export class TodoController {
       todoIds,
       status,
       req.user.recordTypeName,
-      programId,
       instituteId,
+      programId
     );
   }
 
@@ -507,8 +512,8 @@ export class TodoController {
     const response = await this.todoService.getThirdPartyTodosV2(
       studentid,
       'Student',
-      programId,
       instituteId,
+      programId,
     );
     return response;
   }
