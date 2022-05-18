@@ -607,8 +607,8 @@ export class TodoService {
   async notifyOnTaskStatusChange(
     taskId: string,
     currentStatus,
-    programId: string,
     instituteId: string,
+    programId:string
   ) {
     const tasks = await this.sfService.models.todos.get(
       'Id, Archived, Name, Group_Id, Assignee, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue,program',
@@ -649,8 +649,8 @@ export class TodoService {
     todoId: string,
     status: string,
     role: string,
-    programId: string,
     instituteId: string,
+    programId:string,
     note?: string,
   ) {
     const requestedTodo = await this.sfService.models.todos.get(
@@ -719,8 +719,8 @@ export class TodoService {
           this.notifyOnTaskStatusChange(
             todo.Id,
             status.toUpperCase(),
-            programId,
             instituteId,
+            programId
           );
         }
       }
@@ -738,8 +738,8 @@ export class TodoService {
         this.notifyOnTaskStatusChange(
           todoId,
           status.toUpperCase(),
-          programId,
           instituteId,
+          programId
         );
       }
     }
@@ -766,8 +766,8 @@ export class TodoService {
     todoIds: string[],
     status: string,
     role: string,
-    programId: string,
     instituteId: string,
+    programId:string
   ) {
     // Can be used as check to report any update failure
     let hasErrors = false;
@@ -1141,8 +1141,8 @@ export class TodoService {
   async getTodoRecepients(
     userId: string,
     recordType: string,
-    programId: string,
     instituteId: string,
+    programId:string
   ) {
     // console.log(recordType, userId, instituteId);
 
@@ -1241,8 +1241,8 @@ export class TodoService {
     updateTodoDto: UpdateTodoDto,
     userId: string,
     RecordType: string,
-    programId: string,
     instituteId: string,
+    programId:string
   ) {
     const todoIds = updateTodoDto.Id;
     const updateObj: any = {};
@@ -2118,8 +2118,8 @@ export class TodoService {
    */
   async sendTodoNotification(
     todoNotificationData: TodoNotificationData,
-    programId: string,
     instituteId: string,
+    programId:string
   ) {
     let userToBeNotified;
     let data;
@@ -2235,8 +2235,8 @@ export class TodoService {
   async getTasksByStudentId(
     studentId: string,
     archived: boolean,
-    programId,
     instituteId: string,
+    programId:string
   ) {
     return await this.getTasks(
       {
@@ -2258,8 +2258,8 @@ export class TodoService {
   async getTasksByListedById(
     listedById: string,
     archived: boolean,
-    programId: string,
     instituteId: string,
+    programId:string
   ) {
     return await this.getTasks(
       {
