@@ -107,6 +107,6 @@ export class UtilityController {
   @ApiOkResponse({ description: Responses.GUIDES_SUCCESS })
   @ApiNotFoundResponse({ description: Errors.GUIDES_NOT_FOUND })
   getGuides(@Req() req, @Query('instituteId') instituteId: string) {
-    return this.utilityService.getGuides(req.user.RecordTypeName, instituteId);
+    return this.utilityService.getGuides(req.user.recordTypeName, instituteId);
   }
 }

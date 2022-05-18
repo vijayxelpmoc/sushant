@@ -52,6 +52,8 @@ export class NotificationController {
     @Request() req,
     @Query() instituteId: string,
   ): Promise<BasicDataResponse> {
+    console.log(req.user,instituteId);
+    
     return await this.notificationService.getNotifications(
       req.user.id,
       instituteId,
