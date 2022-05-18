@@ -232,7 +232,7 @@ export class AdvisorService {
           creatorName: event.Listed_by.Name,
           creatorProfilePic: event.Listed_by.Profile_Picture,
           createdAt: event.Created_at,
-          eventName: event.Name,
+          eventName: event.Account_Name,
           category: event.Category,
           phone: event.Phone,
           venue: event.Venue,
