@@ -224,7 +224,7 @@ export class TodoController {
     @Body('todoIds') todoIds: string[],
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
-  ) {
+  ) {    
     return await this.todoService.acceptOrRejectRequestedTodoBulk(
       req.user.id,
       todoIds,
@@ -257,15 +257,15 @@ export class TodoController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    // console.log(instituteId);
+    console.log(instituteId,programId,status,id);
 
     return await this.todoService.updateToDoStatus(
       req.user.id,
       id,
       status,
       req.user.recordTypeName,
-      programId,
       instituteId,
+      programId,
       note,
     );
   }

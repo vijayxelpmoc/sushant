@@ -313,7 +313,7 @@ export class TodoService {
     programId: string,
     instituteId: string,
   ) {
-    // // console.log(todo);
+    console.log(todo,programId,instituteId);
 
     const groupId = uuid();
     // creating todo obj.
@@ -611,7 +611,7 @@ export class TodoService {
     programId: string,
   ) {
     const tasks = await this.sfService.models.todos.get(
-      'Id, Archived, Name, Group_Id, Assignee, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue,program',
+      'Id, Archived, Name, Group_Id, Assignee, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue,Program',
       { Id: taskId, Program: programId },
       {},
       instituteId,
@@ -663,7 +663,7 @@ export class TodoService {
       instituteId,
     );
 
-    // // console.log(requestedTodo);
+    console.log(requestedTodo);
 
     // if todo is invalid
     if (!requestedTodo || requestedTodo.length === 0) {
@@ -706,6 +706,7 @@ export class TodoService {
           {
             Task_Status: status,
             Note: note !== '' ? note : null,
+            Program: programId,
           },
           todoId,
           instituteId,
@@ -716,6 +717,8 @@ export class TodoService {
         // The assignee can also revert back the status
         if (response.success === true) {
           // error
+          console.log('succewss');
+
           this.notifyOnTaskStatusChange(
             todo.Id,
             status.toUpperCase(),
@@ -730,11 +733,14 @@ export class TodoService {
         {
           Task_Status: status,
           Note: note !== '' ? note : null,
+          Program: programId,
         },
         todoId,
         instituteId,
       );
       if (response.success === true) {
+        console.log('success2');
+
         this.notifyOnTaskStatusChange(
           todoId,
           status.toUpperCase(),
@@ -778,8 +784,8 @@ export class TodoService {
           todo,
           status,
           role,
-          programId,
           instituteId,
+          programId,
         );
       } catch (err) {
         // console.log(`[ERROR] Updating Todo [${todo}] : `, err);
@@ -921,6 +927,7 @@ export class TodoService {
       await this.sfService.models.todos.update(
         {
           Assignee_accepted_status: status,
+          Program: programId,
         },
         todoId,
         instituteId,
@@ -951,7 +958,9 @@ export class TodoService {
         await this.sfService.models.todos.update(
           {
             Assignee_accepted_status: status,
+            Program: programId,
           },
+          // [...todoIds],
           id,
           instituteId,
         );
@@ -1248,7 +1257,7 @@ export class TodoService {
     const updateObj: any = {};
 
     const { filteredTasks } = await this.getTasks(
-      { Id: todoIds },
+      { Id: todoIds,Program:programId },
       programId,
       instituteId,
     );
@@ -1386,6 +1395,7 @@ export class TodoService {
         const assigneeTodos = await this.getTasks(
           {
             Id: todoIds,
+            Program:programId
             // Assignee: updateTodoDto.assignees,
           },
           programId,
@@ -1479,6 +1489,7 @@ export class TodoService {
             Listed_by: OBJ.Listed_by,
             Reminder_at: OBJ.Reminder_at,
             Assignee: OBJ.assignee,
+            Program: programId,
           },
           OBJ.Id,
           instituteId,
@@ -2078,6 +2089,7 @@ export class TodoService {
           createdAt: todo.createdAt,
           listedBy: todo.listedBy,
           Assignee: [],
+          Program:programId
         };
 
         for (const todo of mp[key]) {
@@ -2119,8 +2131,8 @@ export class TodoService {
    */
   async sendTodoNotification(
     todoNotificationData: TodoNotificationData,
-    instituteId: string,
     programId: string,
+    instituteId: string,
   ) {
     let userToBeNotified;
     let data;
@@ -2132,6 +2144,7 @@ export class TodoService {
           {
             Id: todoNotificationData.todoId,
             Assignee: todoNotificationData.assigneeId,
+            Program: programId,
           },
           programId,
           instituteId,
@@ -2152,6 +2165,7 @@ export class TodoService {
             {
               Group_Id: todoNotificationData.groupId,
               Listed_by: todoNotificationData.listedById,
+              Program: programId,
             },
             programId,
             instituteId,
@@ -2161,6 +2175,7 @@ export class TodoService {
             {
               Id: todoNotificationData.todoId,
               Assignee: todoNotificationData.assigneeId,
+              Program: programId,
             },
             programId,
             instituteId,
@@ -2487,10 +2502,7 @@ export class TodoService {
     // console.log('instId');
 
     // const instiId = await this.getInstituteId(Id, programId, instituteId);
-    const globalTasks = await this.getGlobalTasks(
-      programId,
-      instituteId,
-    );
+    const globalTasks = await this.getGlobalTasks(programId, instituteId);
 
     let i = 0;
     let tasksLen = tasks.filteredTasks.length;
@@ -2522,8 +2534,8 @@ export class TodoService {
   async getThirdPartyTodosV2(
     Id: string,
     role: string,
-    programId: string,
     instituteId: string,
+    programId: string,
   ) {
     const allTodos = await (
       await this.getTodosV2(Id, role, programId, instituteId)
@@ -2690,6 +2702,7 @@ export class TodoService {
         {
           Task_Status: 'Open',
           Status: '',
+          Program: programId,
         },
         Id,
         instituteId,
