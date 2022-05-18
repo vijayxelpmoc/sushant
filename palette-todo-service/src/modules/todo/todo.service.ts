@@ -951,14 +951,14 @@ export class TodoService {
     status: string,
     programId: string,
     instituteId: string,
-  ) {
+  ) {    
     let hasErrors = false;
     todoIds.map(async (id) => {
       try {
         await this.sfService.models.todos.update(
           {
             Assignee_accepted_status: status,
-            Program: programId,
+            // Program: programId,
           },
           // [...todoIds],
           id,
