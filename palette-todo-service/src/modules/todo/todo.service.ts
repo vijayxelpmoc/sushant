@@ -22,6 +22,7 @@ import {
   CreateTodoResourcesDto,
   ApprovedStatus,
   CreateTodoV2Dto,
+  Is_Accepted,
 } from './dtos';
 import uuid from 'uuid-random';
 import {
@@ -235,7 +236,7 @@ export class TodoService {
 
     const assignee = await this.sfService.generics.contacts.get(
       'Id, Name, Profile_Picture',
-      { Id: userId },
+      { Id: userId, Primary_Educational_Institution: programId },
       {},
       instituteId,
     );
@@ -244,6 +245,7 @@ export class TodoService {
       'Id, Name',
       {
         Id: listedBy,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -315,7 +317,7 @@ export class TodoService {
 
     const groupId = uuid();
     // creating todo obj.
-    const todoObj: SFTodo = {
+    const todoObj: any = {
       Name: todo.name,
       Description: todo.description,
       Task_Status: todo.status,
@@ -344,18 +346,19 @@ export class TodoService {
           // If the assignee is the creator of the todo, then the status is accepted
           Assignee_accepted_status:
             userId === assignee ? 'Accepted' : 'Requested',
-
-          Program: programId,
+          // Program: programId,
         };
-        // // console.log(newtodoObj);
+        console.log(newtodoObj);
 
         // Todo created.
         const createdTodo = await this.sfService.models.todos.create(
           newtodoObj,
           instituteId,
         );
+        console.log('createdTodo', createdTodo);
+
         // storting todo ids.
-        alltodoIds.push(createdTodo.id);
+        // alltodoIds.push(createdTodo.id);
         // Notification created.
         await this.sfService.models.notifications.create(
           {
@@ -371,14 +374,19 @@ export class TodoService {
           },
           instituteId,
         );
+
+        assigneeTodos.push(newtodoObj);
       }
       return {
         statusCode: 200,
         message: 'Todo created successfully',
         groupId,
+        data: assigneeTodos,
         ids: alltodoIds,
       };
-    } else if (instituteId) {
+    } else if (todo.InstituteId) {
+      console.log(todoObj);
+
       // creating global todo.
       const isAdmin = recordType === Role.Administrator;
 
@@ -392,7 +400,6 @@ export class TodoService {
           Parent_Account: todo.InstituteId,
           Assignee_accepted_status: 'Accepted',
           Is_Admin_Reviewed: 'No',
-          Program: programId,
         },
         instituteId,
       );
@@ -403,7 +410,7 @@ export class TodoService {
           {
             Organization: todo.InstituteId,
             Role: 'Admin',
-            Program: programId,
+            // Program: programId,
           },
           {},
           instituteId,
@@ -498,7 +505,7 @@ export class TodoService {
       'Name, Profile_Picture, Id',
       {
         Id: todo.Assignee,
-        Program: programId,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -560,7 +567,7 @@ export class TodoService {
       instituteId,
     );
     console.log(todo.Assignee);
-    
+
     const assignees =
       todo.Assignee !== null
         ? await this.sfService.generics.contacts.get(
@@ -570,7 +577,7 @@ export class TodoService {
               Primary_Educational_Institution: programId,
             },
             {},
-            instituteId
+            instituteId,
           )
         : null;
 
@@ -925,7 +932,7 @@ export class TodoService {
     return {
       statusCode: 200,
       message:
-        status === ApprovedStatus.Approved
+        status === Is_Accepted.Accepted
           ? Responses.TODO_ACCEPTED
           : Responses.TODO_REJECTED,
     };
@@ -979,7 +986,7 @@ export class TodoService {
         {
           Contact: userId,
           Role: 'Admin',
-          Program: programId,
+          Organization: programId,
         },
         {},
         instituteId,
@@ -995,7 +1002,7 @@ export class TodoService {
       {
         Account: institute[0].Account,
         Role: 'Admin',
-        Program: programId,
+        Organization: programId,
       },
       {},
       instituteId,
@@ -1032,9 +1039,8 @@ export class TodoService {
     const mentors: SFMentors[] = await this.sfService.models.affiliations.get(
       'Id, Name,  Account, Affiliation_Type, Contact, Description, Role, Contact.Id, Contact.Name, Contact.Designation, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Palette_Email, Contact.Is_Deactive',
       {
-        Account: institute[0].Account,
+        Organization: institute[0].Account,
         Role: 'Advisor',
-        Program: programId,
       },
       {},
       instituteId,
@@ -1166,7 +1172,7 @@ export class TodoService {
           '*',
           {
             Id: userId,
-            Primary_Educational_Institution:programId,
+            Primary_Educational_Institution: programId,
           },
           {},
           instituteId,
@@ -1309,6 +1315,7 @@ export class TodoService {
 
       // console.log("updateTodoDto",updateTodoDto);
 
+      updateObj.Program = programId;
       // if block only for admin edit
       if (RecordType === 'Administrator') {
         updateObj['Opportunit_Id'] = null;
@@ -1628,7 +1635,7 @@ export class TodoService {
         Program: programId,
       },
       {},
-      instituteId,  
+      instituteId,
     );
 
     if (todoList.length == 0) {
@@ -1846,7 +1853,7 @@ export class TodoService {
         'Id, Name',
         {
           Id: [...createdUserIds],
-          // Program: programId,
+          // Role:
         },
         {},
         instituteId,
@@ -1886,6 +1893,8 @@ export class TodoService {
     });
 
     // adding the ids and the tasks data together and filtering the response
+    // console.log(createdUser);
+
     const toDoIds = [];
     const filteredToDos: any[] = [];
     allToDo.map((todo) => {
@@ -1919,6 +1928,8 @@ export class TodoService {
     });
 
     const response = { filteredTasks: filteredToDos, taskIds: toDoIds };
+    // console.log(response);
+
     return response;
   }
 
@@ -1947,6 +1958,7 @@ export class TodoService {
         {},
         instituteId,
       );
+    console.log(resources);
 
     resources !== [] &&
       resources.map((resource) => {
@@ -2266,6 +2278,7 @@ export class TodoService {
       {
         Contact: Id,
         Affiliation_Type: 'Educational Institution',
+        Organization: programId,
       },
       {},
       instituteId,
@@ -2277,14 +2290,13 @@ export class TodoService {
   }
 
   async getGlobalTasks(Id: string, programId: string, instituteId: string) {
-    // console.log('golbalTasks');
+    console.log('golbalTasks');
 
     return await this.getTasks(
       {
         Todo_Scope: 'Global',
         Parent_Account: Id,
         Status: 'Approved',
-        Program:programId
       },
       programId,
       instituteId,
@@ -2364,14 +2376,14 @@ export class TodoService {
             ],
             Assignee_accepted_status: todo.acceptedStatus,
             opportunity: todo.opportunity,
-            Program:programId,
+            Program: programId,
           };
           const obj = {
             todo: todoObj,
             resources: resources[`${todo.Id}`] || [],
           };
           responseTodos.push(obj);
-          // console.log(todoObj);
+          console.log(obj);
 
           todoObj.listedBy !== null && listedBy.push(todoObj.listedBy);
         }
@@ -2398,7 +2410,7 @@ export class TodoService {
           Assignee: [],
           Assignee_accepted_status: todo.acceptedStatus,
           opportunity: todo.opportunity,
-          Program:programId,
+          Program: programId,
         };
 
         const tempAssignees = new Set();
@@ -2429,6 +2441,8 @@ export class TodoService {
           todo: todoObj,
           resources: resources[`${todoObj.Id}`] || [],
         };
+
+        console.log(obj);
 
         responseTodos.push(obj);
         todoObj.listedBy !== null && listedBy.push(todoObj.listedBy);
