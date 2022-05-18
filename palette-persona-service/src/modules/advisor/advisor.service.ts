@@ -216,7 +216,7 @@ export class AdvisorService {
     const filteredData = [];
     // get opportunity details.
     const res = await this.sfService.models.accounts.get(
-      'Listed_by.Name, Listed_by.Profile_Picture, *',
+      '*,Listed_by.Name, Listed_by.Profile_Picture',
       {
         Id: id,
       },
@@ -306,13 +306,10 @@ export class AdvisorService {
     '*,Listed_by.Profile_Picture,Listed_by.Name',
       {
         Approval_Status: 'AdvisorReview',
-        // Removal_Status: null || 'Rejected',
       },
       {},
       instituteId,
-    );
-    console.log(opportunities);
-    
+    );    
     const approvalList = [];
     opportunities.map((opportunity) => {
       const dataObj = {
