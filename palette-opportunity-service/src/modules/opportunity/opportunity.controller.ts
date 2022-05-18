@@ -31,6 +31,7 @@ import {
 import { CommentsDto } from './dtos/create-comments.dto';
 import { InstituteDataResponse } from './types/create-opportunity-interface';
 import { draftInfoDto } from './dto/opportunities.dto';
+import { QueryRequired } from '@src/decorators'; 
 
 @Controller({
   path: 'opportunity',
@@ -204,8 +205,9 @@ export class OpportunityController {
   async getUserOpportunities(
     @Request() req,
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ): Promise<any> {
-    return await this.opportunityService.getSelfOpportunities(req.user.id, instituteId);
+    return await this.opportunityService.getSelfOpportunities(req.user.id, instituteId, programId);
   }
 
   // /** adds opportunity to consideration
@@ -250,8 +252,9 @@ export class OpportunityController {
     @Request() req,
     @Param('opportunityId') opportunityId: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<BasicResponse> {
-    return await this.opportunityService.addtoTodo(req.user.id, opportunityId, instituteId);
+    return await this.opportunityService.addtoTodo(req.user.id, opportunityId, instituteId, programId);
   }
 
   /** creates opportunity
@@ -273,12 +276,14 @@ export class OpportunityController {
     @Request() req,
     @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<BasicResponse> {    
     return await this.opportunityService.CreateOpportunity(
       req.user.id,
       req.user.recordTypeName,
       opportunitiesInfoDto,
       instituteId,
+      programId,
     );
   }
 
@@ -299,6 +304,7 @@ export class OpportunityController {
     @Body('opportunityId') opportunityId: string,
     @Body('recipientIds') recipientIds: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.EditDiscreteOpportunity(
       req.user.id,
@@ -307,6 +313,7 @@ export class OpportunityController {
       opportunitiesInfoDto,
       recipientIds,
       instituteId,
+      programId,
     );
   }
 
@@ -326,12 +333,14 @@ export class OpportunityController {
     @Body('hidingStatus') hidingStatus: string,
     @Body('opportunityIds') opportunityIds: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.changeHidingStatus(
       req.user.id,
       opportunityIds,
       hidingStatus,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -351,13 +360,15 @@ export class OpportunityController {
     @Body('opportunityIds') opportunityIds: string[],
     @Body('message') message: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.deleteOpportunity(
       req.user.id,
       req.user.recordTypeName,
       opportunityIds,
       message,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -377,13 +388,15 @@ export class OpportunityController {
     @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
     @Body('opportunityId') opportunityId: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<any> {
     return await this.opportunityService.EditGlobalOpportunity(
       req.user.id,
       req.user.recordTypeName,
       opportunityId,
       opportunitiesInfoDto,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -403,12 +416,14 @@ export class OpportunityController {
     @Body() opportunitiesInfoDto: draftInfoDto,
     @Body('opportunityId') opportunityId: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<any> {
     return await this.opportunityService.EditDraftOpportunity(
       req.user.id,
       opportunityId,
       opportunitiesInfoDto,
       instituteId,
+      programId,
     );
   }
 
@@ -430,12 +445,14 @@ export class OpportunityController {
     @Request() req,
     @Body() opportunitiesInfoDto: draftInfoDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<BasicResponse> {
     return await this.opportunityService.CreateDraftOpportunity(
       opportunitiesInfoDto,
       req.user.id,
       req.user.recordTypeName,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -454,13 +471,15 @@ export class OpportunityController {
     @Body('opportunityId') opportunityId: string,
     @Body() opportunitiesInfoDto: draftInfoDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.SetDraftOpportunityStatus(
       opportunityId,
       opportunitiesInfoDto,
       req.user.id,
       req.user.recordTypeName,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -482,8 +501,9 @@ export class OpportunityController {
     @Request() req,
     @Param('id') id,
     @Query('instituteId') instituteId: string, 
+    @QueryRequired('programId') programId: string,
   ): Promise<any> {
-    return await this.opportunityService.getOpportunityDetail(id, instituteId);
+    return await this.opportunityService.getOpportunityDetail(id, instituteId, programId);
   }
 
   /** gets modification detail
@@ -504,11 +524,13 @@ export class OpportunityController {
     @Request() req,
     @Param('modificationId') modificationId,
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ): Promise<any> {
     return await this.opportunityService.getModificationDetail(
       req.user.id,
       modificationId,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -528,12 +550,14 @@ export class OpportunityController {
   async removalCancel(
     @Request() req, 
     @Param('opportunityId') opportunityId: string, 
-    @Body('instituteId') instituteId: string
+    @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.removalCancel(
       req.user.id,
       opportunityId,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -554,11 +578,13 @@ export class OpportunityController {
     @Request() req,
     @Param('opportunityId') opportunityId,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.modificationCancel(
       req.user.id,
       opportunityId,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -579,13 +605,15 @@ export class OpportunityController {
   async getcomments(
     @Request() req, 
     @Param('id') id: string, 
-    @Query('instituteId') instituteId: string
+    @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ): Promise<any> {
     return await this.opportunityService.getOpportunityComments(
       req.user.id,
       req.user.recordTypeName,
       id,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -607,12 +635,14 @@ export class OpportunityController {
     @Request() req,
     @Body() commentsDto: CommentsDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<BasicResponse> {
     return await this.opportunityService.createOpportunityComment(
       req.user.id,
       req.user.recordTypeName,
       commentsDto,
       instituteId,
+      programId,
     );
   }
 
@@ -635,11 +665,13 @@ export class OpportunityController {
     @Request() req,
     @Body('opportunities') opportunities: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.bulkAddOpportunitiesToConsiderations(
       req.user.id,
       opportunities,
       instituteId,
+      programId,
     );
   }
 
@@ -662,11 +694,13 @@ export class OpportunityController {
     @Request() req,
     @Body('considerations') considerations: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.bulkAddConsiderationToToDo(
       req.user.id,
       considerations,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -690,12 +724,14 @@ export class OpportunityController {
     @Body('opportunityIds') opportunityIds: string[],
     @Body('assigneesIds') assigneesIds: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.shareConsideration(
       req.user.id,
       opportunityIds,
       assigneesIds,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -716,10 +752,12 @@ export class OpportunityController {
     @Request() req,
     @Body('considerations') considerations: string[],
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.opportunityService.bulkDismissConsiderations(
       considerations,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -742,12 +780,14 @@ export class OpportunityController {
     @Request() req,
     @Body() opportunityTodoDto: OpportunityTodoDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<any> {
     return await this.opportunityService.bulkOpportunitiestoTodo(
       req.user.id,
       req.user.recordTypeName,
       opportunityTodoDto,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -768,13 +808,15 @@ export class OpportunityController {
   async getOpportunityUsers(
     @Request() req,
     @Param('opportunityId') opportunityId: string,
-    @Query('instituteId') instituteId: string,  
+    @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,  
   ): Promise<any> {
     return await this.opportunityService.getOpportunityUsers(
       req.user.id,
       req.user.recordTypeName,
       opportunityId,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -794,16 +836,17 @@ export class OpportunityController {
   async getRecommendedEvents(
     @Request() req, 
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ): Promise<any> {
     let role = req.user.recordTypeName;
     if (role == Role.Administrator) {
-      return await this.opportunityService.getAdminRecommendedEvents(req.user.id, instituteId);
+      return await this.opportunityService.getAdminRecommendedEvents(req.user.id, instituteId, programId);
     } else if (role == Role.Advisor) {
-      return await this.opportunityService.getAdvisorRecommendedEvents(req.user.id, instituteId);
+      return await this.opportunityService.getAdvisorRecommendedEvents(req.user.id, instituteId, programId);
     } else if (role == Role.Student) {
-      return await this.opportunityService.getStudentRecommendedEvents(req.user.id, instituteId);
+      return await this.opportunityService.getStudentRecommendedEvents(req.user.id, instituteId, programId);
     } else if (role == Role.Parent) {
-      return await this.opportunityService.getParentRecommendedEvents(req.user.id, instituteId);
+      return await this.opportunityService.getParentRecommendedEvents(req.user.id, instituteId, programId);
     } else {
       throw new NotFoundException();
     }
@@ -827,11 +870,13 @@ export class OpportunityController {
     @Request() req,
     @Body() wishListDto: WishListDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<any> {
     return await this.opportunityService.wishListEvent(
       req.user.id,
       wishListDto,
-      instituteId
+      instituteId,
+      programId,
     );
   }
 
@@ -845,11 +890,13 @@ export class OpportunityController {
    async getInstituteActivitiesByStudentId(
      @Request() req, 
      @Query('instituteId') instituteId: string,
+     @QueryRequired('programId') programId: string,
     ) {
      const studentId = req.user.id;
      return await this.opportunityService.getStudentInstituteActivities(
        studentId,
        instituteId,
+       programId,
      );
    }
 
@@ -870,11 +917,13 @@ export class OpportunityController {
   getExploreViewActivities(
     @Request() req, 
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ): Promise<any> {
     return this.opportunityService.getInstituteActivities(
       null,
       req.user.id,
       instituteId,
+      programId,
     );
   }
 }
@@ -886,7 +935,3 @@ export class OpportunityController {
 //     httpPort: 4000
 //     lambdaPort: 4002
 
-
-
-// OPP : /student/activities/institute
-// OPP : /student/explore/activities

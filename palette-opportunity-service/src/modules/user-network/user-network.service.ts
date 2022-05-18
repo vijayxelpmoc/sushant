@@ -1691,13 +1691,11 @@ export class UserNetworkService {
     );
 
     // console.log("observerInsti",observerInsti);
-
     const observerInstiIds = observerInsti.map((inst) => {
       return inst.Contact;
     });
 
     // console.log("observerInstIds",observerInstiIds);
-
     const temp = await this.sfService.generics.contacts.get(
       '*',
       {

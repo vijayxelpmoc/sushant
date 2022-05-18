@@ -2512,7 +2512,7 @@ export class TodoService {
 
     console.log(tasks);
 
-    return this.getTodoAndResource(tasks, programId, instituteId);
+    return this.getTodoAndResource(tasks,programId, instituteId);
   }
 
   async getThirdPartyTodosV2(

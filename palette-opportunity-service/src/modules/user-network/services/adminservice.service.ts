@@ -44,7 +44,7 @@ export class AdminService {
         instituteId,
       );
 
-    // console.log('third', institute[0].Organization);
+    console.log('third', institute[0].Organization);
 
     if (institute.length === 0) {
       throw new BadRequestException('Admin has no institute assigned');
@@ -61,7 +61,7 @@ export class AdminService {
       instituteId,
     );
 
-    // console.log('fourth', Admins);
+    console.log('fourth', Admins);
 
     if (Admins.length > 0) {
       Admins.map((admin) => {
@@ -99,19 +99,19 @@ export class AdminService {
       instituteId,
     );
 
-    // console.log('fifth', students);
+    console.log('fifth', students);
 
     // getting all the mentors inside the institute
     const mentors: SFMentors[] = await this.sfService.models.affiliations.get(
       'Id, Name, Organization, Affiliation_Type, Contact, Description, Role, Contact.Id, Contact.Name, Contact.Designation, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Palette_Email, Contact.Is_Deactive',
       {
         Organization: institute[0].Organization.Id,
-        // Role: ['Advisor', 'Observer'],
+        Role: ['Advisor', 'Observer'],
       },
       {},
       instituteId,
     );
-    // console.log('sixth', mentors);
+    console.log('sixth', mentors);
 
     // filtering the data
     const filteredStudents: StudentResponse[] = [];
@@ -157,7 +157,7 @@ export class AdminService {
     // getting all the guardians of the students
     const studentConnection: StudentConnectionResponseSF[] =
       await this.sfService.models.relationships.get(
-        'Contact.Primary_Educational_Institution, Contact.Designation, Related_Contact,Related_Contact.Id,Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.Palette_Email, Type, Related_Contact.Is_Deactive,Related_Contact.IsRegisteredOnPalette',
+        'Relationship_Number,Contact.Primary_Educational_Institution, Contact.Designation, Related_Contact,Related_Contact.Id,Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.Palette_Email, Type, Related_Contact.Is_Deactive,Related_Contact.IsRegisteredOnPalette',
         {
           Contact: studentIds,
           Type: GuardianSubRoles,
@@ -165,7 +165,7 @@ export class AdminService {
         {},
         instituteId,
       );
-    // console.log('seventh', studentConnection);
+    console.log('seventh', studentConnection);
 
     const filteredParent: MentorParentResponse[] = [];
     const filteredObserver: ObserverParentResponse[] = [];
@@ -173,19 +173,21 @@ export class AdminService {
     if (studentConnection.length > 0) {
       studentConnection.map((user) => {
         // checking this to exclude the user that are deactivated
-        if (user.Related_Contact.Is_Deactive === false) {
-          const filteredObj = {
-            Id: user.Related_Contact.Id,
-            name: user.Related_Contact.Name,
-            profilePicture: user.Related_Contact.Profile_Picture,
-            instituteName: institute[0].Organization.Account_Name,
-            designation: user.Contact.Designation,
-            role: user.Contact.Designation,
-          };
-          if (user.Type === 'Observer') {
-            filteredObserver.push(filteredObj);
-          } else {
-            filteredParent.push(filteredObj);
+        if (user.Related_Contact !== null) {
+          if (user.Related_Contact.Is_Deactive === false) {
+            const filteredObj = {
+              Id: user.Related_Contact.Id,
+              name: user.Related_Contact.Name,
+              profilePicture: user.Related_Contact.Profile_Picture,
+              instituteName: institute[0].Organization.Account_Name,
+              designation: user.Contact.Designation,
+              role: user.Contact.Designation,
+            };
+            if (user.Type === 'Observer') {
+              filteredObserver.push(filteredObj);
+            } else {
+              filteredParent.push(filteredObj);
+            }
           }
         }
       });
