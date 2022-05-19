@@ -33,7 +33,7 @@ export class UtilityService {
   NewPortalUserUrl = `https://palette-bigthought.ideas.aha.io/api/v1/idea_portals/7065254068546852736/portal_users/?access_token=${this.accessToken}`;
   NewIdeaUrl = `https://palette-bigthought.ideas.aha.io/api/v1/products/6981847117522761702/ideas/?access_token=${this.accessToken}`;
 
-  async contactUs(contactInfoDto: ContactInfoDto, instituteId: string) {
+  async contactUs(contactInfoDto: ContactInfoDto,programId:string, instituteId: string) {
     const { email, message, name } = contactInfoDto;
 
     const response = await this.sfService.models.contactUs.create(
@@ -41,6 +41,7 @@ export class UtilityService {
         User_Name: name,
         Message: message,
         Email: email,
+        Program:programId
       },
       instituteId,
     );
@@ -72,7 +73,7 @@ export class UtilityService {
     throw new InternalServerErrorException(Errors.CONTACT_US_FAILED);
   }
 
-  async addReportIssue(reportIssueDto: ReportIssueDto, instituteId: string) {
+  async addReportIssue(reportIssueDto: ReportIssueDto,programId:string, instituteId: string) {
     const { email, message, name, type, category, needed_by, screenshots } =
       reportIssueDto;
     // type is a string of categories separrated with commas
@@ -94,6 +95,7 @@ export class UtilityService {
         Screenshot1: screenshots[0],
         Screenshot2: screenshots[1],
         Screenshot3: screenshots[2],
+        Program:programId
       },
       instituteId,
     );
@@ -216,7 +218,7 @@ export class UtilityService {
     return resp;
   }
 
-  async addFeedback(feedbackInfoDto: FeedbackInfoDto, instituteId: string) {
+  async addFeedback(feedbackInfoDto: FeedbackInfoDto,programId:string, instituteId: string) {
     const { email, feedback, name, rating } = feedbackInfoDto;
 
     const response = await this.sfService.models.feedback.create(
@@ -225,6 +227,7 @@ export class UtilityService {
         Email: email,
         feedback: feedback,
         Rating: rating,
+        Program:programId
       },
       instituteId,
     );
@@ -257,12 +260,14 @@ export class UtilityService {
     throw new InternalServerErrorException(Errors.FEEDBACK_SUBMIT_FAILED);
   }
 
-  async getGuides(role: string, instituteId: string) {
+  async getGuides(role: string,programId:string, instituteId: string) {
     const responseData: Array<
       GetGuidesSFResponse
     > = await this.sfService.models.guides.get(
       '*',
-      {},
+      {
+        Program:programId
+      },
       {},
       instituteId
     );
