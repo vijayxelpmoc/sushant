@@ -48,7 +48,11 @@ export class AdminController {
     // if (cachedAdmin) {
     //   return cachedAdmin;
     // }
-    const admin = await this.adminService.getAdmin(req.user.id, instituteId, programId);
+    const admin = await this.adminService.getAdmin(
+      req.user.id,
+      instituteId,
+      programId,
+    );
     // await this.cachingService.set(cacheKey, admin);
     return admin;
   }
@@ -92,7 +96,7 @@ export class AdminController {
   async getAdminDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
-    @QueryRequired('programId') programId: string,
+    @Query('programId') programId: string,
   ) {
     return await this.adminService.getAdmin(id, instituteId, programId);
   }
@@ -108,18 +112,26 @@ export class AdminController {
   async getOpportunitydetail(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ): Promise<any> {
     // console.log(req.user);
-    
-    return await this.adminService.getOpportunitydetail(id, instituteId);
+
+    return await this.adminService.getOpportunitydetail(
+      id,
+      instituteId,
+      programId,
+    );
   }
 
   // done
   @hasRoles(Role.Administrator)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('todo/approvals')
-  async getTodos(@Query('instituteId') instituteId: string): Promise<any> {
-    return await this.adminService.getTodos(instituteId);
+  async getTodos(
+    @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
+  ): Promise<any> {
+    return await this.adminService.getTodos(instituteId, programId);
   }
 
   /** approves the opportunity
@@ -132,6 +144,7 @@ export class AdminController {
     @Request() req,
     @Body('eventStatusDto') eventStatusDto: EventStatusDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ): Promise<any> {
     console.log(`eventStatusDto`, eventStatusDto);
     const { eventId, status, type } = eventStatusDto;
@@ -142,6 +155,7 @@ export class AdminController {
         type,
         req.user.id,
         instituteId,
+        programId,
       );
     }
     if (status === 'Reject') {
@@ -150,6 +164,7 @@ export class AdminController {
         type,
         req.user.id,
         instituteId,
+        programId,
       );
     }
     return { statusCode: 400, message: 'status must be Accept/Reject' };
@@ -162,8 +177,9 @@ export class AdminController {
   async getTodoDetail(
     @Param('id') id,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ): Promise<ApprovalTodoResponse> {
-    return await this.adminService.getTodoDetail(id, instituteId);
+    return await this.adminService.getTodoDetail(id, instituteId, programId);
   }
 
   // Approve Todo done

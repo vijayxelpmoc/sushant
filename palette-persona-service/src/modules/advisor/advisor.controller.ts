@@ -106,6 +106,7 @@ export class AdvisorController {
   async getOpportunityApprovals(
     @Request() req,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
     console.log(req.user);
 
@@ -113,6 +114,7 @@ export class AdvisorController {
       req.user.id,
       req.user.recordTypeName,
       instituteId,
+      programId,
     );
   }
 
@@ -123,8 +125,13 @@ export class AdvisorController {
     @Request() req,
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
-    return await this.advisorService.getOpportunitydetail(id, instituteId);
+    return await this.advisorService.getOpportunitydetail(
+      id,
+      instituteId,
+      programId,
+    );
   }
 
   @hasRoles(Role.Advisor, Role.Administrator)
@@ -135,6 +142,7 @@ export class AdvisorController {
     @Param('id') id: string,
     @Body('status') status: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     console.log(status, instituteId);
     if (status == 'Accept') {
@@ -143,6 +151,7 @@ export class AdvisorController {
         'In Review',
         req.user.id,
         instituteId,
+        programId,
       );
     } else {
       return await this.advisorService.acceptOrRejectOpportunity(
@@ -150,6 +159,7 @@ export class AdvisorController {
         'Rejected',
         req.user.id,
         instituteId,
+        programId,
       );
     }
   }

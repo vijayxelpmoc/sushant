@@ -73,6 +73,7 @@ export class AdminService {
       'Organization',
       {
         Contact: id,
+        Organization: programId,
         // Role: 'Admin',
       },
       {},
@@ -206,12 +207,14 @@ export class AdminService {
   async getOpportunitydetail(
     notificationId,
     instituteId: string,
+    programId: string,
   ): Promise<any> {
     // notification details.
     const notification = await this.sfService.models.notifications.get(
       '*',
       {
         Id: notificationId,
+        Program: programId,
       },
       {},
       instituteId,
@@ -239,11 +242,12 @@ export class AdminService {
       '*,Listed_by.Id, Listed_by.Name, Listed_by.Profile_Picture',
       {
         Id: id,
+        Program: programId,
       },
       {},
       instituteId,
     );
-    console.log('res', res[0]);
+    console.log('res', res);
 
     if (res.length !== 0) {
       res.map((event) => {
@@ -262,6 +266,7 @@ export class AdminService {
           startDate: event.Start_Date,
           endDate: event.End_Date,
           description: event.Description,
+          Program:programId,
           approvalStatus:
             type === 'Opportunity Removal Request'
               ? event.Removal_Status
@@ -285,15 +290,17 @@ export class AdminService {
       '*',
       {
         Id: id,
+        Program: programId,
       },
       {},
       instituteId,
     );
     console.log('mods', mods);
+    
 
     const oppor = await this.sfService.models.accounts.get(
       'Listed_by,Listed_by.Name,Listed_by.Id,Listed_by.Profile_Picture,Listed_by.Phone',
-      { Id: mods[0].Opportunity_Id },
+      { Id: mods[0].Opportunity_Id, Program: programId },
       {},
       instituteId,
     );
@@ -327,6 +334,7 @@ export class AdminService {
           endDate: event.End_Date,
           description: event.Description,
           approvalStatus: event.Status,
+          Program:programId,
           type: notification[0].Type,
         };
         //listing obj.
@@ -342,17 +350,20 @@ export class AdminService {
   }
 
   // Global Todo
-  async getTodos(instituteId: string): Promise<any> {
+  async getTodos(instituteId: string, programId: string): Promise<any> {
+    console.log(programId);
+    
     const res = await this.sfService.models.todos.get(
       '*,Listed_by.Phone,Listed_by.Id',
       {
         Status: 'In Review',
         Todo_Scope: 'Global',
+        Program: programId,
       },
       {},
       instituteId,
     );
-    // console.log(res);
+    console.log(res);
 
     const tasksId = res.map((e) => e.Id);
 
@@ -366,11 +377,12 @@ export class AdminService {
         // 'Resource_Connection_Name, Todo, Resource',
         {
           Todo: tasksId,
+          Program: programId,
         },
         {},
         instituteId,
       );
-    console.log(resources);
+    // console.log(resources);
 
     const resIds = resources.map((e) => e.Resource);
 
@@ -378,11 +390,12 @@ export class AdminService {
       '*',
       {
         Id: [...resIds],
+        Program: programId,
       },
       {},
       instituteId,
     );
-    console.log(resor);
+    // console.log(resor);
 
     resources !== [] &&
       resources.map((resource) => {
@@ -393,7 +406,7 @@ export class AdminService {
             url: resource.Resource.URL,
             type: resource.Resource.Resource_Type,
           };
-          console.log("resourcesObj",resourcesObj);
+          // console.log('resourcesObj', resourcesObj);
 
           // if a record with a todo task is present then add the object into it or if not create one
           const hashResource = allResource[`${resource.Todo}`];
@@ -427,6 +440,7 @@ export class AdminService {
         eventVenue: todo.Event_Venue || null,
         approvalStatus: todo.Status,
         instituteId: todo.Parent_Account,
+        Program: todo.Program,
         createdAt: todo.Created_at,
         resources: allResource[todo.Id],
       });
@@ -442,17 +456,19 @@ export class AdminService {
   async getTodoDetail(
     id: string,
     instituteId: string,
+    programId: string,
   ): Promise<ApprovalTodoResponse> {
     const resNotif = await this.sfService.models.notifications.get(
       '*',
       {
         Id: id,
+        Program: programId,
       },
       {},
       instituteId,
     );
 
-    console.log(resNotif);
+    // console.log(resNotif);
 
     if (resNotif.length === 0) {
       throw new NotFoundException();
@@ -462,22 +478,24 @@ export class AdminService {
       '*',
       {
         Id: resNotif[0].To_Do,
+        Program: programId,
         // Todo_Scope: 'Global',
       },
       {},
       instituteId,
     );
-    console.log(res);
+    // console.log(res);
 
     const user = await this.sfService.generics.contacts.get(
       '*',
       {
         Id: res[0].Listed_by,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
     );
-    console.log(user);
+    // console.log(user);
 
     const filteredData = {
       id: res[0]['Id'],
@@ -495,6 +513,7 @@ export class AdminService {
       creatorPic: user.length !== 0 ? user[0].Profile_Picture : null,
       creatorName: user.length !== 0 ? user[0].Name : null,
       createdAt: res[0].Created_at ? res[0].Created_at : res[0].CreatedDate,
+      Program: res[0].Program,
     };
 
     return {
@@ -535,6 +554,7 @@ export class AdminService {
     type: string,
     userId: string,
     instituteId: string,
+    programId: string,
   ): Promise<any> {
     let notificationTitle = ``;
     let notificationMsg = ``;
@@ -545,7 +565,7 @@ export class AdminService {
       // get opportunity.
       const opp = await this.sfService.models.accounts.get(
         '*',
-        { Id: id },
+        { Id: id, Program: programId },
         {},
         instituteId,
       );
@@ -599,6 +619,7 @@ export class AdminService {
             Notification_By: userId,
             Created_at: new Date(),
             Is_Read: false,
+            Program: programId,
           },
           instituteId,
         );
@@ -660,6 +681,7 @@ export class AdminService {
             Notification_By: userId,
             Created_at: new Date(),
             Is_Read: false,
+            Program: programId,
           },
 
           instituteId,
@@ -670,6 +692,7 @@ export class AdminService {
           'Id, Assignee, Name',
           {
             Event: id,
+            Program: programId,
           },
           {},
           instituteId,
@@ -704,6 +727,7 @@ export class AdminService {
                 Notification_By: userId,
                 Created_at: new Date(),
                 Is_Read: false,
+                Program: programId,
               },
 
               instituteId,
@@ -725,7 +749,8 @@ export class AdminService {
         const connectedTodoIds = await this.sfService.models.todos.get(
           'Id, Assignee',
           {
-            Opportunity_Id: id,
+            Opportunit_Id: id,
+            Program: programId,
           },
           {},
           instituteId,
@@ -768,6 +793,7 @@ export class AdminService {
               Notification_By: userId,
               Created_at: new Date(),
               Is_Read: false,
+              Program: programId,
             },
             instituteId,
           );
@@ -781,6 +807,7 @@ export class AdminService {
         '*',
         {
           Id: id,
+          Program: programId,
         },
         {},
         instituteId,
@@ -798,6 +825,7 @@ export class AdminService {
       await this.sfService.models.modifications.update(
         {
           Status: 'Approved',
+          Program: programId,
         },
         id,
 
@@ -809,6 +837,7 @@ export class AdminService {
         'Name, Listed_by',
         {
           Id: mods[0]['Opportunity_Id'],
+          Program: programId,
         },
         {},
         instituteId,
@@ -859,6 +888,7 @@ export class AdminService {
           Notification_By: userId,
           Created_at: new Date(),
           Is_Read: false,
+          Program: programId,
         },
         instituteId,
       );
@@ -868,6 +898,7 @@ export class AdminService {
         'Id, Assignee',
         {
           Event: mods[0]['Opportunity_Id'],
+          Program: programId,
         },
         {},
         instituteId,
@@ -910,6 +941,7 @@ export class AdminService {
               Notification_By: userId,
               Created_at: new Date(),
               Is_Read: false,
+              Program: programId,
             },
             instituteId,
           );
@@ -921,6 +953,7 @@ export class AdminService {
         'Id, Assignee',
         {
           Opportunity_Id: mods[0]['Opportunity_Id'],
+          Program: programId,
         },
         {},
         instituteId,
@@ -974,6 +1007,7 @@ export class AdminService {
               Notification_By: userId,
               Created_at: new Date(),
               Is_Read: false,
+              Program: programId,
             },
             instituteId,
           );
@@ -992,6 +1026,7 @@ export class AdminService {
     type: string,
     userId: string,
     instituteId: string,
+    programId: string,
   ): Promise<any> {
     let notificationTitle = ``;
     let notificationMsg = ``;
@@ -1002,7 +1037,7 @@ export class AdminService {
       // getting opportunity.
       const opp = await this.sfService.models.accounts.get(
         '*',
-        { Id: id },
+        { Id: id, Program: programId },
         {},
         instituteId,
       );
@@ -1058,6 +1093,7 @@ export class AdminService {
             Notification_By: userId,
             Created_at: new Date(),
             Is_Read: false,
+            Program: programId,
           },
           instituteId,
         );
@@ -1107,6 +1143,7 @@ export class AdminService {
             Notification_By: userId,
             Created_at: new Date(),
             Is_Read: false,
+            Program: programId,
           },
           instituteId,
         );
@@ -1117,7 +1154,7 @@ export class AdminService {
       // getting modification details.
       const mods = await this.sfService.models.modifications.get(
         '*',
-        { Id: id },
+        { Id: id, Program: programId },
         {},
         instituteId,
       );
@@ -1153,6 +1190,7 @@ export class AdminService {
         'Name, Listed_by',
         {
           Id: mods[0]['Opportunity_Id'],
+          Program: programId,
         },
         {},
         instituteId,
@@ -1185,6 +1223,7 @@ export class AdminService {
           Notification_By: userId,
           Created_at: new Date(),
           Is_Read: false,
+          Program: programId,
         },
         instituteId,
       );

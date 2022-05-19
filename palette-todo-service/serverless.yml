@@ -130,4 +130,7 @@ functions:
           method: PATCH
           path: todo/publish/draft
           cors: true
-
+      - http:
+          method: PATCH
+          path: todo/publish/bulk
+          cors: true

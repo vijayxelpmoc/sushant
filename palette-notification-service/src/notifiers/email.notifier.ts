@@ -14,9 +14,6 @@ export class EmailNotifier {
 
   constructor() {
     this._transporter = nodemailer.createTransport({
-<<<<<<< HEAD
-      // ses: new AWS.SES(),
-=======
       host: env.MAILER_HOST,
       port: Number(env.MAILER_PORT) || 587,
       secure: false,
@@ -25,7 +22,6 @@ export class EmailNotifier {
         pass: env.MAILER_AUTH_PASS,
       },
       debug: true,
->>>>>>> 0a0fba169b48031ade6351fc7856184f0fde1041
     });
     // this._transporter = nodemailer.createTransport({
     //   ses: new AWS.SES(),
