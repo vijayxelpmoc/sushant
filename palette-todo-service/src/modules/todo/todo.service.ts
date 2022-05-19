@@ -313,7 +313,7 @@ export class TodoService {
     programId: string,
     instituteId: string,
   ) {
-    console.log(todo,programId,instituteId);
+    console.log(todo, programId, instituteId);
 
     const groupId = uuid();
     // creating todo obj.
@@ -706,7 +706,7 @@ export class TodoService {
           {
             Task_Status: status,
             Note: note !== '' ? note : null,
-            Program: programId,
+            // Program: programId,
           },
           todoId,
           instituteId,
@@ -733,7 +733,7 @@ export class TodoService {
         {
           Task_Status: status,
           Note: note !== '' ? note : null,
-          Program: programId,
+          // Program: programId,
         },
         todoId,
         instituteId,
@@ -927,7 +927,7 @@ export class TodoService {
       await this.sfService.models.todos.update(
         {
           Assignee_accepted_status: status,
-          Program: programId,
+          // Program: programId,
         },
         todoId,
         instituteId,
@@ -951,20 +951,19 @@ export class TodoService {
     status: string,
     programId: string,
     instituteId: string,
-  ) {    
+  ) {
     let hasErrors = false;
     todoIds.map(async (id) => {
       try {
         await this.sfService.models.todos.update(
           {
             Assignee_accepted_status: status,
-            // Program: programId,
           },
-          // [...todoIds],
           id,
           instituteId,
         );
       } catch (err) {
+        console.log(`[ERROR] Updating Todo [${id}] : `, err);
         hasErrors = true;
       }
     });
@@ -1257,7 +1256,7 @@ export class TodoService {
     const updateObj: any = {};
 
     const { filteredTasks } = await this.getTasks(
-      { Id: todoIds,Program:programId },
+      { Id: todoIds, Program: programId },
       programId,
       instituteId,
     );
@@ -1324,7 +1323,7 @@ export class TodoService {
 
       // console.log("updateTodoDto",updateTodoDto);
 
-      updateObj.Program = programId;
+      // updateObj.Program = programId;
       // if block only for admin edit
       if (RecordType === 'Administrator') {
         updateObj['Opportunit_Id'] = null;
@@ -1395,7 +1394,7 @@ export class TodoService {
         const assigneeTodos = await this.getTasks(
           {
             Id: todoIds,
-            Program:programId
+            Program: programId,
             // Assignee: updateTodoDto.assignees,
           },
           programId,
@@ -1489,7 +1488,7 @@ export class TodoService {
             Listed_by: OBJ.Listed_by,
             Reminder_at: OBJ.Reminder_at,
             Assignee: OBJ.assignee,
-            Program: programId,
+            // Program: programId,
           },
           OBJ.Id,
           instituteId,
@@ -2089,7 +2088,7 @@ export class TodoService {
           createdAt: todo.createdAt,
           listedBy: todo.listedBy,
           Assignee: [],
-          Program:programId
+          Program: programId,
         };
 
         for (const todo of mp[key]) {
@@ -2702,7 +2701,7 @@ export class TodoService {
         {
           Task_Status: 'Open',
           Status: '',
-          Program: programId,
+          // Program: programId,
         },
         Id,
         instituteId,
@@ -2713,5 +2712,22 @@ export class TodoService {
     } catch (error) {
       return { statusCode: 500, message: 'Bad Request' };
     }
+  }
+
+  async publishDraftMultipleTodos(data, programId, instituteId) {
+    try {
+      data.forEach(async (id) => {
+        await this.sfService.models.todos.update(
+          {
+            Task_Status: 'Open',
+            Status: '',
+          },
+          id,
+          instituteId,
+        );
+      });
+
+      return { statusCode: 200, message: 'Published draft todo' };
+    } catch (error) {}
   }
 }

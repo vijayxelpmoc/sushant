@@ -91,7 +91,7 @@ export class TodoController {
     @Query('programId') programId: string,
   ) {
     console.log(programId);
-    
+
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
@@ -224,7 +224,8 @@ export class TodoController {
     @Body('todoIds') todoIds: string[],
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
-  ) {    
+  ) {
+    console.log(programId);
     return await this.todoService.acceptOrRejectRequestedTodoBulk(
       req.user.id,
       todoIds,
@@ -257,7 +258,7 @@ export class TodoController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    console.log(instituteId,programId,status,id);
+    console.log(instituteId, programId, status, id);
 
     return await this.todoService.updateToDoStatus(
       req.user.id,
@@ -347,7 +348,7 @@ export class TodoController {
     @Body('programId') programId: string,
   ) {
     console.log(programId);
-    
+
     return await this.todoService.createTodoResources(
       createTodoResourcesDto,
       req.user.id,
@@ -439,7 +440,7 @@ export class TodoController {
       status,
       req.user.recordTypeName,
       instituteId,
-      programId
+      programId,
     );
   }
 
@@ -489,7 +490,11 @@ export class TodoController {
   ) {
     console.log(req.user);
 
-    return await this.todoService.getRequestedTodosV2(req.user.id,programId, instituteId);
+    return await this.todoService.getRequestedTodosV2(
+      req.user.id,
+      programId,
+      instituteId,
+    );
   }
 
   // reviewed
@@ -533,6 +538,29 @@ export class TodoController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    return await this.todoService.publishDraftTodo(Id,programId, instituteId);
+    return await this.todoService.publishDraftTodo(Id, programId, instituteId);
+  }
+
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/publish/bulk')
+  async publishDraftMltipleTodos(
+    @Body('ids') ids,
+    @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
+  ) {
+    // console.log(req);
+
+    return await this.todoService.publishDraftMultipleTodos(
+      ids,
+      programId,
+      instituteId,
+    );
   }
 }
