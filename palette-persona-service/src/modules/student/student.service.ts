@@ -19,6 +19,7 @@ export class StudentService {
   async _mapStudentWorkExperience(
     workExp: any[],
     instituteId: string,
+    programId: string,
   ): Promise<Array<any>> {
     return await Promise.all(
       workExp.map(async c => {
@@ -27,6 +28,8 @@ export class StudentService {
           {
             Id: c.Organization,
           },
+          {},
+          instituteId,
         );
         const workObj: any = {
           organizationName: orgName[0].Account_Name,
@@ -125,11 +128,12 @@ export class StudentService {
    *  @param {string} id - The id of the student
    * @returns {Object} StudentBEResponse Interface
    */
-   async getStudent(id: string, instituteId: string): Promise<any> {
+   async getStudent(id: string, instituteId: string, programId: string): Promise<any> {
     const responseData: SFContact[] = await this.sfService.generics.contacts.get(
       'Id, Name, prod_uuid, dev_uuid, Birthdate, Gender, Grade, Student_ID, Phone, Palette_Email, Interests, skills, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Primary_Educational_Institution, Profile_Picture, Account_Name',
       {
         Id: id,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -175,6 +179,7 @@ export class StudentService {
       {
         Contact: id,
         Role: 'Student',
+        Organization: programId,
       },
       {},
       instituteId,
@@ -195,6 +200,7 @@ export class StudentService {
       {
         Contact: Id,
         Affiliation_Type: 'Business Organization',
+        Organization: programId,
       },
       {},
       instituteId,
@@ -202,6 +208,7 @@ export class StudentService {
     const studentWorkExperience: any[] = await this._mapStudentWorkExperience(
       workExp,
       instituteId,
+      programId,
     );
 
     const studentInterests: string[] =
@@ -262,11 +269,13 @@ export class StudentService {
     id: number,
     updateProfileDto: StudentUpdateProfileDto,
     instituteId: string,
+    programId: string,
   ): Promise<any> {
     const responseData: any[] = await this.sfService.generics.contacts.get(
       'Id, Name, prod_uuid, dev_uuid, Birthdate, Gender, Grade, Student_ID, Phone, Palette_Email, Interests, skills, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Primary_Educational_Institution, Profile_Picture, Account_Name',
       {
         Id: id,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -290,7 +299,7 @@ export class StudentService {
 
     const { Id } = responseData[0];
     const updatedStudent: any = {};
-
+    updatedStudent.Primary_Educational_Institution = programId;
     if (interests) {
       if (interests.join(',').length > 250) {
         throw new BadRequestException(Errors.MAX_INTERESTS_LIMIT);

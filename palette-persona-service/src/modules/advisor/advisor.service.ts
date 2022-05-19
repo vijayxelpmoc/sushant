@@ -78,7 +78,7 @@ export class AdvisorService {
         'Id, Account_Name, program_logo',
         {
           Id: Institute_Id,
-          Program: programId,
+          // Program: programId,
         },
         {},
         instituteId,
@@ -138,6 +138,7 @@ export class AdvisorService {
     }
 
     const updateObj: any = {};
+    updateObj.Primary_Educational_Institution = programId;
     //checking the input from dtos and updating
     if (updateSfAdvisorDto.hasOwnProperty('facebook')) {
       const { facebook } = updateSfAdvisorDto;

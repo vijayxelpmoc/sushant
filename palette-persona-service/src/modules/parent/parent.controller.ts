@@ -18,6 +18,7 @@ import {
 // import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { ParentService } from './parent.service';
 import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
+import { QueryRequired } from '@src/decorators';
 
 @Controller({
   path: 'parent',
@@ -31,7 +32,7 @@ export class ParentController {
   @hasRoles(Role.Parent)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
-  async getParent(@Request() req, @Query('instituteId') instituteId: string) {
+  async getParent(@Request() req, @Query('instituteId') instituteId: string, @QueryRequired('programId') programId: string,) {
     // // Cache the user profile as it's accessed multiple
     // // times throughout the application
     // const cacheKey = `parent_${req.user.id}`;
@@ -39,7 +40,7 @@ export class ParentController {
     // if (cachedParent) {      
     //   return cachedParent;
     // }
-    const parent = await this.parentService.getParent(req.user.id, instituteId);
+    const parent = await this.parentService.getParent(req.user.id, instituteId, programId);
     // await this.cachingService.set(cacheKey, parent);
     return parent;
   }
@@ -62,8 +63,9 @@ export class ParentController {
   getParentDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ) {
-    return this.parentService.getParent(id, instituteId);
+    return this.parentService.getParent(id, instituteId, programId);
   }
 
   /** updates parent profile details
@@ -77,11 +79,13 @@ export class ParentController {
     @Request() req, 
     @Body() updateSfParentDto: UpdateSfParentDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return this.parentService.update(
       req.user.id, 
       updateSfParentDto,
       instituteId,
+      programId,
     );
   }
 }

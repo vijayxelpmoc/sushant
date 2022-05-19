@@ -10,12 +10,19 @@ export class PayloadService {
     OppId: string,
     userId: string,
     instituteId: string,
+    programId: string
   ): Promise<any> {
     if (OppId == null || OppId == '' || userId == null || userId == '') {
       throw new NotFoundException();
     }
-    const opportunity = await this.sfService.models.accounts.get('*', { Id: OppId }, {}, instituteId);
-    // not found.
+    const opportunity = await this.sfService.models.accounts.get('*', { 
+        Id: OppId,
+        Program: programId, 
+      }, 
+      {},
+      instituteId
+    );
+
     if (opportunity.length == 0) {
       throw new NotFoundException(`Oops, Not Found!`);
     }
@@ -27,13 +34,17 @@ export class PayloadService {
     // institute from affiliation.
     const InstitutesData = await this.sfService.models.affiliations.get(
       'Organization',
-      { Contact: userId },
+      { 
+        Contact: userId, 
+        Organization: programId,
+      },
       {},
       instituteId
     );
     if (InstitutesData.length > 0) {
       const Institutes = await this.sfService.models.accounts.get('*', {
         Id: InstitutesData[0].Organization,
+        Program: programId, 
       }, {}, instituteId);
       if (Institutes.length > 0) {
         // mapping institute id : institute name.
@@ -46,7 +57,10 @@ export class PayloadService {
     // interested users in opportunity.
     const interestedUsersData = await this.sfService.models.recommendations.get(
       'Assignee',
-      { Event: OppId },
+      { 
+        Event: OppId,
+        Program: programId,
+      },
       {},
       instituteId
     );
@@ -59,7 +73,11 @@ export class PayloadService {
     // enrolled users in opportunity.
     const enrolledUsersData = await this.sfService.models.todos.get('Assignee', {
         Opportunit_Id: OppId,
-    }, {}, instituteId);
+        Program: programId, 
+      }, 
+      {}, 
+      instituteId
+    );
     if (enrolledUsersData.length > 0) {
       enrolledUsersData.map(enrolled => {
         enrolledUsers.push(enrolled.Assignee);
@@ -69,12 +87,15 @@ export class PayloadService {
     const wishListedEvent = await this.sfService.models.recommendations.get('Id', {
       Event: OppId,
       Recommended_by: userId,
+      Program: programId, 
     }, {}, instituteId);
     const recomendedEvent = await this.sfService.models.recommendations.get('Id', {
       Event: OppId,
+      Program: programId, 
     }, {}, instituteId);
     const enrolledEvent = await this.sfService.models.todos.get('Id', {
         Opportunit_Id: OppId,
+        Program: programId, 
     }, {}, instituteId);
 
     const opportunityDataObj = {
@@ -121,12 +142,13 @@ export class PayloadService {
   }
 
   // consideration notification data object.
-  async GetConsiderationNotificationData(consId: string, instituteId: string): Promise<any> {
+  async GetConsiderationNotificationData(consId: string, instituteId: string, programId: string): Promise<any> {
     if (consId == null || consId == '') {
       throw new NotFoundException();
     }
     const considerations = await this.sfService.models.recommendations.get('*', {
       Id: consId,
+      Program: programId, 
     }, {}, instituteId);
     if (considerations.length == 0) {
       throw new NotFoundException(`Oops, Not Found!`);
@@ -135,6 +157,7 @@ export class PayloadService {
     // considered opportunity details.
     const opportunity = await this.sfService.models.accounts.get('*', {
       Id: considerations[0].Event,
+      Program: programId, 
     }, {}, instituteId);
 
     let modStatus = [];
@@ -142,12 +165,14 @@ export class PayloadService {
     if (opportunity[0].Modification__c !== null) {
       modStatus = await this.sfService.models.modifications.get('Status', {
         Id: opportunity[0].Modification,
+        Program: programId, 
       }, {}, instituteId);
     }
 
     // opportunity recommended by user.
     const recommendedBy = await this.sfService.generics.contacts.get('*', {
       Id: considerations[0].Recommended_by,
+      Primary_Educational_Institution: programId,
     }, {}, instituteId);
 
     const considerationDataObj = {
@@ -182,13 +207,14 @@ export class PayloadService {
   }
 
   // consideration notification data object.
-  async GetModificationNotificationData(modificationId: string, instituteId: string): Promise<any> {
+  async GetModificationNotificationData(modificationId: string, instituteId: string, programId: string): Promise<any> {
     if (!modificationId) {
       throw new NotFoundException();
     }
 
     const modification = await this.sfService.models.modifications.get('*', {
       Id: modificationId,
+      Program: programId, 
     }, {}, instituteId);
 
     if (modification.length == 0) {
@@ -215,16 +241,18 @@ export class PayloadService {
   }
 
   // consideration notification data object.
-  async GetTodoNotificationData(todoId: string, instituteId: string): Promise<any> {
+  async GetTodoNotificationData(todoId: string, instituteId: string, programId: string): Promise<any> {
     if (todoId == null || todoId == '') {
       throw new NotFoundException();
     }
-    console.log('todoId', todoId);
     
     // get todo.
     const todo = await this.sfService.models.todos.get(
       'Assignee.Id, Assignee.Profile_Picture, Assignee.Name, Listed_by.Id, Listed_by.Name, Id, Group_Id, To_do, Description, Task_Status, Status, Assignee_accepted_status, Todo_Scope, Type, Event_At, Event_Venue, Complete_By, Created_at, Archived, Opportunit_Id',
-      { Id: todoId },
+      { 
+        Id: todoId,
+        Program: programId,
+      },
       {},
       instituteId
     );
@@ -235,7 +263,10 @@ export class PayloadService {
 
     const resources = await this.sfService.models.resourceConnections.get(
       'Resource_Connection_Name, Todo, Resource.Id, Resource.Resource_Name, Resource.URL, Resource.Resource_Type',
-      { Todo: todoId },
+      { 
+        Todo: todoId,
+        Program: programId,
+      },
       {},
       instituteId
     );
@@ -303,7 +334,7 @@ export class PayloadService {
   }
 
   // opportunity approval notification data object.
-  async GetOpportunityApprovalNotificationData(id: string, instituteId: string): Promise<any> {
+  async GetOpportunityApprovalNotificationData(id: string, instituteId: string, programId: string): Promise<any> {
     if (id == null || id == '' || id == undefined) {
       throw new NotFoundException();
     }
@@ -311,7 +342,10 @@ export class PayloadService {
     let approvalDataObj = {};
     const notification = await this.sfService.models.notifications.get(
       'Id, Notification_By.Profile_Picture, Notification_By.Name, Created_at, Type, Title, Event_type, Is_Read, To_Do', 
-      { Id: id }, 
+      { 
+        Id: id,
+        Program: programId,
+      }, 
       {}, 
       instituteId
     );
@@ -319,7 +353,7 @@ export class PayloadService {
       return approvalDataObj;
     }
 
-    const allTodos = await this.sfService.models.todos.get('Id, Type', {}, {}, instituteId);
+    const allTodos = await this.sfService.models.todos.get('Id, Type', { Program: programId }, {}, instituteId);
     const allTodosObj: any = {};
     allTodos.map(todo => {
       allTodosObj[todo.Id] = todo.Type;

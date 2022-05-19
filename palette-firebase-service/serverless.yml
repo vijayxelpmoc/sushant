@@ -50,3 +50,7 @@ functions:
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}
+      - http:  
+          method: PATCH
+          path: firebase/uuid
+          cors: true

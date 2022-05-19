@@ -28,11 +28,12 @@ export class ObserverService {
    *  @param {string} id - The id of the admin
    * @returns {Object} AdminBEResponse Interface
    */
-   async getObserver(id: string, instituteId: string): Promise<any> {
+   async getObserver(id: string, instituteId: string, programId: string): Promise<any> {
     const responseData: SFObserverContact[] = await this.sfService.generics.contacts.get(
       'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name',
       {
         Id: id,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId
@@ -69,6 +70,7 @@ export class ObserverService {
       'Id, Affiliation_Name, Organization, Affiliation_Type, Contact.Id, End_Date, Start_Date, Role,  Description, Designation',
       {
         Contact: id,
+        Organization: programId,
       },
       {},
       instituteId
@@ -77,7 +79,8 @@ export class ObserverService {
     const institutesList: ObserverInstitute[] = await this.observerInstituteMapping(
       id,
       institutesListRaw,
-      instituteId
+      instituteId,
+      programId,
     );
 
     const ObserverData: ObserverBEResponse = {
@@ -114,12 +117,14 @@ export class ObserverService {
     userId: string,
     institutesListRaw: ObserverSFInstitutesList[],
     instituteId: string,
+    programId: string,
   ): Promise<ObserverInstitute[]> {
     return await Promise.all(
       institutesListRaw.map(async c => {
         const getInstitute = await this.sfService.models.affiliations.get('*', {
           Contact: userId,
           Role: 'Observer',
+          Organization: programId,
         }, {}, instituteId);
 
         const Institute_Id = getInstitute[0].Organization; // Real Institute Id
@@ -147,12 +152,14 @@ export class ObserverService {
     id: string,
     updateSfObserverDto: UpdateSfObserverDto,
     instituteId: string,
+    programId: string,
   ) {
     const responseData: SFObserverContact[] =
       await this.sfService.generics.contacts.get(
         'Name, Palette_Email',
         {
           Id: id,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -163,6 +170,7 @@ export class ObserverService {
     }
 
     const updateObj: any = {};
+    updateObj.Primary_Educational_Institution = programId;
     if (updateSfObserverDto.hasOwnProperty('facebook')) {
       const { facebook } = updateSfObserverDto;
       updateObj.Facebook = facebook;

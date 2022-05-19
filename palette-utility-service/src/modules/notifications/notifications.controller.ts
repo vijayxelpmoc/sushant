@@ -8,6 +8,7 @@ import {
 import { Errors, Responses } from '@src/constants';
 import { NotificationsService } from './notifications.service';
 import { BasicDataResponse, BasicResponse } from './dtos/index';
+import { QueryRequired } from '@src/decorators';
 
 @Controller('notifications')
 export class NotificationsController {
@@ -33,8 +34,13 @@ export class NotificationsController {
     async getNotifications(
         @Request() req,
         @Query('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
     ): Promise<BasicDataResponse> {
-        return await this.notificationService.getNotifications(req.user.id, instituteId);
+        return await this.notificationService.getNotifications(
+            req.user.id, 
+            instituteId, 
+            programId,
+        );
     }
 
     /**
@@ -55,11 +61,13 @@ export class NotificationsController {
         @Request() req,
         @Param('id') id: string,
         @Query('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
     ): Promise<BasicDataResponse> {
         return await this.notificationService.getNotificationDetail(
             id,
             req.user.id,
             instituteId,
+            programId,
         );
     }
 
@@ -80,8 +88,13 @@ export class NotificationsController {
     async makeNotificationsRead(
         @Request() req,
         @Query('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
     ): Promise<BasicResponse> {
-        return await this.notificationService.readNotifications(req.user.id, instituteId);
+        return await this.notificationService.readNotifications(
+            req.user.id, 
+            instituteId, 
+            programId,
+        );
     }
 
     /**
@@ -102,8 +115,14 @@ export class NotificationsController {
         @Request() req,
         @Param('id') id: string,
         @Query('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
     ): Promise<BasicResponse> {
-        return await this.notificationService.readNotification(req.user.id, id, instituteId);
+        return await this.notificationService.readNotification(
+            req.user.id, 
+            id, 
+            instituteId, 
+            programId,
+        );
     }
 
     //Delete all notifications of the logged in user
@@ -117,7 +136,15 @@ export class NotificationsController {
     )
     @UseGuards(JwtAuthGuard, RolesGuard)
     @Delete('/deleteAll')
-    async deleteAllNotifications(@Request() req, @Query('instituteId') instituteId: string,) {
-        return await this.notificationService.deleteAllNotifications(req.user.id, instituteId);
+    async deleteAllNotifications(
+        @Request() req, 
+        @Query('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
+    ) {
+        return await this.notificationService.deleteAllNotifications(
+            req.user.id, 
+            instituteId, 
+            programId,
+        );
     }
 }

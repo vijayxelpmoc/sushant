@@ -23,6 +23,7 @@ import { AdminService } from './admin.service';
 import { UpdateSfAdminDto } from './dto/admin-update-profile.dto';
 import { ApprovalTodoResponse } from './types/admin-interface';
 import { EventStatusDto } from '../advisor/dto/advisor-update-profile.dto';
+import { QueryRequired } from '@src/decorators';
 
 @Controller({
   path: 'admin',
@@ -36,12 +37,10 @@ export class AdminController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
   async getAdmin(
-    @Request() req,
+    @Request() req, 
     @Query('instituteId') instituteId: string,
-    @Query('programId') programId: string,
+    @QueryRequired('programId') programId: string,
   ) {
-    console.log(req.user);
-
     // // Cache the user profile as it's accessed multiple
     // // times throughout the application
     // const cacheKey = `admin_${req.user.id}`;

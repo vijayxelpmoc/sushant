@@ -87,7 +87,7 @@ export class AdminService {
         'Id, Account_Name, program_logo',
         {
           Id: Institute_Id,
-          Program: programId,
+          // Program: programId,
         },
         {},
         instituteId,
@@ -149,6 +149,7 @@ export class AdminService {
     }
 
     const updateObj: any = {};
+    updateObj.Primary_Educational_Institution = programId;
     if (updateSfAdminDto.hasOwnProperty('facebook')) {
       const { facebook } = updateSfAdminDto;
       updateObj.Facebook = facebook;

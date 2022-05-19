@@ -26,12 +26,13 @@ export class NotificationsService {
     /** Gets user notifications
      * @returns statusCode message & list
      */
-    async getNotifications(id: string, instituteId: string): Promise<BasicDataResponse> {
+    async getNotifications(id: string, instituteId: string, programId: string): Promise<BasicDataResponse> {
         // getting notification details.
         const myNotifications = await this.sfService.models.notifications.get(
             'Id, To_Do, Notification_By.Profile_Picture, Notification_By.Name, Created_at, Type, Title, Is_Read, Opportunity.Id, Opportunity.Modification, Opportunity.Category, Modification, Event_type',
             {
                 Contact: id,
+                Program: programId,
             },
             { Created_at: -1 },
             instituteId
@@ -92,45 +93,61 @@ export class NotificationsService {
      * Updates notification is read status to true
      * @returns message and status code
      */
-    async readNotifications(userId: string, instituteId: string): Promise<BasicResponse> {
+    async readNotifications(userId: string, instituteId: string, programId: string): Promise<BasicResponse> {
         // getting not read user notifications
         const mylist = await this.sfService.models.notifications.get('Id', {
             Is_Read: false,
             Contact: userId,
+            Program: programId,
         }, {}, instituteId);
 
         if (mylist.length) {
+          throw new NotFoundException();   
+        }
+
         for (const element of mylist) {
-            // updating is read status
-            await this.sfService.models.notifications.update({
-            Is_Read: true,
-            }, element['Id'], instituteId);
-        }
-        }
-        return { statusCode: 200, message: 'ReadAllNotifications' };
+          // updating is read status
+          await this.sfService.models.notifications.update({
+          Is_Read: true,
+          Program: programId,
+          }, element['Id'], instituteId);
+      }
+      return { statusCode: 200, message: 'ReadAllNotifications' };
     }
 
     async readNotification(
         userId: string,
         notificationId: string,
-        instituteId: string
+        instituteId: string,
+        programId: string
     ): Promise<BasicResponse> {
         // getting not read user notification
         const singleNotification = await this.sfService.models.notifications.get('Id', {
             Contact: userId,
             Id: notificationId,
-        }, {}, instituteId);
-        if (singleNotification.lenght !== 0) {
-            await this.sfService.models.notifications.update({
-                Is_Read: true,
-            }, notificationId, instituteId);
+            Program: programId,
+          }, 
+          {}, 
+          instituteId
+        );
+        if (singleNotification.lenght == 0) {
+          throw new NotFoundException();    
         }
+
+        await this.sfService.models.notifications.update({
+            Is_Read: true,
+            Program: programId,
+          }, 
+          notificationId, 
+          instituteId,
+        );
         return { statusCode: 200, message: 'Success' };
     }
 
-    async deleteAllNotifications(Id: string, instituteId: string) {
+    async deleteAllNotifications(Id: string, instituteId: string, programId: string) {
         const notifications = await this.sfService.models.notifications.get('Id', {
           Contact: Id,
+          Program: programId,
         }, {}, instituteId);
     
         const notificationIds: string[] = notifications.map(notification => {
@@ -150,17 +167,22 @@ export class NotificationsService {
         notificationId: string,
         userId: string,
         instituteId: string,
+        programId: string,
       ): Promise<BasicDataResponse> {
         // notification details.
         const notification = await this.sfService.models.notifications.get('*', {
-          Id: notificationId,
-        }, {}, instituteId);
+            Id: notificationId,
+            Program: programId,
+          }, 
+          {}, 
+          instituteId
+        );
     
         if (notification.lenght == 0) {
-          throw new NotFoundException('Not found!');
+          throw new NotFoundException();
         }
+
         const type = notification[0].Type;
-    
         let dataObj = undefined;
         switch (type) {
           case 'New To-Do': {
@@ -168,6 +190,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetTodoNotificationData(
               notification[0].To_Do,
               instituteId,
+              programId,
             );
             break;
           }
@@ -176,6 +199,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetTodoNotificationData(
               notification[0].To_Do,
               instituteId,
+              programId,
             );
             break;
           }
@@ -184,6 +208,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetTodoNotificationData(
               notification[0].To_Do,
               instituteId,
+              programId,
             );
             break;
           }
@@ -192,6 +217,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetConsiderationNotificationData(
               notification[0].Recommendation,
               instituteId,
+              programId,
             );
             break;
           }
@@ -201,6 +227,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
@@ -210,6 +237,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
@@ -219,6 +247,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
@@ -228,6 +257,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
@@ -237,6 +267,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
@@ -245,6 +276,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetTodoNotificationData(
               notification[0].To_Do,
               instituteId,
+              programId,
             );
             break;
           }
@@ -253,6 +285,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetTodoNotificationData(
               notification[0].To_Do,
               instituteId,
+              programId,
             );
             break;
           }
@@ -261,6 +294,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetTodoNotificationData(
               notification[0].To_Do,
               instituteId,
+              programId,
             );
             break;
           }
@@ -270,6 +304,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
@@ -279,6 +314,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
@@ -287,6 +323,7 @@ export class NotificationsService {
             dataObj = await this.payloadService.GetModificationNotificationData(
               notification[0].Modification,
               instituteId,
+              programId,
             );
             break;
           }
@@ -296,6 +333,7 @@ export class NotificationsService {
               notification[0].Opportunity,
               userId,
               instituteId,
+              programId,
             );
             break;
           }
