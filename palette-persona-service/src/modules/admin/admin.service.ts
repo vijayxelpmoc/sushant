@@ -26,8 +26,6 @@ export class AdminService {
   }
 
   async getAdmin(id: string, instituteId: string, programId: string) {
-    // console.log(instituteId);
-
     const responseData: SFAdminContact[] =
       await this.sfService.generics.contacts.get(
         'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
@@ -39,7 +37,6 @@ export class AdminService {
         {},
         instituteId,
       );
-    // console.log(responseData);
 
     if (!responseData) {
       throw new NotFoundException(`Admin with ID "${id}" not found`);
@@ -219,7 +216,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    // console.log('notification', notification);
 
     // select id based on notification type.
     let id = null;
@@ -247,7 +243,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    console.log('res', res);
 
     if (res.length !== 0) {
       res.map((event) => {
@@ -295,7 +290,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    console.log('mods', mods);
     
 
     const oppor = await this.sfService.models.accounts.get(
@@ -304,7 +298,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    // console.log(oppor[0].Listed_by);
 
     // const user = await this.sfService.generics.contacts.get(
     //   'Name,Profile_Picture',
@@ -312,7 +305,6 @@ export class AdminService {
     //   {},
     //   instituteId,
     // )[0];
-    // // console.log(user);
 
     if (mods.length !== 0) {
       mods.map((event) => {
@@ -351,8 +343,6 @@ export class AdminService {
 
   // Global Todo
   async getTodos(instituteId: string, programId: string): Promise<any> {
-    console.log(programId);
-    
     const res = await this.sfService.models.todos.get(
       '*,Listed_by.Phone,Listed_by.Id',
       {
@@ -363,7 +353,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    console.log(res);
 
     const tasksId = res.map((e) => e.Id);
 
@@ -382,7 +371,6 @@ export class AdminService {
         {},
         instituteId,
       );
-    // console.log(resources);
 
     const resIds = resources.map((e) => e.Resource);
 
@@ -395,7 +383,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    // console.log(resor);
 
     resources !== [] &&
       resources.map((resource) => {
@@ -406,7 +393,6 @@ export class AdminService {
             url: resource.Resource.URL,
             type: resource.Resource.Resource_Type,
           };
-          // console.log('resourcesObj', resourcesObj);
 
           // if a record with a todo task is present then add the object into it or if not create one
           const hashResource = allResource[`${resource.Todo}`];
@@ -468,8 +454,6 @@ export class AdminService {
       instituteId,
     );
 
-    // console.log(resNotif);
-
     if (resNotif.length === 0) {
       throw new NotFoundException();
     }
@@ -484,7 +468,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    // console.log(res);
 
     const user = await this.sfService.generics.contacts.get(
       '*',
@@ -495,7 +478,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    // console.log(user);
 
     const filteredData = {
       id: res[0]['Id'],
@@ -903,7 +885,6 @@ export class AdminService {
         {},
         instituteId,
       );
-      // console.log('recc', recc);
       notificationTitle = `Opportunity ${opp[0].Name}`;
       notificationMsg = `Opportunity ${opp[0].Name} has been updated.`;
       if (recc.length !== 0) {
