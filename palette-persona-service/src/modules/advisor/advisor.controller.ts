@@ -32,7 +32,10 @@ export class AdvisorController {
   @hasRoles(Role.Advisor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
-  async getAdmin(@Request() req, @Query('instituteId') instituteId: string) {
+  async getAdvisor(@Request() req, 
+  @Query('instituteId') instituteId: string,
+  @Query('programId') programId: string
+  ) {
     // // Cache the user profile as it's accessed multiple
     // // times throughout the application
     // const cacheKey = `advisor_${req.user.id}`;
@@ -45,6 +48,7 @@ export class AdvisorController {
     const advisor = await this.advisorService.getAdvisor(
       req.user.id,
       instituteId,
+      programId
     );
     // await this.cachingService.set(cacheKey, advisor);
     return advisor;
@@ -61,11 +65,13 @@ export class AdvisorController {
     @Request() req,
     @Body() updateSfAdvisorDto: UpdateSfAdvisorDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return this.advisorService.update(
       req.user.id,
       updateSfAdvisorDto,
       instituteId,
+      programId
     );
   }
 
@@ -87,8 +93,9 @@ export class AdvisorController {
   async getAdvisorDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
-    return await this.advisorService.getAdvisor(id, instituteId);
+    return await this.advisorService.getAdvisor(id, instituteId, programId);
   }
 
   // Guardian Opportunity Approvals
@@ -98,6 +105,7 @@ export class AdvisorController {
   async getOpportunityApprovals(
     @Request() req,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
     console.log(req.user);
 
@@ -105,6 +113,7 @@ export class AdvisorController {
       req.user.id,
       req.user.recordTypeName,
       instituteId,
+      programId,
     );
   }
 
@@ -115,8 +124,13 @@ export class AdvisorController {
     @Request() req,
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
-    return await this.advisorService.getOpportunitydetail(id, instituteId);
+    return await this.advisorService.getOpportunitydetail(
+      id,
+      instituteId,
+      programId,
+    );
   }
 
   @hasRoles(Role.Advisor, Role.Administrator)
@@ -127,6 +141,7 @@ export class AdvisorController {
     @Param('id') id: string,
     @Body('status') status: string,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     console.log(status, instituteId);
     if (status == 'Accept') {
@@ -135,6 +150,7 @@ export class AdvisorController {
         'In Review',
         req.user.id,
         instituteId,
+        programId,
       );
     } else {
       return await this.advisorService.acceptOrRejectOpportunity(
@@ -142,6 +158,7 @@ export class AdvisorController {
         'Rejected',
         req.user.id,
         instituteId,
+        programId,
       );
     }
   }
