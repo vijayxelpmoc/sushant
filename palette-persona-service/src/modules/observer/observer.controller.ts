@@ -17,6 +17,7 @@ import {
 // import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { UpdateSfObserverDto } from './dtos';
 import { ObserverService } from './observer.service';
+import { QueryRequired } from '@src/decorators';
 
 @Controller({
   path: 'observer',
@@ -34,8 +35,12 @@ export class ObserverController {
   @hasRoles(Role.Observer)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
-  async getObserver(@Request() req, @Query('instituteId') instituteId: string) {
-    return await this.observerService.getObserver(req.user.id, instituteId);
+  async getObserver(
+    @Request() req, 
+    @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,  
+  ) {
+    return await this.observerService.getObserver(req.user.id, instituteId, programId);
   }
 
   /**
@@ -56,8 +61,9 @@ export class ObserverController {
   async gettingObserverDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string, 
   ) {
-    return await this.observerService.getObserver(id, instituteId);
+    return await this.observerService.getObserver(id, instituteId, programId);
   }
 
   /** updates observer profile details
@@ -67,15 +73,17 @@ export class ObserverController {
    @hasRoles(Role.Observer)
    @UseGuards(JwtAuthGuard, RolesGuard)
    @Patch('profile/update')
-   update(
+   async update(
      @Request() req, 
      @Body() updateSfObserverDto: UpdateSfObserverDto,
      @Body('instituteId') instituteId: string,
+     @Body('programId') programId: string,
    ) {
-    return this.observerService.update(
+    return await this.observerService.update(
       req.user.id, 
       updateSfObserverDto,
       instituteId,
+      programId,
     );
    }
 

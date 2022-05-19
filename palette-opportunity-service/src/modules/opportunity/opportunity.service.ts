@@ -1135,7 +1135,6 @@ export class OpportunityService {
               {
                 Organization: InstituteId,
                 Role: 'Advisor',
-                Program: programId,
               },
               {}, 
               instituteId

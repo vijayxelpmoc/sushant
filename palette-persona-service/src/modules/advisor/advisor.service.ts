@@ -20,12 +20,13 @@ export class AdvisorService {
     this.notifier = new Notifier();
   }
 
-  async getAdvisor(id: string, instituteId: string) {
+  async getAdvisor(id: string, instituteId: string, programId: string) {
     const responseData: SFAdvisorContact[] =
       await this.sfService.generics.contacts.get(
         'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
         {
           Id: id,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -76,6 +77,7 @@ export class AdvisorService {
         'Id, Account_Name, program_logo',
         {
           Id: Institute_Id,
+          // Program: programId,
         },
         {},
         instituteId,
@@ -117,12 +119,14 @@ export class AdvisorService {
     id: string,
     updateSfAdvisorDto: UpdateSfAdvisorDto,
     instituteId: string,
+    programId: string,
   ) {
     const responseData: SFAdvisorContact[] =
       await this.sfService.generics.contacts.get(
         'Name, Palette_Email',
         {
           Id: id,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -133,6 +137,7 @@ export class AdvisorService {
     }
 
     const updateObj: any = {};
+    updateObj.Primary_Educational_Institution = programId;
     //checking the input from dtos and updating
     if (updateSfAdvisorDto.hasOwnProperty('facebook')) {
       const { facebook } = updateSfAdvisorDto;

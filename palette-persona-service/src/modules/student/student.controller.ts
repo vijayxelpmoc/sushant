@@ -19,6 +19,7 @@ import {
 import { StudentUpdateProfileDto } from './dto';
 import { StudentService } from './student.service';
 import { CachingService } from '@gowebknot/palette-salesforce-service';
+import { QueryRequired } from '@src/decorators';
 
 @Controller({
   path: 'student',
@@ -32,7 +33,7 @@ export class StudentController {
   @hasRoles(Role.Student)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
-  async getStudent(@Request() req, @Query('instituteId') instituteId: string) {
+  async getStudent(@Request() req, @Query('instituteId') instituteId: string, @QueryRequired('programId') programId: string,) {
     // // Cache the user profile as it's accessed multiple
     // // times throughout the application
     // const cacheKey = `student_${req.user.id}`;
@@ -43,6 +44,7 @@ export class StudentController {
     const student = await this.studentService.getStudent(
       req.user.id,
       instituteId,
+      programId
     );
     // await this.cachingService.set(cacheKey, student);
     return student;
@@ -61,8 +63,9 @@ export class StudentController {
   async getStudentDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ) {
-    return await this.studentService.getStudent(id, instituteId);
+    return await this.studentService.getStudent(id, instituteId, programId);
   }
 
   @hasRoles(Role.Student)
@@ -72,11 +75,13 @@ export class StudentController {
     @Request() req,
     @Body() updateProfileDto: StudentUpdateProfileDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.studentService.updateStudentProfile(
       req.user.id,
       updateProfileDto,
       instituteId,
+      programId,
     );
   }
 }

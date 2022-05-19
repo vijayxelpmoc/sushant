@@ -26,11 +26,12 @@ export class ParentService {
    *  @param {string} id - The id of the parent
    * @returns {Object} ParentBEResponse Interface
    */
-   async getParent(id: string, instituteId: string): Promise<any> {
+   async getParent(id: string, instituteId: string, programId: string): Promise<any> {
     const responseData: SFParentContact[] = await this.sfService.generics.contacts.get(
       'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name, Primary_Educational_Institution',
       {
         Id: id,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -68,6 +69,7 @@ export class ParentService {
       {
         Related_Contact: Id,
         Type: GuardianSubRoles,
+        Program: programId,
       },
       {},
       instituteId,
@@ -83,6 +85,7 @@ export class ParentService {
       'Organization',
       {
         Contact: id,
+        Organization: programId,
         // Role: 'Guardian',
       },
       {},
@@ -96,6 +99,7 @@ export class ParentService {
       | ParentInstituteName[]
       | null = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', {
       Id: Institute_Id,
+      // Program: programId,
     }, {}, instituteId);
 
     studentList.map(student => {
@@ -150,11 +154,13 @@ export class ParentService {
     id: string,
     updateSfParentDto: UpdateSfParentDto,
     instituteId: string,
+    programId: string,
   ) {
     const responseData: SFParentContact[] = await this.sfService.generics.contacts.get(
       'Name, Palette_Email',
       {
         Id: id,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -165,6 +171,7 @@ export class ParentService {
     }
 
     const updateObj: any = {};
+    updateObj.Primary_Educational_Institution = programId;
     if (updateSfParentDto.hasOwnProperty('facebook')) {
       const { facebook } = updateSfParentDto;
       updateObj.Facebook = facebook;

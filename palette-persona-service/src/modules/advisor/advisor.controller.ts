@@ -20,6 +20,7 @@ import {
 // import { CachingService } from '@gowebknot/palette-salesforce-service';
 import { AdvisorService } from './advisor.service';
 import { UpdateSfAdvisorDto } from './dto/advisor-update-profile.dto';
+import { QueryRequired } from '@src/decorators';
 
 @Controller({
   path: 'advisor',
@@ -32,7 +33,11 @@ export class AdvisorController {
   @hasRoles(Role.Advisor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
-  async getAdmin(@Request() req, @Query('instituteId') instituteId: string) {
+  async getAdmin(
+    @Request() req, 
+    @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
+  ) {
     // // Cache the user profile as it's accessed multiple
     // // times throughout the application
     // const cacheKey = `advisor_${req.user.id}`;
@@ -40,11 +45,11 @@ export class AdvisorController {
     // if (cachedAdvisor) {
     //   return cachedAdvisor;
     // }
-    console.log(req.user);
 
     const advisor = await this.advisorService.getAdvisor(
       req.user.id,
       instituteId,
+      programId,
     );
     // await this.cachingService.set(cacheKey, advisor);
     return advisor;
@@ -61,11 +66,13 @@ export class AdvisorController {
     @Request() req,
     @Body() updateSfAdvisorDto: UpdateSfAdvisorDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return this.advisorService.update(
       req.user.id,
       updateSfAdvisorDto,
       instituteId,
+      programId,
     );
   }
 
@@ -87,8 +94,9 @@ export class AdvisorController {
   async getAdvisorDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ) {
-    return await this.advisorService.getAdvisor(id, instituteId);
+    return await this.advisorService.getAdvisor(id, instituteId, programId);
   }
 
   // Guardian Opportunity Approvals

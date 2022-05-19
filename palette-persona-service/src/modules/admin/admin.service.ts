@@ -25,7 +25,7 @@ export class AdminService {
     // this.notifier = new Notifier();
   }
 
-  async getAdmin(id: string, instituteId: string) {
+  async getAdmin(id: string, instituteId: string, programId: string) {
     // console.log(instituteId);
 
     const responseData: SFAdminContact[] =
@@ -34,6 +34,7 @@ export class AdminService {
         // "Id,Name",
         {
           Id: id,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -85,6 +86,7 @@ export class AdminService {
         'Id, Account_Name, program_logo',
         {
           Id: Institute_Id,
+          // Program: programId,
         },
         {},
         instituteId,
@@ -130,11 +132,13 @@ export class AdminService {
     id: string,
     updateSfAdminDto: UpdateSfAdminDto,
     instituteId: string,
+    programId: string,
   ) {
     const responseData: any = this.sfService.generics.contacts.get(
       'Name, Palette_Email',
       {
         Id: id,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId,
@@ -144,6 +148,7 @@ export class AdminService {
     }
 
     const updateObj: any = {};
+    updateObj.Primary_Educational_Institution = programId;
     if (updateSfAdminDto.hasOwnProperty('facebook')) {
       const { facebook } = updateSfAdminDto;
       updateObj.Facebook = facebook;

@@ -23,6 +23,7 @@ import { AdminService } from './admin.service';
 import { UpdateSfAdminDto } from './dto/admin-update-profile.dto';
 import { ApprovalTodoResponse } from './types/admin-interface';
 import { EventStatusDto } from '../advisor/dto/advisor-update-profile.dto';
+import { QueryRequired } from '@src/decorators';
 
 @Controller({
   path: 'admin',
@@ -35,9 +36,11 @@ export class AdminController {
   @hasRoles(Role.Administrator)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('profile')
-  async getAdmin(@Request() req, @Query('instituteId') instituteId: string) {
-    console.log(req.user);
-    
+  async getAdmin(
+    @Request() req, 
+    @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
+  ) {
     // // Cache the user profile as it's accessed multiple
     // // times throughout the application
     // const cacheKey = `admin_${req.user.id}`;
@@ -45,7 +48,7 @@ export class AdminController {
     // if (cachedAdmin) {
     //   return cachedAdmin;
     // }
-    const admin = await this.adminService.getAdmin(req.user.id, instituteId);
+    const admin = await this.adminService.getAdmin(req.user.id, instituteId, programId);
     // await this.cachingService.set(cacheKey, admin);
     return admin;
   }
@@ -61,11 +64,13 @@ export class AdminController {
     @Request() req,
     @Body() updateSfAdminDto: UpdateSfAdminDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
     return await this.adminService.update(
       req.user.id,
       updateSfAdminDto,
       instituteId,
+      programId,
     );
   }
 
@@ -87,8 +92,9 @@ export class AdminController {
   async getAdminDetails(
     @Param('id') id: string,
     @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
   ) {
-    return await this.adminService.getAdmin(id, instituteId);
+    return await this.adminService.getAdmin(id, instituteId, programId);
   }
 
   /** gets In Review opportunity detail
