@@ -48,8 +48,9 @@ export class UtilityController {
   async contact(
     @Body() contactInfoDto: ContactInfoDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
-    return this.utilityService.contactUs(contactInfoDto, instituteId);
+    return this.utilityService.contactUs(contactInfoDto, programId,instituteId);
   }
 
   @hasRoles(
@@ -70,8 +71,9 @@ export class UtilityController {
   async feedback(
     @Body() feedbackInfoDto: FeedbackInfoDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
-    return this.utilityService.addFeedback(feedbackInfoDto, instituteId);
+    return this.utilityService.addFeedback(feedbackInfoDto,programId, instituteId);
   }
 
   @hasRoles(
@@ -90,8 +92,9 @@ export class UtilityController {
   async reportIssue(
     @Body() reportIssueDto: ReportIssueDto,
     @Body('instituteId') instituteId: string,
+    @Body('programId') programId: string,
   ) {
-    return this.utilityService.addReportIssue(reportIssueDto, instituteId);
+    return this.utilityService.addReportIssue(reportIssueDto,programId, instituteId);
   }
 
   @hasRoles(
@@ -106,7 +109,10 @@ export class UtilityController {
   @Get('guides')
   @ApiOkResponse({ description: Responses.GUIDES_SUCCESS })
   @ApiNotFoundResponse({ description: Errors.GUIDES_NOT_FOUND })
-  getGuides(@Req() req, @Query('instituteId') instituteId: string) {
-    return this.utilityService.getGuides(req.user.recordTypeName, instituteId);
+  getGuides(@Req() req, 
+  @Query('instituteId') instituteId: string,
+  @Query('programId') programId: string,
+  ) {
+    return this.utilityService.getGuides(req.user.recordTypeName,programId, instituteId);
   }
 }

@@ -20,12 +20,13 @@ export class AdvisorService {
     this.notifier = new Notifier();
   }
 
-  async getAdvisor(id: string, instituteId: string) {
+  async getAdvisor(id: string, instituteId: string, programId: string) {
     const responseData: SFAdvisorContact[] =
       await this.sfService.generics.contacts.get(
         'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
         {
           Id: id,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -64,6 +65,7 @@ export class AdvisorService {
       {
         Contact: id,
         Role: 'Advisor',
+        Organization: programId,
       },
       {},
       instituteId,
@@ -76,6 +78,7 @@ export class AdvisorService {
         'Id, Account_Name, program_logo',
         {
           Id: Institute_Id,
+          Program: programId,
         },
         {},
         instituteId,
@@ -117,12 +120,14 @@ export class AdvisorService {
     id: string,
     updateSfAdvisorDto: UpdateSfAdvisorDto,
     instituteId: string,
+    programId: string,
   ) {
     const responseData: SFAdvisorContact[] =
       await this.sfService.generics.contacts.get(
         'Name, Palette_Email',
         {
           Id: id,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -186,18 +191,24 @@ export class AdvisorService {
   async getOpportunitydetail(
     notificationId,
     instituteId: string,
+    programId: string,
   ): Promise<any> {
     // notification details.
     const notification = await this.sfService.models.notifications.get(
       '*',
       {
         Id: notificationId,
+        Program: programId,
       },
       {},
       instituteId,
     );
     console.log(notification);
-    
+
+    if(notification.length === 0){
+      return new NotFoundException();
+    }
+
     // select id based on notification type.
     let id = null;
     const type = notification[0].Type;
@@ -219,12 +230,13 @@ export class AdvisorService {
       '*,Listed_by.Name, Listed_by.Profile_Picture',
       {
         Id: id,
+        Program: programId,
       },
       {},
       instituteId,
     );
-    console.log("res",res);
-    
+    console.log('res', res);
+
     if (res.length !== 0) {
       res.map((event) => {
         const filteredDataObject = {
@@ -244,6 +256,7 @@ export class AdvisorService {
               ? event.Removal_Status
               : event.Approval_Status,
           type: type,
+          Program: programId,
         };
         // listing obj.
         filteredData.push(filteredDataObject);
@@ -257,36 +270,51 @@ export class AdvisorService {
 
     // if id is of modification.
     const mods = await this.sfService.models.modifications.get(
-      'Opportunity_Id.Listed_by.Name, Opportunity_Id.Listed_by.Profile_Picture, Opportunity_Id.Listed_by, *',
+      // 'Id,Created_at,Account_Name,Phone,Category,Start_Date,Venue,End_Date,Description,Status, Opportunity_Id.Listed_by,Opportunity_Id.Listed_by.Name, Opportunity_Id.Listed_by.Profile_Picture',
+      'Id,Created_at,Account_Name,Phone,Category,Start_Date,Venue,End_Date,Description,Status, Opportunity_Id.Listed_by',
+      // 'Opportunity_Id.Listed_by, *',
       {
         Id: id,
+        Program: programId,
       },
       {},
       instituteId,
     );
-    // console.log(mods);
+
+    const user = await this.sfService.generics.contacts.get(
+      'Name,Profile_Picture',
+      {
+        Id: mods[0].Opportunity_Id.Listed_by,
+        Primary_Educational_Institution: programId,
+      },
+      {},
+      instituteId,
+    );
+    console.log(user);
     
+    console.log(mods);
 
     if (mods.length !== 0) {
       mods.map((event) => {
         const filteredDataObj = {
           Id: event.Id,
-          creatorName: event.Opportunity_Id
-            ? event.Opportunity_Id.Listed_by.Name
+          creatorName: user
+            ? user[0].Name
             : null,
-          creatorProfilePic: event.Opportunity_Id
-            ? event.Opportunity_Id.Listed_by.Profile_Picture
+          creatorProfilePic: user
+            ? user[0].Profile_Picture
             : null,
           createdAt: event.Created_at,
           eventName: event.Account_Name,
-          category: event.Cate,
+          category: event.Category,
           phone: event.Phone,
           venue: event.Venue,
           startDate: event.Start_Date,
           endDate: event.End_Date,
           description: event.Description,
           approvalStatus: event.Status,
-          type: notification[0].Type,
+          type: notification && notification[0].Type,
+          Program: programId,
         };
         //listing obj.
         filteredData.push(filteredDataObj);
@@ -301,15 +329,21 @@ export class AdvisorService {
   }
 
   // Opportunity Approvals
-  async getOpportunityApprovals(userId: string,role:string, instituteId: string) {
+  async getOpportunityApprovals(
+    userId: string,
+    role: string,
+    instituteId: string,
+    programId: string,
+  ) {
     const opportunities = await this.sfService.models.accounts.get(
-    '*,Listed_by.Profile_Picture,Listed_by.Name',
+      '*,Listed_by.Profile_Picture,Listed_by.Name',
       {
         Approval_Status: 'AdvisorReview',
+        Program: programId,
       },
       {},
       instituteId,
-    );    
+    );
     const approvalList = [];
     opportunities.map((opportunity) => {
       const dataObj = {
@@ -326,6 +360,7 @@ export class AdvisorService {
         Type: opportunity.Category,
         approvalStatus: opportunity.Approval_Status,
         expirationDate: opportunity.End_Date,
+        Program: programId,
       };
       approvalList.push(dataObj);
     });
@@ -343,20 +378,19 @@ export class AdvisorService {
     status: string,
     userId: string,
     instituteId: string,
+    programId: string,
   ) {
-    const requestedOpportunity = (
-      await this.sfService.models.accounts.get(
-        '*',
-        {
-          Id: opportunityId,
-        },
-        {},
-        instituteId,
-      )
+    const requestedOpportunity = await this.sfService.models.accounts.get(
+      '*',
+      {
+        Id: opportunityId,
+        Program: programId,
+      },
+      {},
+      instituteId,
     );
 
     console.log(requestedOpportunity);
-    
 
     if (!requestedOpportunity[0]) {
       throw new NotFoundException('Opportunity not found');
@@ -376,6 +410,7 @@ export class AdvisorService {
         '*',
         {
           Id: opportunityId,
+          Program: programId,
         },
         {},
         instituteId,
@@ -388,6 +423,7 @@ export class AdvisorService {
           {
             Account: insId,
             Role: 'Admin',
+            Organization: programId,
           },
           {},
           instituteId,
@@ -416,6 +452,7 @@ export class AdvisorService {
               Opportunity: opp[0].Id,
               Title: notificationMsg,
               Type: 'Opportunity Approval Request',
+              Program: programId,
             },
             instituteId,
           );
@@ -454,6 +491,7 @@ export class AdvisorService {
             Opportunity: opp[0].Id,
             Title: notificationMsg,
             Type: 'Opportunity Rejected',
+            Program: programId,
           },
           instituteId,
         );
@@ -469,5 +507,4 @@ export class AdvisorService {
       message: `Opportunity ${status}ed.`,
     };
   }
-  
 }
