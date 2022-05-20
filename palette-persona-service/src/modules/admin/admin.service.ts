@@ -1022,7 +1022,9 @@ export class AdminService {
         {},
         instituteId,
       );
-      if (opp.length !== 0) {
+      // console.log(opp);
+      
+      if (opp.length === 0) {
         throw new NotFoundException(`Opportunity Not Found!`);
       }
 

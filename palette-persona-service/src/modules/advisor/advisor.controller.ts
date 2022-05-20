@@ -156,7 +156,7 @@ export class AdvisorController {
     } else {
       return await this.advisorService.acceptOrRejectOpportunity(
         id,
-        'Reject',
+        'Rejected',
         req.user.id,
         instituteId,
         programId,
