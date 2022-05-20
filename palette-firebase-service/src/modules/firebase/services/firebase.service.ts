@@ -33,8 +33,6 @@ export class FirebaseService {
    *
    */
 
-  // Util Methods
-
   /** store uuid from firebase for the user of palette
    *  @param {UuidDto} body uuid,  salesforce id and email of the user
    * @returns {Object} status code and message or errors
