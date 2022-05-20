@@ -206,26 +206,6 @@ export class UtilityService {
     return { statusCode: 200, message: 'User Added' };
   }
 
-  async getCustomFields(): Promise<any> {
-    const module = [
-      'Account',
-      'Chat',
-      'Opportunity',
-      'To-Do',
-      'User Network',
-      'Others',
-    ];
-    const needed_by = [
-      "Yesterday! (let's go already)",
-      'Week',
-      'Month',
-      'Quarter',
-      'Not sure -- just thought it was cool',
-    ];
-
-    return { module, needed_by };
-  }
-
   async getAllPortalUsers(): Promise<any> {
     // console.log('GetAllPortalUsers');
 

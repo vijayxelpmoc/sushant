@@ -50,7 +50,11 @@ export class UtilityController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    return this.utilityService.contactUs(contactInfoDto, programId,instituteId);
+    return this.utilityService.contactUs(
+      contactInfoDto,
+      programId,
+      instituteId,
+    );
   }
 
   @hasRoles(
@@ -73,7 +77,11 @@ export class UtilityController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    return this.utilityService.addFeedback(feedbackInfoDto,programId, instituteId);
+    return this.utilityService.addFeedback(
+      feedbackInfoDto,
+      programId,
+      instituteId,
+    );
   }
 
   @hasRoles(
@@ -87,7 +95,23 @@ export class UtilityController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/custom')
   async getCustomFields() {
-    return this.utilityService.getCustomFields();
+    const module = [
+      'Account',
+      'Chat',
+      'Opportunity',
+      'To-Do',
+      'User Network',
+      'Others',
+    ];
+    const needed_by = [
+      "Yesterday! (let's go already)",
+      'Week',
+      'Month',
+      'Quarter',
+      'Not sure -- just thought it was cool',
+    ];
+
+    return { module, needed_by };
   }
 
   @hasRoles(
@@ -108,7 +132,11 @@ export class UtilityController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    return this.utilityService.addReportIssue(reportIssueDto,programId, instituteId);
+    return this.utilityService.addReportIssue(
+      reportIssueDto,
+      programId,
+      instituteId,
+    );
   }
 
   @hasRoles(
@@ -123,10 +151,15 @@ export class UtilityController {
   @Get('guides')
   @ApiOkResponse({ description: Responses.GUIDES_SUCCESS })
   @ApiNotFoundResponse({ description: Errors.GUIDES_NOT_FOUND })
-  getGuides(@Req() req, 
-  @Query('instituteId') instituteId: string,
-  @Query('programId') programId: string,
+  getGuides(
+    @Req() req,
+    @Query('instituteId') instituteId: string,
+    @Query('programId') programId: string,
   ) {
-    return this.utilityService.getGuides(req.user.recordTypeName,programId, instituteId);
+    return this.utilityService.getGuides(
+      req.user.recordTypeName,
+      programId,
+      instituteId,
+    );
   }
 }
