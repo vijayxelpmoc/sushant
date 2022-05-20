@@ -53,6 +53,10 @@ functions:
           cors: true
       - http:
           method: GET
+          path: util/custom
+          cors: true
+      - http:
+          method: GET
           path: notifications
           cors: true
       - http:
