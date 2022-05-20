@@ -84,8 +84,9 @@ export class UtilityController {
     Role.Administrator,
     Role.Observer,
   )
+  @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/custom')
-  getCustomFields() {
+  async getCustomFields() {
     return this.utilityService.getCustomFields();
   }
 
