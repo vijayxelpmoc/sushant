@@ -84,6 +84,19 @@ export class UtilityController {
     Role.Administrator,
     Role.Observer,
   )
+  @Get('/custom')
+  getCustomFields() {
+    return this.utilityService.getCustomFields();
+  }
+
+  @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Administrator,
+    Role.Observer,
+  )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('report/issue')
   @ApiOkResponse({ description: Responses.REPORT_ISSUE_SUCCESS })
