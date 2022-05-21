@@ -137,43 +137,63 @@ export class AdvisorService {
       throw new NotFoundException(`Advisor with #${id} not found`);
     }
 
+    const { 
+      facebook,
+      whatsapp,
+      instagram,
+      website,
+      website_Title,
+      github,
+      linkedin,
+    } = updateSfAdvisorDto;
+
     const updateObj: any = {};
     updateObj.Primary_Educational_Institution = programId;
-    //checking the input from dtos and updating
-    if (updateSfAdvisorDto.hasOwnProperty('facebook')) {
-      const { facebook } = updateSfAdvisorDto;
-      updateObj.Facebook = facebook;
-    }
+    updateObj.Facebook = facebook;
+    updateObj.Whatsapp = whatsapp;
+    updateObj.Instagram = instagram;
+    updateObj.Github = github;
+    updateObj.LinkedIn_URL = linkedin;
+    updateObj.Website = website;
+    updateObj.Website_Title = website_Title;
 
-    if (updateSfAdvisorDto.hasOwnProperty('whatsapp')) {
-      const { whatsapp } = updateSfAdvisorDto;
-      updateObj.Whatsapp = whatsapp;
-    }
+    // const updateObj: any = {};
+    // updateObj.Primary_Educational_Institution = programId;
+    // //checking the input from dtos and updating
+    // if (updateSfAdvisorDto.hasOwnProperty('facebook')) {
+    //   const { facebook } = updateSfAdvisorDto;
+    //   updateObj.Facebook = facebook;
+    // }
 
-    if (updateSfAdvisorDto.hasOwnProperty('instagram')) {
-      const { instagram } = updateSfAdvisorDto;
-      updateObj.Instagram = instagram;
-    }
+    // if (updateSfAdvisorDto.hasOwnProperty('whatsapp')) {
+    //   const { whatsapp } = updateSfAdvisorDto;
+    //   updateObj.Whatsapp = whatsapp;
+    // }
 
-    if (updateSfAdvisorDto.hasOwnProperty('github')) {
-      const { github } = updateSfAdvisorDto;
-      updateObj.Github = github;
-    }
+    // if (updateSfAdvisorDto.hasOwnProperty('instagram')) {
+    //   const { instagram } = updateSfAdvisorDto;
+    //   updateObj.Instagram = instagram;
+    // }
 
-    if (updateSfAdvisorDto.hasOwnProperty('linkedin')) {
-      const { linkedin } = updateSfAdvisorDto;
-      updateObj.LinkedIn_URL = linkedin;
-    }
+    // if (updateSfAdvisorDto.hasOwnProperty('github')) {
+    //   const { github } = updateSfAdvisorDto;
+    //   updateObj.Github = github;
+    // }
 
-    if (updateSfAdvisorDto.hasOwnProperty('website')) {
-      const { website } = updateSfAdvisorDto;
-      updateObj.Website = website;
-    }
+    // if (updateSfAdvisorDto.hasOwnProperty('linkedin')) {
+    //   const { linkedin } = updateSfAdvisorDto;
+    //   updateObj.LinkedIn_URL = linkedin;
+    // }
 
-    if (updateSfAdvisorDto.hasOwnProperty('website_Title')) {
-      const { website_Title } = updateSfAdvisorDto;
-      updateObj.Website_Title = website_Title;
-    }
+    // if (updateSfAdvisorDto.hasOwnProperty('website')) {
+    //   const { website } = updateSfAdvisorDto;
+    //   updateObj.Website = website;
+    // }
+
+    // if (updateSfAdvisorDto.hasOwnProperty('website_Title')) {
+    //   const { website_Title } = updateSfAdvisorDto;
+    //   updateObj.Website_Title = website_Title;
+    // }
 
     const updateUser: AdvisorUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);

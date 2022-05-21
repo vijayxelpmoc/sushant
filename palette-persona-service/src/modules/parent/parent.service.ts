@@ -170,42 +170,62 @@ export class ParentService {
       throw new NotFoundException(`parent with ID "${id}" not found`);
     }
 
+    const { 
+      facebook, 
+      whatsapp, 
+      instagram, 
+      website, 
+      website_Title, 
+      github, 
+      linkedin, 
+    } = updateSfParentDto;
+
     const updateObj: any = {};
     updateObj.Primary_Educational_Institution = programId;
-    if (updateSfParentDto.hasOwnProperty('facebook')) {
-      const { facebook } = updateSfParentDto;
-      updateObj.Facebook = facebook;
-    }
+    updateObj.Facebook = facebook;
+    updateObj.Whatsapp = whatsapp;
+    updateObj.Instagram = instagram;
+    updateObj.Website = website;
+    updateObj.Website_Title = website_Title;
+    updateObj.Github = github;
+    updateObj.LinkedIn_URL = linkedin;
 
-    if (updateSfParentDto.hasOwnProperty('whatsapp')) {
-      const { whatsapp } = updateSfParentDto;
-      updateObj.Whatsapp = whatsapp;
-    }
+    // const updateObj: any = {};
+    // updateObj.Primary_Educational_Institution = programId;
+    // if (updateSfParentDto.hasOwnProperty('facebook')) {
+    //   const { facebook } = updateSfParentDto;
+    //   updateObj.Facebook = facebook;
+    // }
 
-    if (updateSfParentDto.hasOwnProperty('instagram')) {
-      const { instagram } = updateSfParentDto;
-      updateObj.Instagram = instagram;
-    }
+    // if (updateSfParentDto.hasOwnProperty('whatsapp')) {
+    //   const { whatsapp } = updateSfParentDto;
+    //   updateObj.Whatsapp = whatsapp;
+    // }
 
-    if (updateSfParentDto.hasOwnProperty('website')) {
-      const { website } = updateSfParentDto;
-      updateObj.Website = website;
-    }
+    // if (updateSfParentDto.hasOwnProperty('instagram')) {
+    //   const { instagram } = updateSfParentDto;
+    //   updateObj.Instagram = instagram;
+    // }
 
-    if (updateSfParentDto.hasOwnProperty('website_Title')) {
-      const { website_Title } = updateSfParentDto;
-      updateObj.Website_Title = website_Title;
-    }
+    // if (updateSfParentDto.hasOwnProperty('website')) {
+    //   const { website } = updateSfParentDto;
+    //   updateObj.Website = website;
+    // }
 
-    if (updateSfParentDto.hasOwnProperty('github')) {
-      const { github } = updateSfParentDto;
-      updateObj.Github = github;
-    }
+    // if (updateSfParentDto.hasOwnProperty('website_Title')) {
+    //   const { website_Title } = updateSfParentDto;
+    //   updateObj.Website_Title = website_Title;
+    // }
 
-    if (updateSfParentDto.hasOwnProperty('linkedin')) {
-      const { linkedin } = updateSfParentDto;
-      updateObj.LinkedIn_URL = linkedin;
-    }
+    // if (updateSfParentDto.hasOwnProperty('github')) {
+    //   const { github } = updateSfParentDto;
+    //   updateObj.Github = github;
+    // }
+
+    // if (updateSfParentDto.hasOwnProperty('linkedin')) {
+    //   const { linkedin } = updateSfParentDto;
+    //   updateObj.LinkedIn_URL = linkedin;
+    // }
 
     const updateUser: ParentUpdateResponse = await this.sfService.generics.contacts.update(
       id,

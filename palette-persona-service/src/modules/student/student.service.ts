@@ -314,16 +314,14 @@ export class StudentService {
       updatedStudent['skills'] = skills.join(',');
     }
 
-    facebook && (updatedStudent['Facebook'] = facebook);
-    whatsapp && (updatedStudent['Whatsapp'] = whatsapp);
-    instagram && (updatedStudent['Instagram'] = instagram);
-    website && (updatedStudent['Website'] = website);
-    websiteTitle && (updatedStudent['Website_Title'] = websiteTitle);
-    github && (updatedStudent['Github'] = github);
-    linkedin && (updatedStudent['LinkedIn_URL'] = linkedin);
+    updatedStudent['Facebook'] = facebook;
+    updatedStudent['Whatsapp'] = whatsapp;
+    updatedStudent['Instagram'] = instagram;
+    updatedStudent['Website'] = website;
+    updatedStudent['Website_Title'] = websiteTitle;
+    updatedStudent['Github'] = github;
+    updatedStudent['LinkedIn_URL'] = linkedin;
 
-
-    
     const updateUser: any = await this.sfService.generics.contacts.update(
       Id,
       updatedStudent,

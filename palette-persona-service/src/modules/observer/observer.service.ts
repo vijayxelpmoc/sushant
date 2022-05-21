@@ -169,42 +169,62 @@ export class ObserverService {
       throw new NotFoundException(`Observer with #${id} not found`);
     }
 
+    const { 
+      facebook,
+      whatsapp,
+      instagram,
+      website,
+      website_Title,
+      github,
+      linkedin,
+    } = updateSfObserverDto;
+
     const updateObj: any = {};
     updateObj.Primary_Educational_Institution = programId;
-    if (updateSfObserverDto.hasOwnProperty('facebook')) {
-      const { facebook } = updateSfObserverDto;
-      updateObj.Facebook = facebook;
-    }
+    updateObj.Facebook = facebook;
+    updateObj.Whatsapp = whatsapp;
+    updateObj.Instagram = instagram;
+    updateObj.Website = website;
+    updateObj.Website_Title = website_Title;
+    updateObj.Github = github;
+    updateObj.LinkedIn_URL = linkedin;
 
-    if (updateSfObserverDto.hasOwnProperty('whatsapp')) {
-      const { whatsapp } = updateSfObserverDto;
-      updateObj.Whatsapp = whatsapp;
-    }
+    // const updateObj: any = {};
+    // updateObj.Primary_Educational_Institution = programId;
+    // if (updateSfObserverDto.hasOwnProperty('facebook')) {
+    //   const { facebook } = updateSfObserverDto;
+    //   updateObj.Facebook = facebook;
+    // }
 
-    if (updateSfObserverDto.hasOwnProperty('instagram')) {
-      const { instagram } = updateSfObserverDto;
-      updateObj.Instagram = instagram;
-    }
+    // if (updateSfObserverDto.hasOwnProperty('whatsapp')) {
+    //   const { whatsapp } = updateSfObserverDto;
+    //   updateObj.Whatsapp = whatsapp;
+    // }
 
-    if (updateSfObserverDto.hasOwnProperty('website')) {
-      const { website } = updateSfObserverDto;
-      updateObj.Website = website;
-    }
+    // if (updateSfObserverDto.hasOwnProperty('instagram')) {
+    //   const { instagram } = updateSfObserverDto;
+    //   updateObj.Instagram = instagram;
+    // }
 
-    if (updateSfObserverDto.hasOwnProperty('website_Title')) {
-      const { website_Title } = updateSfObserverDto;
-      updateObj.Website_Title = website_Title;
-    }
+    // if (updateSfObserverDto.hasOwnProperty('website')) {
+    //   const { website } = updateSfObserverDto;
+    //   updateObj.Website = website;
+    // }
 
-    if (updateSfObserverDto.hasOwnProperty('github')) {
-      const { github } = updateSfObserverDto;
-      updateObj.Github = github;
-    }
+    // if (updateSfObserverDto.hasOwnProperty('website_Title')) {
+    //   const { website_Title } = updateSfObserverDto;
+    //   updateObj.Website_Title = website_Title;
+    // }
 
-    if (updateSfObserverDto.hasOwnProperty('linkedin')) {
-      const { linkedin } = updateSfObserverDto;
-      updateObj.LinkedIn_URL = linkedin;
-    }
+    // if (updateSfObserverDto.hasOwnProperty('github')) {
+    //   const { github } = updateSfObserverDto;
+    //   updateObj.Github = github;
+    // }
+
+    // if (updateSfObserverDto.hasOwnProperty('linkedin')) {
+    //   const { linkedin } = updateSfObserverDto;
+    //   updateObj.LinkedIn_URL = linkedin;
+    // }
 
     const updateUser: ObserverUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);

@@ -622,7 +622,7 @@ export class OpportunityService {
                 Title: notificationMsg,
                 Type: 'Opportunity Approval Request',
                 Program: programId,
-              });
+              }, instituteId);
               // try {
               //   // create push notification
               //   await this.firebaseService.sendNotification(
@@ -3577,7 +3577,7 @@ export class OpportunityService {
       'Id, Primary_Educational_Institution',
       {
         Id: studentId, 
-        Program: programId,
+        Primary_Educational_Institution: programId,
       },
       {},
       instituteId

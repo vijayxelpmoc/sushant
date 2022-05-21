@@ -145,42 +145,63 @@ export class AdminService {
       throw new NotFoundException(`parent with ID "${id}" not found`);
     }
 
+
+    const { 
+      facebook,
+      whatsapp,
+      instagram,
+      website,
+      websiteTitle,
+      github,
+      linkedin,
+    } = updateSfAdminDto;
+
     const updateObj: any = {};
     updateObj.Primary_Educational_Institution = programId;
-    if (updateSfAdminDto.hasOwnProperty('facebook')) {
-      const { facebook } = updateSfAdminDto;
-      updateObj.Facebook = facebook;
-    }
+    updateObj.Facebook = facebook;
+    updateObj.Whatsapp = whatsapp;
+    updateObj.Instagram = instagram;
+    updateObj.Github = github;
+    updateObj.LinkedIn_URL = linkedin;
+    updateObj.Website = website;
+    updateObj.Website_Title = websiteTitle;
 
-    if (updateSfAdminDto.hasOwnProperty('whatsapp')) {
-      const { whatsapp } = updateSfAdminDto;
-      updateObj.Whatsapp = whatsapp;
-    }
+    // const updateObj: any = {};
+    // updateObj.Primary_Educational_Institution = programId;
+    // if (updateSfAdminDto.hasOwnProperty('facebook')) {
+    //   const { facebook } = updateSfAdminDto;
+    //   updateObj.Facebook = facebook;
+    // }
 
-    if (updateSfAdminDto.hasOwnProperty('instagram')) {
-      const { instagram } = updateSfAdminDto;
-      updateObj.Instagram = instagram;
-    }
+    // if (updateSfAdminDto.hasOwnProperty('whatsapp')) {
+    //   const { whatsapp } = updateSfAdminDto;
+    //   updateObj.Whatsapp = whatsapp;
+    // }
 
-    if (updateSfAdminDto.hasOwnProperty('website')) {
-      const { website } = updateSfAdminDto;
-      updateObj.Website = website;
-    }
+    // if (updateSfAdminDto.hasOwnProperty('instagram')) {
+    //   const { instagram } = updateSfAdminDto;
+    //   updateObj.Instagram = instagram;
+    // }
 
-    if (updateSfAdminDto.hasOwnProperty('websiteTitle')) {
-      const { websiteTitle } = updateSfAdminDto;
-      updateObj.Website_Title = websiteTitle;
-    }
+    // if (updateSfAdminDto.hasOwnProperty('website')) {
+    //   const { website } = updateSfAdminDto;
+    //   updateObj.Website = website;
+    // }
 
-    if (updateSfAdminDto.hasOwnProperty('github')) {
-      const { github } = updateSfAdminDto;
-      updateObj.Github = github;
-    }
+    // if (updateSfAdminDto.hasOwnProperty('websiteTitle')) {
+    //   const { websiteTitle } = updateSfAdminDto;
+    //   updateObj.Website_Title = websiteTitle;
+    // }
 
-    if (updateSfAdminDto.hasOwnProperty('linkedin')) {
-      const { linkedin } = updateSfAdminDto;
-      updateObj.LinkedIn_URL = linkedin;
-    }
+    // if (updateSfAdminDto.hasOwnProperty('github')) {
+    //   const { github } = updateSfAdminDto;
+    //   updateObj.Github = github;
+    // }
+
+    // if (updateSfAdminDto.hasOwnProperty('linkedin')) {
+    //   const { linkedin } = updateSfAdminDto;
+    //   updateObj.LinkedIn_URL = linkedin;
+    // }
 
     const updateUser: AdminUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
