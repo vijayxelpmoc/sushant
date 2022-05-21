@@ -101,8 +101,8 @@ export class NotificationsService {
           Program: programId,
       }, {}, instituteId);
 
-      if (mylist.length) {
-        throw new NotFoundException();   
+      if (mylist.length == 0) {
+        return { statusCode: 200, message: 'No notifications to read' };
       }
 
       for (const element of mylist) {
@@ -135,7 +135,7 @@ export class NotificationsService {
         instituteId
       );
       if (singleNotification.lenght == 0) {
-        throw new NotFoundException();    
+        return { statusCode: 200, message: 'No notifications to read' };    
       }
 
       await this.sfService.models.notifications.update({
@@ -157,12 +157,16 @@ export class NotificationsService {
         Contact: Id,
         Program: programId,
       }, {}, instituteId);
+
+      if (notifications.lenght == 0) {
+        return { statusCode: 200, message: 'No notifications to delete' };    
+      }
   
       const notificationIds: string[] = notifications.map(notification => {
         return notification.Id;
       });
       
-      if (notificationIds.length >= 199) {
+      if (notificationIds.length > 199) {
           throw new NotFoundException('Maximum 200 notifications can be deleted at once!');
       }
       

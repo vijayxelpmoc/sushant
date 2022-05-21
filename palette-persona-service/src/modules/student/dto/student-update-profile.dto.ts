@@ -12,7 +12,7 @@ export class StudentUpdateProfileDto {
   skills: string[];
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   facebook: string;
 
   @IsOptional()
@@ -20,11 +20,11 @@ export class StudentUpdateProfileDto {
   whatsapp: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   instagram: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   website: string;
 
   @IsOptional()
@@ -32,10 +32,10 @@ export class StudentUpdateProfileDto {
   websiteTitle: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   github: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   linkedin: string;
 }
