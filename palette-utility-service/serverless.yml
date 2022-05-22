@@ -30,11 +30,6 @@ provider:
       PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
       PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
       AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
-  iamRoleStatements:
-    - Effect: Allow
-      Action:
-        - ses: *
-      Resource: '*'
 
 functions:
   sendReminder:
