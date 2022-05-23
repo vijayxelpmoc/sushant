@@ -1,4 +1,4 @@
-import { Req, Controller, Post, Body, UseGuards } from '@nestjs/common';
+import { Req, Controller, Post, Body, UseGuards, Patch } from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -16,6 +16,7 @@ import {
 import { Errors, Responses } from '@src/constants';
 import { UsersService } from './users.service';
 import { PreRegisterUserDto, AddProfilePictureDto } from './dto';
+import { UuidDto } from './dto/uuid.dto';
 
 @ApiTags('users')
 @Controller({
@@ -58,4 +59,18 @@ export class UsersController {
       role,
     );
   }
+
+  /** store uuid from firebase for the user of palette
+   *  @param {UuidDto} body uuid,  salesforce id and email of the user
+   * @returns {Object} status code and message or errors
+   */
+   @Patch('uuid')
+   async createUuidRecord(
+     @Body() uuidDto: UuidDto, 
+     @Body('instituteId') instituteId: string,
+     @Body('programId') programId: string,
+     @Body('role') role: string,
+    ) {
+     return await this.usersService.updateUuid(uuidDto, instituteId, programId, role);
+   }
 }

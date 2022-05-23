@@ -14,6 +14,7 @@ import { User, Roles } from './types';
 // const Cryptr = require('cryptr');
 import { EnvKeys } from '@src/constants';
 import { AuthService } from '../auth/auth.service';
+import { UuidDto } from './dto/uuid.dto';
 
 @Injectable()
 export class UsersService {
@@ -120,5 +121,31 @@ export class UsersService {
       statusCode: 200,
       message: Responses.ADD_PROFILE_PICTURE_SUCCESS,
     };
+  }
+
+  /** store uuid from firebase for the user of palette
+   *  @param {UuidDto} body uuid,  salesforce id and email of the user
+   * @returns {Object} status code and message or errors
+   */
+   async updateUuid(uuidDto: UuidDto, instituteId: string, programId: string, role: string): Promise<any> {
+    const user = await this.sfService.generics.contacts.get('Id', { Id: uuidDto.SFId, Primary_Educational_Institution: programId, Record_Type_Name: role }, {}, instituteId);
+    console.log(user);
+    
+    if (user.length == 0) {
+      throw new NotFoundException();
+    }
+
+    let data;
+    if (process.env.NODE_ENV === 'prod') {
+      data = {
+        prod_uuid: uuidDto.uuid,
+      };
+    } else {
+      data = {
+        dev_uuid: uuidDto.uuid,
+      };
+    }
+
+    return await this.sfService.generics.contacts.update(uuidDto.SFId, data, instituteId);
   }
 }
