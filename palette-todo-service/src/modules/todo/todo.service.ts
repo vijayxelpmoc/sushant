@@ -348,17 +348,17 @@ export class TodoService {
             userId === assignee ? 'Accepted' : 'Requested',
           // Program: programId,
         };
-        console.log(newtodoObj);
+        // console.log(newtodoObj);
 
         // Todo created.
         const createdTodo = await this.sfService.models.todos.create(
           newtodoObj,
           instituteId,
         );
-        console.log('createdTodo', createdTodo);
+        // console.log('createdTodo', createdTodo);
 
         // storting todo ids.
-        // alltodoIds.push(createdTodo.id);
+        alltodoIds.push(createdTodo.id);
         // Notification created.
         await this.sfService.models.notifications.create(
           {
@@ -403,6 +403,9 @@ export class TodoService {
         },
         instituteId,
       );
+
+      console.log(response);
+      
 
       if (!isAdmin) {
         const admins = await this.sfService.models.affiliations.get(
@@ -1386,7 +1389,8 @@ export class TodoService {
                 Notification_Todo_Type: updateObj.Type,
                 Notification_By: userId,
                 Program: programId,
-              });
+              },
+              instituteId);
             }
           } else {
             edittedDataObj[mytodo.Id] = 'not edited';
@@ -2040,11 +2044,13 @@ export class TodoService {
     const responseTodos = [];
 
     const listedBy = [];
+    console.log("mp",mp);
+    
     // adding them into task and structuring the response
     for (const key of Object.keys(mp)) {
       if (key === 'default') {
         for (const todo of mp[key]) {
-          // console.log('todo', todo);
+          console.log('todo', todo);
 
           const todoObj = {
             Id: todo.Id,
@@ -2113,6 +2119,8 @@ export class TodoService {
       }
     }
 
+    console.log(listedBy);
+    
     const listedByResponse = _.uniqBy(listedBy, (listedBy) => listedBy.Id);
     const response = {
       statusCode: 200,
