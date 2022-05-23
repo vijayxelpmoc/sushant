@@ -786,7 +786,7 @@ export class TodoService {
   ) {
     // Can be used as check to report any update failure
     let hasErrors = false;
-    todoIds.map(async (todo) => {
+    await todoIds.map(async (todo) => {
       try {
         await this.updateToDoStatus(
           userId,
@@ -805,7 +805,7 @@ export class TodoService {
       statusCode: 201,
       message: hasErrors
         ? 'There were some errors in updating all the todos'
-        : 'All of the todos were updated successfully.',
+        : 'All of the todos were updated successfully.'
     };
   }
 
@@ -2049,7 +2049,6 @@ export class TodoService {
     const responseTodos = [];
 
     const listedBy = [];
-    console.log('mp', mp);
 
     // adding them into task and structuring the response
     for (const key of Object.keys(mp)) {
@@ -2067,7 +2066,7 @@ export class TodoService {
             venue: todo.venue,
             completeBy: todo.completeBy ? todo.completeBy : '',
             createdAt: todo.createdAt,
-            listedBy: todo.listedBy,
+            listedBy: todo.Listed_by,
             Assignee: [
               {
                 Id: todo.Assignee,
@@ -2088,6 +2087,8 @@ export class TodoService {
         }
       } else {
         const todo = mp[key][0];
+        console.log(todo.Listed_by);
+
         const todoObj = {
           Id: todo.Id,
           groupId: todo.groupId,
@@ -2098,7 +2099,7 @@ export class TodoService {
           venue: todo.venue,
           completeBy: todo.completeBy ? todo.completeBy : '',
           createdAt: todo.createdAt,
-          listedBy: todo.listedBy,
+          listedBy: todo.Listed_by,
           Assignee: [],
           Program: programId,
         };
@@ -2119,6 +2120,8 @@ export class TodoService {
           todo: todoObj,
           resources: resources[`${todo.Id}`] || [],
         };
+        console.log('todoObj.ListedBy', todoObj.listedBy);
+
         responseTodos.push(obj);
         listedBy.push(todoObj.listedBy);
       }
