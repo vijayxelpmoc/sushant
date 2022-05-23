@@ -5,7 +5,7 @@ import { IsArray, IsOptional, IsString, IsUrl } from 'class-validator';
 
 export class UpdateSfAdminDto {
   @IsOptional()
-  @IsUrl()
+  @IsString()
   facebook: string;
 
   @IsOptional()
@@ -13,11 +13,11 @@ export class UpdateSfAdminDto {
   whatsapp: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   instagram: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   website: string;
 
   @IsOptional()
@@ -25,7 +25,7 @@ export class UpdateSfAdminDto {
   websiteTitle: string;
 
   @IsOptional()
-  @IsUrl()
+  @IsString()
   github: string;
 
   @IsOptional()
