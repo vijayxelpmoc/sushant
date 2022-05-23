@@ -566,6 +566,12 @@ export class TodoService {
       programId,
       instituteId,
     );
+    const testResources = await this.getResourcesById(
+      [todo.Id],
+      programId,
+      instituteId,
+    );
+    // console.log(todo.Assignee);
 
     const assignees =
       todo.Assignee !== null
@@ -580,8 +586,8 @@ export class TodoService {
           )
         : null;
 
-    console.log(todoResources);
-
+        console.log(todoResources);
+        
     return {
       statusCode: 200,
       message: 'Todo Details',
@@ -1969,6 +1975,7 @@ export class TodoService {
             {},
             instituteId,
           );
+
           const resourcesObj = {
             Id: resource.Resource,
             name: res[0].Resource_Name,
@@ -1978,7 +1985,6 @@ export class TodoService {
 
           // if a record with a todo task is present then add the object into it or if not create one
           const hashResource = allResource[`${resource.Todo}`];
-
           if (hashResource) {
             hashResource.push(resourcesObj);
             allResource[`${resource.Todo}`] = hashResource;
@@ -1986,10 +1992,10 @@ export class TodoService {
             const AllResources = [];
             AllResources.push(resourcesObj);
             allResource[`${resource.Todo}`] = AllResources;
-          }
-          // console.log("allResource",allResource);
+          }          
         }
       });
+      
     return allResource;
   }
 
@@ -2348,8 +2354,15 @@ export class TodoService {
       programId,
       instituteId,
     );
-    const task = await this.getResourcesById(taskIds, programId, instituteId);
-    console.log('resources out', resources);
+
+    const testresources = await this.getResourcesById(
+      taskIds,
+      programId,
+      instituteId,
+    );
+
+    console.log(resources);
+    
 
     const responseTodos = [];
 
@@ -2393,12 +2406,12 @@ export class TodoService {
             resources: resources[`${todo.Id}`] || [],
           };
           responseTodos.push(obj);
-          console.log(obj);
 
           todoObj.listedBy !== null && listedBy.push(todoObj.listedBy);
         }
       } else {
         const todo = mp[key][0];
+        // console.log(todo);
 
         const todoObj = {
           Id: todo.Id,
@@ -2437,7 +2450,6 @@ export class TodoService {
           todoObj.Assignee.push(assignee);
           tempAssignees.add(assignee);
         }
-
         todoObj.Assignee = todoObj.Assignee.filter((value, index) => {
           const _value = JSON.stringify(value);
           return (
@@ -2516,8 +2528,6 @@ export class TodoService {
       }
       i += 1;
     }
-
-    // console.log(tasks);
 
     return this.getTodoAndResource(tasks, programId, instituteId);
   }
