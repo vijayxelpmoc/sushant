@@ -566,7 +566,6 @@ export class TodoService {
       programId,
       instituteId,
     );
-    console.log(todo.Assignee);
 
     const assignees =
       todo.Assignee !== null
@@ -580,6 +579,8 @@ export class TodoService {
             instituteId,
           )
         : null;
+
+    console.log(todoResources);
 
     return {
       statusCode: 200,
@@ -1639,7 +1640,7 @@ export class TodoService {
     const resourceCon: TodoResourceConnection[] = [];
 
     const todoList: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived, To_do, Group_Id, Assignee, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
+      'Id, Archived, To_do, Group_Id, Assignee,Assignee.Id, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
       {
         Id: todoIds,
         Program: programId,
@@ -1649,7 +1650,7 @@ export class TodoService {
     );
 
     if (todoList.length == 0) {
-      throw new BadRequestException(Errors.TODO_NOT_FOUND);
+      throw new BadRequestException('Todo not found');
     }
 
     const groupId = todoList[0].Group_Id;
@@ -1657,11 +1658,11 @@ export class TodoService {
     const isValid = todoList.every((todo) => todo.Group_Id === groupId);
 
     if (!isValid) {
-      throw new BadRequestException(Errors.INVALID_TASKS_FOR_GROUP);
+      throw new BadRequestException("Tasks doesn't belong to the same group");
     }
 
     if (todoList[0].Listed_by != listedById) {
-      throw new BadRequestException(Errors.REQUESTER_NOT_CREATOR_OF_TODO);
+      throw new BadRequestException('You are not the creator of this Todo');
     }
 
     const resources = [];
@@ -1675,68 +1676,57 @@ export class TodoService {
       resources.push(resObj);
     }
 
-    // // console.log(resources);
-
-    let resourceRes = [];
-    // error
-    resources.forEach(async (res) => {
-      resourceRes = [
-        ...resourceRes,
-        await this.sfService.models.resources.create(res, instituteId),
-      ];
-    });
-
-    // console.log(resourceRes);
+    const resourceRes = await this.sfService.models.resources.create(
+      resources,
+      instituteId,
+    );
 
     for (const resource of resourceRes) {
       for (const todoId of todoIds) {
         const resourceConObj = {
           Todo: todoId,
           Resource: resource.id,
+          Program: programId,
         };
         resourceCon.push(resourceConObj);
       }
     }
 
-    // await this.sfService.models.resourceConnections.create(
-    //   resourceCon,
-    //   instituteId,
-    // );
+    await this.sfService.models.resourceConnections.create(
+      resourceCon,
+      instituteId,
+    );
 
-    // if (isNewTodo) {
-    //   for (const todo of todoList) {
-    //     if (todo.Assignee !== todo.Listed_by) {
-    //       const user = await this.sfService.generics.contacts.get(
-    //         'Id, Name',
-    //         {
-    //           Id: todo.Listed_by,
-    //         },
-    //         {},
-    //         instituteId,
-    //       );
-    // const message = 'New Task by ' + user[0].Name;
-
-    // this.sendTodoNotification(
-    //   {
-    //     title: message,
-    //     message: todo.Name,
-    //     notifyTo: 'assignee',
-    //     groupId: todo.Group_Id,
-    //     assigneeId: todo.Assignee,
-    //     listedById: todo.Listed_by,
-    //     todoId: todo.Id,
-    //   },
-    //   instituteId,
-    // );
-    // }
-    // }
-    // }
-
-    return {
-      status: 201,
-      message: Responses.TODO_RESOURCES_ADD_SUCCESS,
-      data: resourceCon,
-    };
+    if (isNewTodo) {
+      for (const todo of todoList) {
+        if (todo.Assignee.Id !== todo.Listed_by) {
+          const user = await this.sfService.generics.contacts.get(
+            'Id, Name',
+            {
+              Id: todo.Listed_by,
+              Primary_Educational_Institution: programId,
+            },
+            {},
+            instituteId,
+          );
+          const message = 'New Task by ' + user[0].Name;
+          this.sendTodoNotification(
+            {
+              title: message,
+              message: todo.To_do,
+              notifyTo: 'assignee',
+              groupId: todo.Group_Id,
+              assigneeId: todo.Assignee.Id,
+              listedById: todo.Listed_by,
+              todoId: todo.Id,
+            },
+            programId,
+            instituteId,
+          );
+        }
+      }
+    }
+    return resourceCon;
   }
 
   async addTodoResources(
@@ -1834,8 +1824,6 @@ export class TodoService {
    * array of tasks assigned to the student.
    */
   async getTasks(filters, programId: string, instituteId: string) {
-    console.log('filters', filters);
-
     const allToDo: any[] = await this.sfService.models.todos.get(
       'Id, Archived, Assignee.Id, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, To_do, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id, Assignee_accepted_status, Todo_Scope, Status, Opportunit_Id, Reminder_at',
       filters,
@@ -1864,7 +1852,7 @@ export class TodoService {
         {
           Id: [...createdUserIds],
           // Role:
-          // Program__c:programId
+          // Program:programId
         },
         {},
         instituteId,
@@ -1960,8 +1948,7 @@ export class TodoService {
     // tasksId.forEach(async (taskId) => {
     const resources: SFResource[] =
       await this.sfService.models.resourceConnections.get(
-        'Name, Todo, Resource, Resource.Resource_Name,Resource.Id, Resource.URL, Resource.Resource_Type',
-        // 'Resource_Connection_Name, Todo, Resource',
+        'Resource_Connection_Name, Todo, Resource',
         {
           Todo: tasksId,
           Program: programId,
@@ -1969,21 +1956,29 @@ export class TodoService {
         {},
         instituteId,
       );
-    console.log(resources);
 
     resources !== [] &&
-      resources.map((resource) => {
+      resources.forEach(async (resource) => {
         if (resource.Resource) {
+          const res = await this.sfService.models.resources.get(
+            'Id,Name,Resource_Type,URL',
+            {
+              Id: resource.Resource,
+              Program: programId,
+            },
+            {},
+            instituteId,
+          );
           const resourcesObj = {
-            Id: resource.Resource.Id,
-            name: resource.Resource.Resource_Name,
-            url: resource.Resource.URL,
-            type: resource.Resource.Resource_Type,
+            Id: resource.Resource,
+            name: res[0].Resource_Name,
+            url: res[0].URL,
+            type: res[0].Resource_Type,
           };
-          // // console.log("resourcesObj",resourcesObj);
 
           // if a record with a todo task is present then add the object into it or if not create one
           const hashResource = allResource[`${resource.Todo}`];
+
           if (hashResource) {
             hashResource.push(resourcesObj);
             allResource[`${resource.Todo}`] = hashResource;
@@ -1992,9 +1987,9 @@ export class TodoService {
             AllResources.push(resourcesObj);
             allResource[`${resource.Todo}`] = AllResources;
           }
+          // console.log("allResource",allResource);
         }
       });
-
     return allResource;
   }
 
@@ -2305,8 +2300,6 @@ export class TodoService {
   }
 
   async getGlobalTasks(programId: string, instituteId: string) {
-    console.log('golbalTasks');
-
     return await this.getTasks(
       {
         Todo_Scope: 'Global',
@@ -2355,6 +2348,8 @@ export class TodoService {
       programId,
       instituteId,
     );
+    const task = await this.getResourcesById(taskIds, programId, instituteId);
+    console.log('resources out', resources);
 
     const responseTodos = [];
 
@@ -2404,7 +2399,6 @@ export class TodoService {
         }
       } else {
         const todo = mp[key][0];
-        // console.log(todo);
 
         const todoObj = {
           Id: todo.Id,
@@ -2443,6 +2437,7 @@ export class TodoService {
           todoObj.Assignee.push(assignee);
           tempAssignees.add(assignee);
         }
+
         todoObj.Assignee = todoObj.Assignee.filter((value, index) => {
           const _value = JSON.stringify(value);
           return (
@@ -2456,9 +2451,6 @@ export class TodoService {
           todo: todoObj,
           resources: resources[`${todoObj.Id}`] || [],
         };
-
-        console.log(obj);
-
         responseTodos.push(obj);
         todoObj.listedBy !== null && listedBy.push(todoObj.listedBy);
       }
@@ -2525,7 +2517,7 @@ export class TodoService {
       i += 1;
     }
 
-    console.log(tasks);
+    // console.log(tasks);
 
     return this.getTodoAndResource(tasks, programId, instituteId);
   }
