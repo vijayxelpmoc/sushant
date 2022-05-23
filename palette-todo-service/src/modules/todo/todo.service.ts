@@ -405,7 +405,6 @@ export class TodoService {
       );
 
       console.log(response);
-      
 
       if (!isAdmin) {
         const admins = await this.sfService.models.affiliations.get(
@@ -589,8 +588,8 @@ export class TodoService {
           )
         : null;
 
-        console.log(todoResources);
-        
+    console.log(todoResources);
+
     return {
       statusCode: 200,
       message: 'Todo Details',
@@ -1379,18 +1378,20 @@ export class TodoService {
               //   // // console.log('err',err);
               // }
               // create SF notification
-              await this.sfService.models.notifications.create({
-                Title: notificationTitle,
-                Contact: user,
-                Type: 'To-Do Modified',
-                Created_at: new Date(),
-                Is_Read: false,
-                Todo: mytodo.Id,
-                Notification_Todo_Type: updateObj.Type,
-                Notification_By: userId,
-                Program: programId,
-              },
-              instituteId);
+              await this.sfService.models.notifications.create(
+                {
+                  Title: notificationTitle,
+                  Contact: user,
+                  Type: 'To-Do Modified',
+                  Created_at: new Date(),
+                  Is_Read: false,
+                  Todo: mytodo.Id,
+                  Notification_Todo_Type: updateObj.Type,
+                  Notification_By: userId,
+                  Program: programId,
+                },
+                instituteId,
+              );
             }
           } else {
             edittedDataObj[mytodo.Id] = 'not edited';
@@ -1736,7 +1737,11 @@ export class TodoService {
         }
       }
     }
-    return resourceCon;
+    return {
+      status: 201,
+      message: Responses.TODO_RESOURCES_ADD_SUCCESS,
+      data: resourceCon,
+    };
   }
 
   async addTodoResources(
@@ -1996,10 +2001,10 @@ export class TodoService {
             const AllResources = [];
             AllResources.push(resourcesObj);
             allResource[`${resource.Todo}`] = AllResources;
-          }          
+          }
         }
       });
-      
+
     return allResource;
   }
 
@@ -2044,8 +2049,8 @@ export class TodoService {
     const responseTodos = [];
 
     const listedBy = [];
-    console.log("mp",mp);
-    
+    console.log('mp', mp);
+
     // adding them into task and structuring the response
     for (const key of Object.keys(mp)) {
       if (key === 'default') {
@@ -2120,7 +2125,7 @@ export class TodoService {
     }
 
     console.log(listedBy);
-    
+
     const listedByResponse = _.uniqBy(listedBy, (listedBy) => listedBy.Id);
     const response = {
       statusCode: 200,
@@ -2370,7 +2375,6 @@ export class TodoService {
     );
 
     console.log(resources);
-    
 
     const responseTodos = [];
 
