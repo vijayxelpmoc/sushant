@@ -14,15 +14,15 @@ export class FirebaseController {
 
   // [TODO] - Add necessary firebase API's Here
 
-  /** store uuid from firebase for the user of palette
-   *  @param {UuidDto} body uuid,  salesforce id and email of the user
-   * @returns {Object} status code and message or errors
-   */
-   @Patch('uuid')
-   async createUuidRecord(
-     @Body() uuidDto: UuidDto, 
-     @Body('instituteId') instituteId: string
-    ) {
-     return await this.firebaseService.updateUuid(uuidDto, instituteId);
-   }
+  // /** store uuid from firebase for the user of palette
+  //  *  @param {UuidDto} body uuid,  salesforce id and email of the user
+  //  * @returns {Object} status code and message or errors
+  //  */
+  //  @Patch('uuid')
+  //  async createUuidRecord(
+  //    @Body() uuidDto: UuidDto, 
+  //    @Body('instituteId') instituteId: string
+  //   ) {
+  //    return await this.firebaseService.updateUuid(uuidDto, instituteId);
+  //  }
 }

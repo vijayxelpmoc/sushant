@@ -4,10 +4,21 @@ useDotenv: true
 plugins:
   - serverless-offline
   - serverless-deployment-bucket
+  - serverless-webpack
+
+custom:
+  webpack:
+    webpackConfig: 'webpack.config.js'
+    includeModules:
+      forceExclude:
+        - aws-sdk
+
+package:
+  individually: true
 
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   region: ${env:PALETTE_AWS_REGION}
   apiGateway:
     minimumCompressionSize: 1024
@@ -45,8 +56,8 @@ provider:
   - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
 
 functions:
-  util:
-    handler: dist/lambda.handler
+  main:
+    handler: src/lambda.handler
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}
