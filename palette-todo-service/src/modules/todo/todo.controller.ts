@@ -347,8 +347,6 @@ export class TodoController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    console.log(programId);
-
     return await this.todoService.createTodoResources(
       createTodoResourcesDto,
       req.user.id,
