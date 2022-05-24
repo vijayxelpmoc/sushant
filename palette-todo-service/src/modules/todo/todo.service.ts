@@ -729,7 +729,7 @@ export class TodoService {
           // error
           console.log('succewss');
 
-          this.notifyOnTaskStatusChange(
+          await this.notifyOnTaskStatusChange(
             todo.Id,
             status.toUpperCase(),
             instituteId,
@@ -751,7 +751,7 @@ export class TodoService {
       if (response.success === true) {
         console.log('success2');
 
-        this.notifyOnTaskStatusChange(
+        await this.notifyOnTaskStatusChange(
           todoId,
           status.toUpperCase(),
           instituteId,
@@ -787,11 +787,12 @@ export class TodoService {
   ) {
     // Can be used as check to report any update failure
     let hasErrors = false;
-    await todoIds.map(async (todo) => {
+    console.log(todoIds);
+    for(const i in todoIds){
       try {
         await this.updateToDoStatus(
           userId,
-          todo,
+          todoIds[i],
           status,
           role,
           instituteId,
@@ -801,7 +802,7 @@ export class TodoService {
         // console.log(`[ERROR] Updating Todo [${todo}] : `, err);
         hasErrors = true;
       }
-    });
+    }
     return {
       statusCode: 201,
       message: hasErrors
