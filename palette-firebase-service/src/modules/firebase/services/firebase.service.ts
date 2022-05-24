@@ -33,24 +33,24 @@ export class FirebaseService {
    *
    */
 
-  /** store uuid from firebase for the user of palette
-   *  @param {UuidDto} body uuid,  salesforce id and email of the user
-   * @returns {Object} status code and message or errors
-   */
-   async updateUuid(uuidDto: UuidDto, instituteId: string): Promise<any> {
-    let data;
-    if (process.env.NODE_ENV === 'prod') {
-      data = {
-        prod_uuid: uuidDto.uuid,
-      };
-    } else {
-      data = {
-        dev_uuid: uuidDto.uuid,
-      };
-    }
+  // /** store uuid from firebase for the user of palette
+  //  *  @param {UuidDto} body uuid,  salesforce id and email of the user
+  //  * @returns {Object} status code and message or errors
+  //  */
+  //  async updateUuid(uuidDto: UuidDto, instituteId: string): Promise<any> {
+  //   let data;
+  //   if (process.env.NODE_ENV === 'prod') {
+  //     data = {
+  //       prod_uuid: uuidDto.uuid,
+  //     };
+  //   } else {
+  //     data = {
+  //       dev_uuid: uuidDto.uuid,
+  //     };
+  //   }
 
-    return await this.sfService.generics.contacts.update(uuidDto.SFId, data, instituteId);
-  }
+  //   return await this.sfService.generics.contacts.update(uuidDto.SFId, data, instituteId);
+  // }
 
   private _mapContactUUID(contact: SFContact): Contact {
     return {
