@@ -49,6 +49,9 @@ import { draftInfoDto } from './dto/opportunities.dto';
 import { OpportunityTodoDto } from './dtos/opportunities.dto';
 import { getMappedActivityObject } from './opportunity.utils';
 import { StringMap } from 'aws-lambda/trigger/cognito-user-pool-trigger/_common';
+import axios from 'axios';
+import { OpportunityPayloadResponse } from './payload-types/opportunity-payload';
+
 @Injectable()
 export class OpportunityService {
 
@@ -3881,5 +3884,38 @@ export class OpportunityService {
       paletteActivitiesResponse[activityId.Opportunit_Id] = true;
     });
     return paletteActivitiesResponse;
+  }
+
+  async testing(request: any, userId: string, instituteId: string, programId: string): Promise<OpportunityPayloadResponse> {
+    const HTTP = `https`;
+    const HOST = request.headers.host;
+    const oppId = '0014x000016xYnIAAU';
+    try {
+      // SERVER
+        // let URL = `${HTTP}://${HOST}/notifications/payload/opportunity?oppId=${oppId}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`;
+      // LOCAL
+      let URL = `http://localhost:9000/notifications/payload/opportunity?oppId=${oppId}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`;
+      console.log('URL', URL);
+      
+      const Response = await axios.get<any>(
+        URL,
+        {
+          headers: {
+            Accept: 'application/json',
+          },
+        },
+      );
+      // console.log('Response', Response.data);
+      return Response.data;
+    } catch (error) {
+      throw new BadRequestException('An unexpected error occurred');
+      // if (axios.isAxiosError(error)) {
+      //   console.log('error message: ', error.message);
+      //   return error.message;
+      // } else {
+      //   console.log('unexpected error: ', error);
+      //   return 'An unexpected error occurred';
+      // }
+    }
   }
 }

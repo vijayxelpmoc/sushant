@@ -94,3 +94,7 @@ functions:
           method: GET
           path: auth/programs/roles
           cors: true
+      - http:
+          method: PATCH
+          path: users/uuid
+          cors: true

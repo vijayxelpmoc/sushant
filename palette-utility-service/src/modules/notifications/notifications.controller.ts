@@ -9,11 +9,13 @@ import { Errors, Responses } from '@src/constants';
 import { NotificationsService } from './notifications.service';
 import { BasicDataResponse, BasicResponse } from './dtos/index';
 import { QueryRequired } from '@src/decorators';
+import { PayloadService } from './payload';
 
 @Controller('notifications')
 export class NotificationsController {
     constructor(
         private notificationService: NotificationsService,
+        private payloadService: PayloadService,
         // private cachingService: CachingService,
     ) {}
 
@@ -143,6 +145,24 @@ export class NotificationsController {
     ) {
         return await this.notificationService.deleteAllNotifications(
             req.user.id, 
+            instituteId, 
+            programId,
+        );
+    }
+
+    // PAYLOAD APIS
+
+    @Get('/payload/opportunity')
+    async opportunityPayload(
+        // @Request() req,
+        @QueryRequired('oppId') oppId: string, 
+        @QueryRequired('userId') userId: string,
+        @QueryRequired('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
+    ) {
+        return await this.payloadService.GetOpportunityNotificationData(
+            oppId,
+            userId, 
             instituteId, 
             programId,
         );

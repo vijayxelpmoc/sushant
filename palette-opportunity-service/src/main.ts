@@ -44,18 +44,6 @@ return app;
 async function bootstrap() {
   const app = await preBuildApp();
 
-  /*
-   * Setup swagger only for dev, won't work as lambda
-  */
-  const config = new DocumentBuilder()
-    .setTitle('Palette')
-    .setDescription('Palette Opportunity Service')
-    .setVersion('1.0')
-    .build();
-
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api', app, document);
-
   await app.listen(process.env.PORT || 3000);
 }
 bootstrap();

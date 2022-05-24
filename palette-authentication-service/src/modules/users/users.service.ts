@@ -129,7 +129,6 @@ export class UsersService {
    */
    async updateUuid(uuidDto: UuidDto, instituteId: string, programId: string, role: string): Promise<any> {
     const user = await this.sfService.generics.contacts.get('Id', { Id: uuidDto.SFId, Primary_Educational_Institution: programId, Record_Type_Name: role }, {}, instituteId);
-    console.log(user);
     
     if (user.length == 0) {
       throw new NotFoundException();

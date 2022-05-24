@@ -1,29 +1,29 @@
 import {
-  Injectable,
-  UnauthorizedException,
-  NotFoundException,
-  Logger,
-} from '@nestjs/common';
-import {
-  Role,
-  Notifier,
-  NotificationType,
-  EmailTemplates,
-} from '@gowebknot/palette-wrapper';
-import * as admin from 'firebase-admin';
-import { SfService } from '@gowebknot/palette-salesforce-service';
-
-import { Contact, PushNotificationData, SFContact } from '@src/modules/firebase/types';
-import { Errors } from '@src/constants';
-import { UuidDto } from '../dtos/uuid.dto';
+    Injectable,
+    UnauthorizedException,
+    NotFoundException,
+    Logger,
+  } from '@nestjs/common';
+  import {
+    Role,
+    Notifier,
+    NotificationType,
+    EmailTemplates,
+  } from '@gowebknot/palette-wrapper';
+  import * as admin from 'firebase-admin';
+  import { SfService } from '@gowebknot/palette-salesforce-service';
+  
+  import { Contact, PushNotificationData, SFContact } from 'src/modules/firebase/types';
+  import { Errors } from 'src/constants';
+  import { UuidDto } from '../dtos/uuid.dto';
 
 @Injectable()
 export class FirebaseService {
-  constructor(
-    private sfService: SfService,
-  ) {}
+    constructor(
+        private sfService: SfService,
+    ) {}
 
-  /*
+    /*
    * [TODO] - Methods to be implemented
    * updateUuid - L64
    *
@@ -33,24 +33,24 @@ export class FirebaseService {
    *
    */
 
-  /** store uuid from firebase for the user of palette
-   *  @param {UuidDto} body uuid,  salesforce id and email of the user
-   * @returns {Object} status code and message or errors
-   */
-   async updateUuid(uuidDto: UuidDto, instituteId: string): Promise<any> {
-    let data;
-    if (process.env.NODE_ENV === 'prod') {
-      data = {
-        prod_uuid: uuidDto.uuid,
-      };
-    } else {
-      data = {
-        dev_uuid: uuidDto.uuid,
-      };
-    }
+  // /** store uuid from firebase for the user of palette
+  //  *  @param {UuidDto} body uuid,  salesforce id and email of the user
+  //  * @returns {Object} status code and message or errors
+  //  */
+  //  async updateUuid(uuidDto: UuidDto, instituteId: string): Promise<any> {
+  //   let data;
+  //   if (process.env.NODE_ENV === 'prod') {
+  //     data = {
+  //       prod_uuid: uuidDto.uuid,
+  //     };
+  //   } else {
+  //     data = {
+  //       dev_uuid: uuidDto.uuid,
+  //     };
+  //   }
 
-    return await this.sfService.generics.contacts.update(uuidDto.SFId, data, instituteId);
-  }
+  //   return await this.sfService.generics.contacts.update(uuidDto.SFId, data, instituteId);
+  // }
 
   private _mapContactUUID(contact: SFContact): Contact {
     return {
