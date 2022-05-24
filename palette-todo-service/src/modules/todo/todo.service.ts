@@ -2750,16 +2750,16 @@ export class TodoService {
 
   async publishDraftMultipleTodos(data, programId, instituteId) {
     try {
-      data.forEach(async (id) => {
+      for(const i in data){
         await this.sfService.models.todos.update(
           {
             Task_Status: 'Open',
             Status: '',
           },
-          id,
+          data[i],
           instituteId,
         );
-      });
+      }
 
       return { statusCode: 200, message: 'Published draft todo' };
     } catch (error) {}
