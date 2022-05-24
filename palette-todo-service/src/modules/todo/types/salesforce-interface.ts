@@ -91,11 +91,12 @@ export interface SFTask {
   Group_Id: string;
   Archived: boolean;
   To_do: string;
-  Assignee?: {
-    Id: string;
-    Name: string;
-    Profile_Picture: string;
-  };
+  Assignee?: string;
+  // {
+  //   Id: string;
+  //   Name: string;
+  //   Profile_Picture: string;
+  // };
   Complete_By: string;
   Description: string;
   Listed_by: string;
