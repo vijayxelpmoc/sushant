@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConsoleLogger,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -2054,8 +2055,8 @@ export class TodoService {
     for (const key of Object.keys(mp)) {
       if (key === 'default') {
         for (const todo of mp[key]) {
-          console.log('todo', todo);
-
+          // console.log("here");
+          // console.log({todo:todo});
           const todoObj = {
             Id: todo.Id,
             groupId: todo.groupId,
@@ -2066,6 +2067,7 @@ export class TodoService {
             venue: todo.venue,
             completeBy: todo.completeBy ? todo.completeBy : '',
             createdAt: todo.createdAt,
+            //changed listedBy to Listed_by. For osme reason the newer salesforce uses the latter name instead of the former
             listedBy: todo.Listed_by,
             Assignee: [
               {
@@ -2087,8 +2089,8 @@ export class TodoService {
         }
       } else {
         const todo = mp[key][0];
-        console.log(todo.Listed_by);
-
+        // console.log("here");
+        // console.log({todo:todo});
         const todoObj = {
           Id: todo.Id,
           groupId: todo.groupId,
@@ -2099,6 +2101,7 @@ export class TodoService {
           venue: todo.venue,
           completeBy: todo.completeBy ? todo.completeBy : '',
           createdAt: todo.createdAt,
+          //changed listedBy to Listed_by. For osme reason the newer salesforce uses the latter name instead of the former
           listedBy: todo.Listed_by,
           Assignee: [],
           Program: programId,
@@ -2124,6 +2127,7 @@ export class TodoService {
 
         responseTodos.push(obj);
         listedBy.push(todoObj.listedBy);
+        console.log(todoObj);
       }
     }
 
