@@ -20,8 +20,8 @@ import {
   RoomType,
   MessageType,
   RoomSnapshot,
-} from '@src/modules/firebase/types';
-import { ChatsLogsFS, Responses, Errors } from '@src/constants';
+} from '../types';
+import { ChatsLogsFS, Responses, Errors } from 'src/constants';
 import { FirebaseService } from './firebase.service';
 
 @Injectable()

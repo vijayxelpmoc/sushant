@@ -4,14 +4,7 @@ useDotenv: true
 plugins:
   - serverless-offline
   - serverless-deployment-bucket
-  - serverless-webpack
 
-custom:
-  webpack:
-    webpackConfig: 'webpack.config.js'
-    includeModules:
-      forceExclude:
-        - aws-sdk
 
 package:
   individually: true
@@ -20,6 +13,10 @@ provider:
   name: aws
   runtime: nodejs14.x
   region: ${env:PALETTE_AWS_REGION}
+  ecr:
+    images:
+      appimage:
+        path: ./
   apiGateway:
     minimumCompressionSize: 1024
     restApiId: ${env:PALETTE_API_GATEWAY_ID}
@@ -57,7 +54,12 @@ provider:
 
 functions:
   main:
-    handler: src/lambda.handler
+    image:
+      name: appimage
+      command:
+        - dist/lambda.handler
+      entryPoint:
+        - '/lambda-entrypoint.sh'
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}
