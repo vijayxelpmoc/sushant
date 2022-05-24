@@ -335,7 +335,7 @@ export class TodoService {
 
     const alltodoIds = [];
     // Create a discrete Todo
-    if (todo.assignee.length) {
+    if (todo.assignee.length > 0) {
       const assigneeTodos: SFTodo[] = [];
       // Create a todo for all the assignees
       for (const assignee of todo.assignee) {
@@ -409,7 +409,7 @@ export class TodoService {
 
       if (!isAdmin) {
         const admins = await this.sfService.models.affiliations.get(
-          'Id',
+          'Id,Contact.Id',
           {
             Organization: todo.InstituteId,
             Role: 'Admin',
@@ -438,7 +438,7 @@ export class TodoService {
           //   // // console.log('err',err);
           // }
           // create notification
-          await this.sfService.models.notifications.create(
+          const name = await this.sfService.models.notifications.create(
             {
               Title: todo.name,
               Contact: admin.Contact.Id,
@@ -452,6 +452,8 @@ export class TodoService {
             },
             instituteId,
           );
+
+          console.log(name);
         });
       }
       if (response.success) {
@@ -787,7 +789,7 @@ export class TodoService {
   ) {
     // Can be used as check to report any update failure
     let hasErrors = false;
-    await todoIds.map(async (todo) => {
+    await todoIds.forEach(async (todo) => {
       try {
         await this.updateToDoStatus(
           userId,
@@ -806,7 +808,7 @@ export class TodoService {
       statusCode: 201,
       message: hasErrors
         ? 'There were some errors in updating all the todos'
-        : 'All of the todos were updated successfully.'
+        : 'All of the todos were updated successfully.',
     };
   }
 
@@ -873,12 +875,15 @@ export class TodoService {
     } else if (draft.InstituteId) {
       const isAdmin = role === Role.Administrator;
       // A Global Todo, needs Approval from Admin
-      const response = await this.sfService.models.todos.create({
-        ...todoObj,
-        Todo_Scope: 'Global',
-        Program: programId,
-        Parentid: draft.InstituteId,
-      });
+      const response = await this.sfService.models.todos.create(
+        {
+          ...todoObj,
+          Todo_Scope: 'Global',
+          Program: programId,
+          Parentid: draft.InstituteId,
+        },
+        instituteId,
+      );
       if (response.success) {
         const message = 'Todo draft created successfully';
         return {
@@ -1652,7 +1657,7 @@ export class TodoService {
     const resourceCon: TodoResourceConnection[] = [];
 
     const todoList: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived, To_do, Group_Id, Assignee,Assignee.Id, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
+      'Id, Archived, To_do, Group_Id, Assignee, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
       {
         Id: todoIds,
         Program: programId,
@@ -1660,6 +1665,8 @@ export class TodoService {
       {},
       instituteId,
     );
+    console.log(todoList);
+    
 
     if (todoList.length == 0) {
       throw new BadRequestException('Todo not found');
@@ -1692,6 +1699,7 @@ export class TodoService {
       resources,
       instituteId,
     );
+    console.log(resourceRes);
 
     for (const resource of resourceRes) {
       for (const todoId of todoIds) {
@@ -1711,7 +1719,9 @@ export class TodoService {
 
     if (isNewTodo) {
       for (const todo of todoList) {
-        if (todo.Assignee.Id !== todo.Listed_by) {
+        console.log(todo);
+
+        if (todo.Assignee !== todo.Listed_by) {
           const user = await this.sfService.generics.contacts.get(
             'Id, Name',
             {
@@ -1728,7 +1738,7 @@ export class TodoService {
               message: todo.To_do,
               notifyTo: 'assignee',
               groupId: todo.Group_Id,
-              assigneeId: todo.Assignee.Id,
+              assigneeId: todo.Assignee,
               listedById: todo.Listed_by,
               todoId: todo.Id,
             },
