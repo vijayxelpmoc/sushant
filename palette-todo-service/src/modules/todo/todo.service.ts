@@ -969,20 +969,22 @@ export class TodoService {
     instituteId: string,
   ) {
     let hasErrors = false;
-    todoIds.map(async (id) => {
+    
+    for(const i in todoIds){
       try {
         await this.sfService.models.todos.update(
           {
             Assignee_accepted_status: status,
           },
-          id,
+          todoIds[i],
           instituteId,
         );
       } catch (err) {
-        console.log(`[ERROR] Updating Todo [${id}] : `, err);
+        console.log(`[ERROR] Updating Todo [${todoIds[i]}] : `, err);
         hasErrors = true;
       }
-    });
+    }
+    
     return {
       statusCode: 201,
       message: hasErrors
