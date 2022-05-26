@@ -1,30 +1,33 @@
 import {
-    Injectable,
-    UnauthorizedException,
-    NotFoundException,
-    Logger,
-    InternalServerErrorException,
-  } from '@nestjs/common';
-  import {
-    Role,
-    Notifier,
-    NotificationType,
-    EmailTemplates,
-  } from '@gowebknot/palette-wrapper';
-  import * as admin from 'firebase-admin';
-  import { SfService } from '@gowebknot/palette-salesforce-service';
-  
-  import { Contact, FirestoreUser, PushNotificationData, SFContact } from 'src/modules/firebase/types';
-  import { Errors } from 'src/constants';
-  import { UuidDto } from '../dtos/uuid.dto';
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import {
+  Role,
+  Notifier,
+  NotificationType,
+  EmailTemplates,
+} from '@gowebknot/palette-wrapper';
+import * as admin from 'firebase-admin';
+import { SfService } from '@gowebknot/palette-salesforce-service';
+
+import {
+  Contact,
+  FirestoreUser,
+  PushNotificationData,
+  SFContact,
+} from '../types';
+import { UuidDto } from '../dtos/uuid.dto';
+import { Errors } from '../../../constants';
 
 @Injectable()
 export class FirebaseService {
-    constructor(
-        private sfService: SfService,
-    ) {}
+  constructor(private sfService: SfService) {}
 
-    /*
+  /*
    * [TODO] - Methods to be implemented
    * updateUuid - L64
    *
@@ -94,7 +97,7 @@ export class FirebaseService {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
     }
     const contacts: Contact[] = sfContacts.map(this._mapContactUUID);
-    
+
     return Array.isArray(sfId) ? contacts : contacts[0];
   }
 
