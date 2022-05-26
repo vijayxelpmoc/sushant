@@ -13,9 +13,11 @@ import {
 } from '@src/types';
 import { UpdateSfAdvisorDto } from './dto/advisor-update-profile.dto';
 import { AdvisorUpdateResponse } from './types/advisor-interface';
+import axios from 'axios';
 @Injectable()
 export class AdvisorService {
   private notifier: Notifier;
+  private URL = 'http://localhost:3000/firebase/testNotif';
   constructor(private sfService: SfService) {
     this.notifier = new Notifier();
   }
@@ -137,7 +139,7 @@ export class AdvisorService {
       throw new NotFoundException(`Advisor with #${id} not found`);
     }
 
-    const { 
+    const {
       facebook,
       whatsapp,
       instagram,
@@ -226,7 +228,7 @@ export class AdvisorService {
     );
     console.log(notification);
 
-    if(notification.length === 0){
+    if (notification.length === 0) {
       return new NotFoundException();
     }
 
@@ -312,19 +314,15 @@ export class AdvisorService {
       instituteId,
     );
     console.log(user);
-    
+
     console.log(mods);
 
     if (mods.length !== 0) {
       mods.map((event) => {
         const filteredDataObj = {
           Id: event.Id,
-          creatorName: user
-            ? user[0].Name
-            : null,
-          creatorProfilePic: user
-            ? user[0].Profile_Picture
-            : null,
+          creatorName: user ? user[0].Name : null,
+          creatorProfilePic: user ? user[0].Profile_Picture : null,
           createdAt: event.Created_at,
           eventName: event.Account_Name,
           category: event.Category,
@@ -411,7 +409,7 @@ export class AdvisorService {
       instituteId,
     );
 
-    console.log(requestedOpportunity);
+    // console.log(requestedOpportunity);
 
     if (!requestedOpportunity[0]) {
       throw new NotFoundException('Opportunity not found');
@@ -424,6 +422,8 @@ export class AdvisorService {
       opportunityId,
       instituteId,
     );
+    console.log(response);
+
     let notificationTitle = ``;
     let notificationMsg = ``;
     if (response['success'] === true) {
@@ -453,6 +453,24 @@ export class AdvisorService {
         notificationMsg = `${opp[0].Name} opportunity requested for approval`;
         admins.map(async (admin) => {
           // create push notification
+          try {
+            const res = await axios.post(this.URL, {
+              instituteId,
+              programId,
+              userId: admin.Contact.Id,
+              title: notificationTitle,
+              message: notificationMsg,
+              data: {
+                data: 'Opportunity data',
+                type: 'Create opportunity',
+              },
+            });
+            console.log('res', res.data);
+          } catch (err) {
+            console.log('err', err.response.data);
+          }
+
+          // return res;
           // await this.firebaseService.sendNotification(
           //   admin.Contact.Id,
           //   notificationTitle,
@@ -492,6 +510,22 @@ export class AdvisorService {
         notificationTitle = `Opportunity ${opp[0].Name}`;
         notificationMsg = `${opp[0].Name} opportunity rejected`;
         // create push notification
+        try {
+          const res = await axios.post(this.URL, {
+            instituteId,
+            programId,
+            userId: opp[0].Listed_by,
+            title: notificationTitle,
+            message: notificationMsg,
+            data: {
+              data: 'Opportunity data',
+              type: 'Create opportunity',
+            },
+          });
+          console.log('res', res);
+        } catch (err) {
+          console.log('err', err.response.data);
+        }
         // await this.firebaseService.sendNotification(
         //   opp[0].Listed_by,
         //   notificationTitle,

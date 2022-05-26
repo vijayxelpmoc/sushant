@@ -1,3 +1,5 @@
+import { KeyValue } from '@gowebknot/palette-salesforce-service';
+
 export interface Contact {
   sfId: string;
   email: string;
@@ -24,9 +26,16 @@ export interface ProcessedFirebaseRecord {
   args: Array<any>;
 }
 
-export interface PushNotificationData {
+export interface FirestoreUser {
+  firstName: string;
+  lastName: string;
+  avatarUrl: string | null;
+  fcmTokens?: string[];
+}
+
+export interface PushNotificationData { 
   type: string;
-  data: string | number;
+  data: KeyValue | string | number;
 }
 
 export * from './firebase-chat-backup.interface';

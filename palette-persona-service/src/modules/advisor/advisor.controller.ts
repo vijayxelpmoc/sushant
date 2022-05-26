@@ -144,7 +144,7 @@ export class AdvisorController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
-    console.log(status, instituteId);
+    console.log(status, instituteId,programId);
     if (status == 'Accept') {
       return await this.advisorService.acceptOrRejectOpportunity(
         id,
@@ -156,7 +156,7 @@ export class AdvisorController {
     } else {
       return await this.advisorService.acceptOrRejectOpportunity(
         id,
-        'Reject',
+        'Rejected',
         req.user.id,
         instituteId,
         programId,
