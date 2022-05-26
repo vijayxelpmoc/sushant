@@ -167,4 +167,62 @@ export class NotificationsController {
             programId,
         );
     }
+
+    @Get('/payload/consideration')
+    async considerationPayload(
+        // @Request() req,
+        @QueryRequired('considerationId') considerationId: string, 
+        @QueryRequired('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
+    ) {
+        return await this.payloadService.GetConsiderationNotificationData(
+            considerationId,
+            instituteId, 
+            programId,
+        );
+    }
+
+    @Get('/payload/modification')
+    async modificationPayload(
+        // @Request() req,
+        @QueryRequired('modificationId') modificationId: string, 
+        @QueryRequired('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
+    ) {
+        return await this.payloadService.GetModificationNotificationData(
+            modificationId,
+            instituteId, 
+            programId,
+        );
+    }
+
+    @Get('/payload/todo')
+    async todoPayload(
+        // @Request() req,
+        @QueryRequired('todoId') todoId: string, 
+        @QueryRequired('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
+    ) {
+        return await this.payloadService.GetTodoNotificationData(
+            todoId,
+            instituteId, 
+            programId,
+        );
+    }
+
+    @Get('/payload/approval')
+    async approvalPayload(
+        // @Request() req,
+        @QueryRequired('notificationId') notificationId: string, 
+        @QueryRequired('instituteId') instituteId: string,
+        @QueryRequired('programId') programId: string,
+    ) {
+        return await this.payloadService.GetOpportunityApprovalNotificationData(
+            notificationId,
+            instituteId, 
+            programId,
+        );
+    }
+
+    
 }
