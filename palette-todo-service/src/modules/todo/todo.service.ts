@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConsoleLogger,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -48,11 +49,17 @@ import {
 } from './types';
 import _ from 'lodash';
 import { FilteredTasks, Task } from './types/task-interface';
+import axios from 'axios';
 
 @Injectable()
 export class TodoService {
   private notifier: Notifier;
+  private URL =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/firebase/testNotif'
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/testNotif`;
   constructor(private sfService: SfService) {
+    // LOCAL
     this.notifier = new Notifier();
   }
 
@@ -313,7 +320,7 @@ export class TodoService {
     programId: string,
     instituteId: string,
   ) {
-    console.log(todo, programId, instituteId);
+    // console.log(todo, programId, instituteId);
 
     const groupId = uuid();
     // creating todo obj.
@@ -334,7 +341,7 @@ export class TodoService {
 
     const alltodoIds = [];
     // Create a discrete Todo
-    if (todo.assignee.length) {
+    if (todo.assignee.length > 0) {
       const assigneeTodos: SFTodo[] = [];
       // Create a todo for all the assignees
       for (const assignee of todo.assignee) {
@@ -348,17 +355,17 @@ export class TodoService {
             userId === assignee ? 'Accepted' : 'Requested',
           // Program: programId,
         };
-        console.log(newtodoObj);
+        // console.log(newtodoObj);
 
         // Todo created.
         const createdTodo = await this.sfService.models.todos.create(
           newtodoObj,
           instituteId,
         );
-        console.log('createdTodo', createdTodo);
+        // console.log('createdTodo', createdTodo);
 
         // storting todo ids.
-        // alltodoIds.push(createdTodo.id);
+        alltodoIds.push(createdTodo.id);
         // Notification created.
         await this.sfService.models.notifications.create(
           {
@@ -385,7 +392,7 @@ export class TodoService {
         ids: alltodoIds,
       };
     } else if (todo.InstituteId) {
-      console.log(todoObj);
+      // console.log(todoObj);
 
       // creating global todo.
       const isAdmin = recordType === Role.Administrator;
@@ -404,9 +411,11 @@ export class TodoService {
         instituteId,
       );
 
+      console.log(response);
+
       if (!isAdmin) {
         const admins = await this.sfService.models.affiliations.get(
-          'Id',
+          'Id,Contact.Id',
           {
             Organization: todo.InstituteId,
             Role: 'Admin',
@@ -419,23 +428,41 @@ export class TodoService {
         const notificationMsg = `New todo requested for approval`;
         admins.map(async (admin) => {
           // create push notification
-          // try {
-          //   await this.firebaseService.sendNotification(
-          //     admin.Contact.Id,
-          //     notificationTitle,
-          //     notificationMsg,
-          //     {
-          //       data: await this.utilityService.GetTodoNotificationData(
-          //         response.id,
-          //       ),
-          //       type: 'Create Todo',
-          //     },
-          //   );
-          // } catch (err) {
-          //   // // console.log('err',err);
-          // }
+          try {
+            const res = await axios.post(this.URL, {
+              instituteId,
+              programId,
+              userId: admin.Contact.Id,
+              title: notificationTitle,
+              message: notificationMsg,
+              data: {
+                data: await this.GetTodoNotificationData(
+                  response.id,
+                  programId,
+                  instituteId,
+                ),
+                type: 'Create Todo',
+              },
+            });
+            console.log('res', res.data);
+
+            // return res;
+            //   await this.firebaseService.sendNotification(
+            //     admin.Contact.Id,
+            //     notificationTitle,
+            //     notificationMsg,
+            //     {
+            //       data: await this.utilityService.GetTodoNotificationData(
+            //         response.id,
+            //       ),
+            //       type: 'Create Todo',
+            //     },
+            //   );
+          } catch (err) {
+            console.log('err', err.response.data);
+          }
           // create notification
-          await this.sfService.models.notifications.create(
+          const name = await this.sfService.models.notifications.create(
             {
               Title: todo.name,
               Contact: admin.Contact.Id,
@@ -449,6 +476,8 @@ export class TodoService {
             },
             instituteId,
           );
+
+          console.log('name', name);
         });
       }
       if (response.success) {
@@ -586,8 +615,8 @@ export class TodoService {
           )
         : null;
 
-        console.log(todoResources);
-        
+    console.log(todoResources);
+
     return {
       statusCode: 200,
       message: 'Todo Details',
@@ -726,7 +755,7 @@ export class TodoService {
           // error
           console.log('succewss');
 
-          this.notifyOnTaskStatusChange(
+          await this.notifyOnTaskStatusChange(
             todo.Id,
             status.toUpperCase(),
             instituteId,
@@ -748,7 +777,7 @@ export class TodoService {
       if (response.success === true) {
         console.log('success2');
 
-        this.notifyOnTaskStatusChange(
+        await this.notifyOnTaskStatusChange(
           todoId,
           status.toUpperCase(),
           instituteId,
@@ -784,11 +813,12 @@ export class TodoService {
   ) {
     // Can be used as check to report any update failure
     let hasErrors = false;
-    todoIds.map(async (todo) => {
+    console.log(todoIds);
+    for(const i in todoIds){
       try {
         await this.updateToDoStatus(
           userId,
-          todo,
+          todoIds[i],
           status,
           role,
           instituteId,
@@ -798,7 +828,7 @@ export class TodoService {
         // console.log(`[ERROR] Updating Todo [${todo}] : `, err);
         hasErrors = true;
       }
-    });
+    }
     return {
       statusCode: 201,
       message: hasErrors
@@ -870,12 +900,15 @@ export class TodoService {
     } else if (draft.InstituteId) {
       const isAdmin = role === Role.Administrator;
       // A Global Todo, needs Approval from Admin
-      const response = await this.sfService.models.todos.create({
-        ...todoObj,
-        Todo_Scope: 'Global',
-        Program: programId,
-        Parentid: draft.InstituteId,
-      });
+      const response = await this.sfService.models.todos.create(
+        {
+          ...todoObj,
+          Todo_Scope: 'Global',
+          Program: programId,
+          Parentid: draft.InstituteId,
+        },
+        instituteId,
+      );
       if (response.success) {
         const message = 'Todo draft created successfully';
         return {
@@ -960,20 +993,22 @@ export class TodoService {
     instituteId: string,
   ) {
     let hasErrors = false;
-    todoIds.map(async (id) => {
+    
+    for(const i in todoIds){
       try {
         await this.sfService.models.todos.update(
           {
             Assignee_accepted_status: status,
           },
-          id,
+          todoIds[i],
           instituteId,
         );
       } catch (err) {
-        console.log(`[ERROR] Updating Todo [${id}] : `, err);
+        console.log(`[ERROR] Updating Todo [${todoIds[i]}] : `, err);
         hasErrors = true;
       }
-    });
+    }
+    
     return {
       statusCode: 201,
       message: hasErrors
@@ -1360,33 +1395,54 @@ export class TodoService {
                   ? mytodo.Assignee
                   : mytodo.Listed_by;
               // firebase notification.
-              // try {
-              //   await this.firebaseService.sendNotification(
-              //     user,
-              //     notificationTitle,
-              //     notificationMsg,
-              //     {
-              //       data: await this.utilityService.GetTodoNotificationData(
-              //         mytodo.Id,
-              //       ),
-              //       type: 'Update Todo',
-              //     },
-              //   );
-              // } catch (err) {
-              //   // // console.log('err',err);
-              // }
+              try {
+                const response = await axios.post(this.URL, {
+                  userId: user,
+                  title: notificationTitle,
+                  message: notificationMsg,
+                  instituteId,
+                  programId,
+                  data: {
+                    data: await this.GetTodoNotificationData(
+                      mytodo.Id,
+                      programId,
+                      instituteId,
+                    ),
+                    type: 'Update Todo',
+                  },
+                });
+                console.log(response);
+
+                // return response;
+                // await this.firebaseService.sendNotification(
+                //   user,
+                //   notificationTitle,
+                //   notificationMsg,
+                //   {
+                //     data: await this.utilityService.GetTodoNotificationData(
+                //       mytodo.Id,
+                //     ),
+                //     type: 'Update Todo',
+                //   },
+                // );
+              } catch (err) {
+                console.log('err', err);
+              }
               // create SF notification
-              await this.sfService.models.notifications.create({
-                Title: notificationTitle,
-                Contact: user,
-                Type: 'To-Do Modified',
-                Created_at: new Date(),
-                Is_Read: false,
-                Todo: mytodo.Id,
-                Notification_Todo_Type: updateObj.Type,
-                Notification_By: userId,
-                Program: programId,
-              });
+              await this.sfService.models.notifications.create(
+                {
+                  Title: notificationTitle,
+                  Contact: user,
+                  Type: 'To-Do Modified',
+                  Created_at: new Date(),
+                  Is_Read: false,
+                  To_Do: mytodo.Id,
+                  Notification_Todo_Type: updateObj.Type,
+                  Notification_By: userId,
+                  Program: programId,
+                },
+                instituteId,
+              );
             }
           } else {
             edittedDataObj[mytodo.Id] = 'not edited';
@@ -1646,7 +1702,7 @@ export class TodoService {
     const resourceCon: TodoResourceConnection[] = [];
 
     const todoList: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived, To_do, Group_Id, Assignee,Assignee.Id, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
+      'Id, Archived, To_do, Group_Id, Assignee, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
       {
         Id: todoIds,
         Program: programId,
@@ -1654,6 +1710,7 @@ export class TodoService {
       {},
       instituteId,
     );
+    console.log(todoList);
 
     if (todoList.length == 0) {
       throw new BadRequestException('Todo not found');
@@ -1686,6 +1743,7 @@ export class TodoService {
       resources,
       instituteId,
     );
+    console.log(resourceRes);
 
     for (const resource of resourceRes) {
       for (const todoId of todoIds) {
@@ -1705,7 +1763,9 @@ export class TodoService {
 
     if (isNewTodo) {
       for (const todo of todoList) {
-        if (todo.Assignee.Id !== todo.Listed_by) {
+        console.log(todo);
+
+        if (todo.Assignee !== todo.Listed_by) {
           const user = await this.sfService.generics.contacts.get(
             'Id, Name',
             {
@@ -1722,7 +1782,7 @@ export class TodoService {
               message: todo.To_do,
               notifyTo: 'assignee',
               groupId: todo.Group_Id,
-              assigneeId: todo.Assignee.Id,
+              assigneeId: todo.Assignee,
               listedById: todo.Listed_by,
               todoId: todo.Id,
             },
@@ -1732,7 +1792,11 @@ export class TodoService {
         }
       }
     }
-    return resourceCon;
+    return {
+      status: 201,
+      message: Responses.TODO_RESOURCES_ADD_SUCCESS,
+      data: resourceCon,
+    };
   }
 
   async addTodoResources(
@@ -1992,10 +2056,10 @@ export class TodoService {
             const AllResources = [];
             AllResources.push(resourcesObj);
             allResource[`${resource.Todo}`] = AllResources;
-          }          
+          }
         }
       });
-      
+
     return allResource;
   }
 
@@ -2040,12 +2104,13 @@ export class TodoService {
     const responseTodos = [];
 
     const listedBy = [];
+
     // adding them into task and structuring the response
     for (const key of Object.keys(mp)) {
       if (key === 'default') {
         for (const todo of mp[key]) {
-          // console.log('todo', todo);
-
+          // console.log("here");
+          // console.log({todo:todo});
           const todoObj = {
             Id: todo.Id,
             groupId: todo.groupId,
@@ -2056,7 +2121,8 @@ export class TodoService {
             venue: todo.venue,
             completeBy: todo.completeBy ? todo.completeBy : '',
             createdAt: todo.createdAt,
-            listedBy: todo.listedBy,
+            //changed listedBy to Listed_by. For osme reason the newer salesforce uses the latter name instead of the former
+            listedBy: todo.Listed_by,
             Assignee: [
               {
                 Id: todo.Assignee,
@@ -2077,6 +2143,8 @@ export class TodoService {
         }
       } else {
         const todo = mp[key][0];
+        // console.log("here");
+        // console.log({todo:todo});
         const todoObj = {
           Id: todo.Id,
           groupId: todo.groupId,
@@ -2087,7 +2155,8 @@ export class TodoService {
           venue: todo.venue,
           completeBy: todo.completeBy ? todo.completeBy : '',
           createdAt: todo.createdAt,
-          listedBy: todo.listedBy,
+          //changed listedBy to Listed_by. For osme reason the newer salesforce uses the latter name instead of the former
+          listedBy: todo.Listed_by,
           Assignee: [],
           Program: programId,
         };
@@ -2108,10 +2177,15 @@ export class TodoService {
           todo: todoObj,
           resources: resources[`${todo.Id}`] || [],
         };
+        console.log('todoObj.ListedBy', todoObj.listedBy);
+
         responseTodos.push(obj);
         listedBy.push(todoObj.listedBy);
+        console.log(todoObj);
       }
     }
+
+    console.log(listedBy);
 
     const listedByResponse = _.uniqBy(listedBy, (listedBy) => listedBy.Id);
     const response = {
@@ -2362,7 +2436,6 @@ export class TodoService {
     );
 
     console.log(resources);
-    
 
     const responseTodos = [];
 
@@ -2718,18 +2791,119 @@ export class TodoService {
 
   async publishDraftMultipleTodos(data, programId, instituteId) {
     try {
-      data.forEach(async (id) => {
+      for(const i in data){
         await this.sfService.models.todos.update(
           {
             Task_Status: 'Open',
             Status: '',
           },
-          id,
+          data[i],
           instituteId,
         );
-      });
+      }
 
       return { statusCode: 200, message: 'Published draft todo' };
     } catch (error) {}
+  }
+
+  async GetTodoNotificationData(
+    todoId: string,
+    programId: string,
+    instituteId: string,
+  ): Promise<any> {
+    if (todoId == null || todoId == '') {
+      throw new NotFoundException();
+    }
+    // get todo.
+    const todo = await this.sfService.models.todos.get(
+      'Assignee.Profile_Picture, Assignee.Name,Assignee.Id, Listed_by.Name, *',
+      { Id: todoId, Program: programId },
+      {},
+      instituteId,
+    );
+    console.log('todo', todo);
+
+    if (todo.length == 0) {
+      throw new NotFoundException(`Oops, Not Found!`);
+    }
+
+    const resources = await this.sfService.models.resourceConnections.get(
+      'Name, Todo, Resource',
+      { Todo: todoId },
+      {},
+      instituteId,
+    );
+    console.log('resources', resources);
+
+    // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
+    const allResource = {};
+    resources.forEach(async (resource) => {
+      if (resource.Resource) {
+        const res = await this.sfService.models.resources.get(
+          'Id,Resource_Name,URL,Resource_Type',
+          {
+            Id: resource.Resource,
+            Program: programId,
+          },
+          {},
+          instituteId,
+        );
+        console.log('res', res);
+        const resourcesObj = {
+          Id: res.Id,
+          name: res.Resource_Name,
+          url: res.URL,
+          type: res.Resource_Type,
+        };
+        // if a record with a todo task is present then add the object into it or if not create one
+        const hashResource = allResource[`${resource.Todo}`];
+        if (hashResource) {
+          hashResource.push(resourcesObj);
+          allResource[`${resource.Todo}`] = hashResource;
+        } else {
+          const Allresources = [];
+          Allresources.push(resourcesObj);
+          allResource[`${resource.Todo}`] = Allresources;
+        }
+      }
+    });
+
+    const todoDataObj = {
+      todo: {
+        Id: todo[0].Id,
+        groupId: todo[0].Group_Id,
+        name: todo[0].To_do,
+        description: todo[0].Description,
+        taskStatus: todo[0].Task_status,
+        status: todo[0].Status,
+        acceptedStatus: todo[0].Assignee_accepted_status,
+        todoScope: todo[0].Todo_Scope,
+        type: todo[0].Type,
+        eventAt: todo[0].Event_At,
+        venue: todo[0].Event_Venue,
+        completeBy: todo[0].Complete_By,
+        createdAt: todo[0].Created_at,
+        listedBy: {
+          Id: todo[0].Listed_by,
+          Name: todo[0].Listed_by.Name,
+        },
+        Assignee: todo.Assignee
+          ? [
+              {
+                Id: todo[0].Assignee.Id,
+                todoId: todo[0].Id,
+                Archived: todo[0].Archived,
+                status: todo[0].Task_status,
+                name: todo[0].Assignee.Name,
+                profilePicture: todo[0].Assignee.Profile_Picture,
+                acceptedStatus: todo[0].Assignee_accepted_status,
+              },
+            ]
+          : null,
+        opportunity: todo[0].Opportunity_Id,
+      },
+      resources: allResource > 0 ? allResource[todo[0].Id] : [],
+    };
+    return todoDataObj;
   }
 }

@@ -1,29 +1,33 @@
 import {
-    Injectable,
-    UnauthorizedException,
-    NotFoundException,
-    Logger,
-  } from '@nestjs/common';
-  import {
-    Role,
-    Notifier,
-    NotificationType,
-    EmailTemplates,
-  } from '@gowebknot/palette-wrapper';
-  import * as admin from 'firebase-admin';
-  import { SfService } from '@gowebknot/palette-salesforce-service';
-  
-  import { Contact, PushNotificationData, SFContact } from 'src/modules/firebase/types';
-  import { Errors } from 'src/constants';
-  import { UuidDto } from '../dtos/uuid.dto';
+  Injectable,
+  UnauthorizedException,
+  NotFoundException,
+  Logger,
+  InternalServerErrorException,
+} from '@nestjs/common';
+import {
+  Role,
+  Notifier,
+  NotificationType,
+  EmailTemplates,
+} from '@gowebknot/palette-wrapper';
+import * as admin from 'firebase-admin';
+import { SfService } from '@gowebknot/palette-salesforce-service';
+
+import {
+  Contact,
+  FirestoreUser,
+  PushNotificationData,
+  SFContact,
+} from '../types';
+import { UuidDto } from '../dtos/uuid.dto';
+import { Errors } from '../../../constants';
 
 @Injectable()
 export class FirebaseService {
-    constructor(
-        private sfService: SfService,
-    ) {}
+  constructor(private sfService: SfService) {}
 
-    /*
+  /*
    * [TODO] - Methods to be implemented
    * updateUuid - L64
    *
@@ -57,7 +61,7 @@ export class FirebaseService {
       sfId: contact.Id,
       email: contact.Email,
       uuid: contact[
-        process.env.NODE_ENV === 'prod' ? ' prod_uuid__c' : 'dev_uuid'
+        process.env.NODE_ENV === 'development' ? 'dev_uuid' : 'prod_uuid'
       ],
     };
   }
@@ -66,14 +70,18 @@ export class FirebaseService {
 
   async getAllUuidRecords() {
     const sfContacts: SFContact[] = await this.sfService.generics.contacts.get(
-      'Id, Name, Email, prod_uuid__c, dev_uuid__c',
+      'Id, Name, Email, prod_uuid, dev_uuid',
       {},
     );
     const contacts: Contact[] = sfContacts.map(this._mapContactUUID);
     return contacts;
   }
 
-  async getUuidWithSFId(sfId: string | string[], instituteId?: string, programId?: string) {
+  async getUuidWithSFId(
+    sfId: string | string[],
+    instituteId: string,
+    programId: string,
+  ) {
     const sfContacts: SFContact[] = await this.sfService.generics.contacts.get(
       'Id, Name, Email, prod_uuid, dev_uuid',
       {
@@ -81,17 +89,20 @@ export class FirebaseService {
         Primary_Educational_Institution: programId,
       },
       {},
-      instituteId
+      instituteId,
     );
+    // console.log('sfContacts', sfContacts);
+
     if (!sfContacts.length) {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
     }
     const contacts: Contact[] = sfContacts.map(this._mapContactUUID);
+
     return Array.isArray(sfId) ? contacts : contacts[0];
   }
 
   // async updateUserPassword(sfId: string, password: string) {
-  //   const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
+  //   const uuid = ((await this.getUuidWithSFId(sfId,instituteId,programId)) as Contact).uuid;
   //   if (!uuid) {
   //     throw new NotFoundException(Errors.SFID_NOT_FOUND);
   //   }
@@ -102,7 +113,7 @@ export class FirebaseService {
 
   // async deleteUser(sfId: string) {
   //   // [TODO] - Check for Boolean Implementation
-  //   const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
+  //   const uuid = ((await this.getUuidWithSFId(sfId,instituteId,programId)) as Contact).uuid;
   //   if (!uuid) {
   //     throw new NotFoundException(Errors.SFID_NOT_FOUND);
   //   }
@@ -127,25 +138,20 @@ export class FirebaseService {
     programId: string
   ) {
     const uuid = ((await this.getUuidWithSFId(sfId, instituteId, programId)) as Contact).uuid;
-    console.log('uuid', uuid);
     
     if (!uuid) {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
     }
 
     const _db = admin.firestore();
-    console.log('_db', _db);
     
     const _messaging = admin.messaging();
-    console.log('_messaging', _messaging);
 
     const userDoc = await _db.collection('users').doc(uuid).get();
-    console.log('userDoc', userDoc);
     if (!userDoc.exists) {
       throw new NotFoundException(Errors.USER_NOT_FOUND);
     }
     const user = await userDoc.data();
-    console.log('user', user);
     if (user.fcmTokens && user.fcmTokens.length > 0) {  
       const message: any = {
         tokens: user.fcmTokens,
@@ -154,7 +160,6 @@ export class FirebaseService {
           body,
         },
       };
-      console.log('message', message);
       
       if (payload) {
         message.data = {
@@ -162,10 +167,8 @@ export class FirebaseService {
           data: JSON.stringify(payload.data),
         };
       }
-      console.log('message', message);
       
       const send = await _messaging.sendMulticast(message);
-      console.log('send', send);
       
       return send; 
       // return await _messaging.sendMulticast(message);

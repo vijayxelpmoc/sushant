@@ -417,8 +417,10 @@ export class UserNetworkService {
           profilePicture: students[stu]['Contact']['Profile_Picture'],
           role: 'Student',
           status:
-            students[stu].Contact.dev_uuid === null ||
-            students[stu].Contact.prod_uuid === null
+            (process.env.NODE_ENV === 'production' &&
+              students[stu].Contact.prod_uuid === null) ||
+            (process.env.NODE_ENV === 'development' &&
+              students[stu].Contact.dev_uuid === null)
               ? `Can't Share`
               : await this.getUserStatus(
                   considerations,
@@ -460,8 +462,10 @@ export class UserNetworkService {
               guardians[gar]['Related_Contact']['Profile_Picture'],
             role: 'Guardian',
             status:
-              guardians[gar].Related_Contact.dev_uuid === null ||
-              guardians[gar].Related_Contact.prod_uuid === null
+              (process.env.NODE_ENV === 'production' &&
+                guardians[gar].Related_Contact.prod_uuid === null) ||
+              (process.env.NODE_ENV === 'development' &&
+                guardians[gar].Related_Contact.dev_uuid === null)
                 ? `Can't Share`
                 : await this.getUserStatus(
                     considerations,
@@ -496,8 +500,10 @@ export class UserNetworkService {
             profilePicture: advisors[adv]['Related_Contact']['Profile_Picture'],
             role: 'Advisor',
             status:
-              advisors[adv].Related_Contact.dev_uuid === null ||
-              advisors[adv].Related_Contact.prod_uuid === null
+              (process.env.NODE_ENV === 'production' &&
+                advisors[adv].Related_Contact.prod_uuid === null) ||
+              (process.env.NODE_ENV === 'development' &&
+                advisors[adv].Related_Contact.dev_uuid === null)
                 ? `Can't Share`
                 : await this.getUserStatus(
                     considerations,
@@ -529,8 +535,10 @@ export class UserNetworkService {
           profilePicture: admins[i]['Contact']['Profile_Picture'],
           role: 'Admin',
           status:
-            admins[i].Contact.dev_uuid === null ||
-            admins[i].Contact.prod_uuid === null
+            (process.env.NODE_ENV === 'production' &&
+              admins[i].Contact.prod_uuid === null) ||
+            (process.env.NODE_ENV === 'development' &&
+              admins[i].Contact.dev_uuid === null)
               ? `Can't Share`
               : await this.getUserStatus(
                   considerations,
@@ -579,8 +587,10 @@ export class UserNetworkService {
           profilePicture: students[stu]['Contact']['Profile_Picture'],
           role: 'Student',
           status:
-            students[stu].Contact.dev_uuid === null ||
-            students[stu].Contact.prod_uuid === null
+            (process.env.NODE_ENV === 'production' &&
+              students[stu].Contact.prod_uuid === null) ||
+            (process.env.NODE_ENV === 'development' &&
+              students[stu].Contact.dev_uuid === null)
               ? `Can't Share`
               : await this.getUserStatus(
                   considerations,
@@ -616,8 +626,10 @@ export class UserNetworkService {
               guardians[gar]['Related_Contact']['Profile_Picture'],
             role: 'Guardian',
             status:
-              guardians[gar].Related_Contact.dev_uuid === null ||
-              guardians[gar].Related_Contact.prod_uuid === null
+              (process.env.NODE_ENV === 'production' &&
+                guardians[gar].Related_Contact.prod_uuid === null) ||
+              (process.env.NODE_ENV === 'development' &&
+                guardians[gar].Related_Contact.dev_uuid === null)
                 ? `Can't Share`
                 : await this.getUserStatus(
                     considerations,
@@ -647,8 +659,10 @@ export class UserNetworkService {
             profilePicture: advisors[adv]['Related_Contact']['Profile_Picture'],
             role: 'Advisor',
             status:
-              advisors[adv].Related_Contact.dev_uuid === null ||
-              advisors[adv].Related_Contact.prod_uuid === null
+              (process.env.NODE_ENV === 'production' &&
+                advisors[adv].Related_Contact.prod_uuid === null) ||
+              (process.env.NODE_ENV === 'development' &&
+                advisors[adv].Related_Contact.dev_uuid === null)
                 ? `Can't Share`
                 : await this.getUserStatus(
                     considerations,
@@ -679,8 +693,10 @@ export class UserNetworkService {
           profilePicture: admins[i]['Contact']['Profile_Picture'],
           role: 'Admin',
           status:
-            admins[i].Contact.dev_uuid === null ||
-            admins[i].Contact.prod_uuid === null
+            (process.env.NODE_ENV === 'production' &&
+              admins[i].Contact.prod_uuid === null) ||
+            (process.env.NODE_ENV === 'development' &&
+              admins[i].Contact.dev_uuid === null)
               ? `Can't Share`
               : await this.getUserStatus(
                   considerations,
@@ -822,6 +838,8 @@ export class UserNetworkService {
       {},
       instituteId,
     );
+    console.log('guradians', guardians);
+
     for (let i = 0; i < guardians.length; i++) {
       if (repIds.indexOf(guardians[i].Related_Contact.Id) < 0) {
         repIds.push(guardians[i].Related_Contact.Id);
@@ -831,8 +849,10 @@ export class UserNetworkService {
           profilePicture: guardians[i].Related_Contact.Profile_Picture,
           role: 'Guardian',
           status:
-            guardians[i].Related_Contact.dev_uuid === null ||
-            guardians[i].Related_Contact.prod_uuid === null
+            (process.env.NODE_ENV === 'production' &&
+              guardians[i].Related_Contact.prod_uuid === null) ||
+            (process.env.NODE_ENV === 'development' &&
+              guardians[i].Related_Contact.dev_uuid === null)
               ? `Can't Share`
               : await this.getUserStatus(
                   considerations,
@@ -854,6 +874,8 @@ export class UserNetworkService {
       {},
       instituteId,
     );
+    console.log('advisors', advisors);
+
     for (let i = 0; i < advisors.length; i++) {
       if (repIds.indexOf(advisors[i].Related_Contact.Id) < 0) {
         repIds.push(advisors[i].Related_Contact.Id);
@@ -863,8 +885,10 @@ export class UserNetworkService {
           profilePicture: advisors[i].Related_Contact.Profile_Picture,
           role: 'Advisor',
           status:
-            advisors[i].Related_Contact.dev_uuid === null ||
-            advisors[i].Related_Contact.prod_uuid === null
+            (process.env.NODE_ENV === 'production' &&
+              advisors[i].Related_Contact.prod_uuid === null) ||
+            (process.env.NODE_ENV === 'development' &&
+              advisors[i].Related_Contact.dev_uuid === null)
               ? `Can't Share`
               : await this.getUserStatus(
                   considerations,
@@ -885,6 +909,7 @@ export class UserNetworkService {
       {},
       instituteId,
     );
+    console.log('admins', admins);
     for (let i = 0; i < admins.length; i++) {
       if (repIds.indexOf(admins[i]['Contact']['Id']) < 0) {
         repIds.push(admins[i]['Contact']['Id']);
@@ -894,8 +919,10 @@ export class UserNetworkService {
           profilePicture: admins[i]['Contact']['Profile_Picture'],
           role: 'Admin',
           status:
-            admins[i].Contact.dev_uuid === null ||
-            admins[i].Contact.prod_uuid === null
+            (process.env.NODE_ENV === 'production' &&
+              admins[i].Contact.prod_uuid === null) ||
+            (process.env.NODE_ENV === 'development' &&
+              admins[i].Contact.dev_uuid === null)
               ? `Can't Share`
               : await this.getUserStatus(
                   considerations,
