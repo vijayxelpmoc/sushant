@@ -59,7 +59,6 @@ functions:
         - dist/lambda.handler
       entryPoint:
         - '/lambda-entrypoint.sh'
-    handler: dist/lambda.handler
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}
