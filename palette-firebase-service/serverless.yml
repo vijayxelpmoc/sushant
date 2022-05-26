@@ -5,7 +5,6 @@ plugins:
   - serverless-offline
   - serverless-deployment-bucket
 
-
 package:
   individually: true
 
@@ -49,20 +48,26 @@ provider:
     FIREBASE_STORAGE_BUCKET: ${env:FIREBASE_STORAGE_BUCKET}
     FIREBASE_TOKEN_BASE_URL: ${env:FIREBASE_TOKEN_BASE_URL}
     FIREBASE_LOG_FILE_PASSWORD: ${env:FIREBASE_LOG_FILE_PASSWORD}
-  provider.iam.role.managedPolicies:
-  - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
+  iamManagedPolicies:
+    - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
 
 functions:
   main:
-    handler: dist/lambda.handler  
+    image:
+      name: appimage
+      command:
+        - dist/lambda.handler
+      entryPoint:
+        - '/lambda-entrypoint.sh'
+    handler: dist/lambda.handler
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}
-      - http:  
+      - http:
           method: PATCH
           path: firebase/uuid
           cors: true
-      - http:  
+      - http:
           method: POST
           path: firebase/testNotif
           cors: true
