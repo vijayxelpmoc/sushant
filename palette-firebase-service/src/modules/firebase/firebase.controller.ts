@@ -29,13 +29,13 @@ export class FirebaseController {
    *  @param {UuidDto} body uuid,  salesforce id and email of the user
    * @returns {Object} status code and message or errors
    */
-  @Patch('uuid')
-  async createUuidRecord(
-    @Body() uuidDto: UuidDto,
-    @Body('instituteId') instituteId: string,
-  ) {
-    return await this.firebaseService.updateUuid(uuidDto, instituteId);
-  }
+  // @Patch('uuid')
+  // async createUuidRecord(
+  //   @Body() uuidDto: UuidDto,
+  //   @Body('instituteId') instituteId: string,
+  // ) {
+  //   return await this.firebaseService.updateUuid(uuidDto, instituteId);
+  // }
 
   @Post('testNotif')
   async testNotif(

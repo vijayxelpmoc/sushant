@@ -741,13 +741,39 @@ export class OpportunityController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('explore/activities')
-  getExploreViewActivities(
+  async getExploreViewActivities(
     @Request() req, 
     @Query('instituteId') instituteId: string,
     @QueryRequired('programId') programId: string,
   ): Promise<any> {
-    return this.opportunityService.getInstituteActivities(
+    return await this.opportunityService.getInstituteActivities(
       null,
+      req.user.id,
+      instituteId,
+      programId,
+    );
+  }
+
+  /**
+   * TESTING
+   */
+   @hasRoles(
+    Role.Student,
+    Role.Parent,
+    Role.Advisor,
+    Role.Faculty,
+    Role.Observer,
+    Role.Administrator,
+  )
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('testing')
+  async testing(
+    @Request() req, 
+    @QueryRequired('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
+  ): Promise<any> {
+    return this.opportunityService.testing(
+      req,
       req.user.id,
       instituteId,
       programId,

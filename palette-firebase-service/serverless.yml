@@ -5,10 +5,18 @@ plugins:
   - serverless-offline
   - serverless-deployment-bucket
 
+
+package:
+  individually: true
+
 provider:
   name: aws
-  runtime: nodejs12.x
+  runtime: nodejs14.x
   region: ${env:PALETTE_AWS_REGION}
+  ecr:
+    images:
+      appimage:
+        path: ./
   apiGateway:
     minimumCompressionSize: 1024
     restApiId: ${env:PALETTE_API_GATEWAY_ID}
@@ -45,8 +53,13 @@ provider:
   - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
 
 functions:
-  util:
-    handler: dist/lambda.handler
+  main:
+    image:
+      name: appimage
+      command:
+        - dist/lambda.handler
+      entryPoint:
+        - '/lambda-entrypoint.sh'
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}

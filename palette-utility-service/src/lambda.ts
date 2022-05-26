@@ -21,6 +21,8 @@ export const handler: Handler = async (
   context: Context,
   callback: Callback,
 ) => {
+  // check the event
+  
   server = server ?? (await bootstrap());
   return server(event, context, callback);
 };

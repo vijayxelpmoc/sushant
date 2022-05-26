@@ -54,7 +54,7 @@ export class CreateTodoDto {
   @IsEnum(ApprovedStatus)
   @IsNotEmpty()
   @IsString()
-  approved_status: ApprovedStatus;
+  approved_status: ApprovedStatus;i
 
   @IsEnum(TodoType)
   @IsNotEmpty()

@@ -1,5 +1,6 @@
 import {
   BadRequestException,
+  ConsoleLogger,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -754,7 +755,7 @@ export class TodoService {
           // error
           console.log('succewss');
 
-          this.notifyOnTaskStatusChange(
+          await this.notifyOnTaskStatusChange(
             todo.Id,
             status.toUpperCase(),
             instituteId,
@@ -776,7 +777,7 @@ export class TodoService {
       if (response.success === true) {
         console.log('success2');
 
-        this.notifyOnTaskStatusChange(
+        await this.notifyOnTaskStatusChange(
           todoId,
           status.toUpperCase(),
           instituteId,
@@ -812,11 +813,12 @@ export class TodoService {
   ) {
     // Can be used as check to report any update failure
     let hasErrors = false;
-    await todoIds.forEach(async (todo) => {
+    console.log(todoIds);
+    for(const i in todoIds){
       try {
         await this.updateToDoStatus(
           userId,
-          todo,
+          todoIds[i],
           status,
           role,
           instituteId,
@@ -826,7 +828,7 @@ export class TodoService {
         // console.log(`[ERROR] Updating Todo [${todo}] : `, err);
         hasErrors = true;
       }
-    });
+    }
     return {
       statusCode: 201,
       message: hasErrors
@@ -991,20 +993,22 @@ export class TodoService {
     instituteId: string,
   ) {
     let hasErrors = false;
-    todoIds.map(async (id) => {
+    
+    for(const i in todoIds){
       try {
         await this.sfService.models.todos.update(
           {
             Assignee_accepted_status: status,
           },
-          id,
+          todoIds[i],
           instituteId,
         );
       } catch (err) {
-        console.log(`[ERROR] Updating Todo [${id}] : `, err);
+        console.log(`[ERROR] Updating Todo [${todoIds[i]}] : `, err);
         hasErrors = true;
       }
-    });
+    }
+    
     return {
       statusCode: 201,
       message: hasErrors
@@ -2105,8 +2109,8 @@ export class TodoService {
     for (const key of Object.keys(mp)) {
       if (key === 'default') {
         for (const todo of mp[key]) {
-          console.log('todo', todo);
-
+          // console.log("here");
+          // console.log({todo:todo});
           const todoObj = {
             Id: todo.Id,
             groupId: todo.groupId,
@@ -2117,6 +2121,7 @@ export class TodoService {
             venue: todo.venue,
             completeBy: todo.completeBy ? todo.completeBy : '',
             createdAt: todo.createdAt,
+            //changed listedBy to Listed_by. For osme reason the newer salesforce uses the latter name instead of the former
             listedBy: todo.Listed_by,
             Assignee: [
               {
@@ -2138,8 +2143,8 @@ export class TodoService {
         }
       } else {
         const todo = mp[key][0];
-        console.log(todo.Listed_by);
-
+        // console.log("here");
+        // console.log({todo:todo});
         const todoObj = {
           Id: todo.Id,
           groupId: todo.groupId,
@@ -2150,6 +2155,7 @@ export class TodoService {
           venue: todo.venue,
           completeBy: todo.completeBy ? todo.completeBy : '',
           createdAt: todo.createdAt,
+          //changed listedBy to Listed_by. For osme reason the newer salesforce uses the latter name instead of the former
           listedBy: todo.Listed_by,
           Assignee: [],
           Program: programId,
@@ -2175,6 +2181,7 @@ export class TodoService {
 
         responseTodos.push(obj);
         listedBy.push(todoObj.listedBy);
+        console.log(todoObj);
       }
     }
 
@@ -2784,16 +2791,16 @@ export class TodoService {
 
   async publishDraftMultipleTodos(data, programId, instituteId) {
     try {
-      data.forEach(async (id) => {
+      for(const i in data){
         await this.sfService.models.todos.update(
           {
             Task_Status: 'Open',
             Status: '',
           },
-          id,
+          data[i],
           instituteId,
         );
-      });
+      }
 
       return { statusCode: 200, message: 'Published draft todo' };
     } catch (error) {}
