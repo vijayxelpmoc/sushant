@@ -3913,7 +3913,6 @@ export class OpportunityService {
       console.log('payload error', error);
       throw new BadRequestException('An unexpected error occurred');
     }
-    console.log('payloadData', payloadData);
     
     try {
       URL = `http://localhost:3000/firebase/send-notification`;
@@ -3934,7 +3933,6 @@ export class OpportunityService {
           },
         },
       );
-      console.log('createResponse', createResponse);
       
       return createResponse.data;
     } catch (error) {
