@@ -67,3 +67,7 @@ functions:
           method: PATCH
           path: firebase/uuid
           cors: true
+      - http:  
+          method: POST
+          path: firebase/testNotif
+          cors: true
