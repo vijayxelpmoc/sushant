@@ -25,6 +25,7 @@ import { UuidDto } from './dto/uuid.dto';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  // Pre registration api
   @Post('register/pre')
   async preRegister(
     @Body() preRegisterUserDto: PreRegisterUserDto,
@@ -34,6 +35,7 @@ export class UsersController {
     return this.usersService.preRegisterForPalette(preRegisterUserDto, instituteId, programId);
   }
 
+  // 
   @hasRoles(
     Role.Student,
     Role.Parent,
