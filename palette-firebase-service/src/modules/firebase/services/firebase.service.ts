@@ -57,7 +57,7 @@ export class FirebaseService {
       sfId: contact.Id,
       email: contact.Email,
       uuid: contact[
-        process.env.NODE_ENV === 'dev' ? 'dev_uuid__c' : 'prod_uuid__c'
+        process.env.NODE_ENV === 'prod' ? ' prod_uuid__c' : 'dev_uuid'
       ],
     };
   }
@@ -73,12 +73,15 @@ export class FirebaseService {
     return contacts;
   }
 
-  async getUuidWithSFId(sfId: string | string[]) {
+  async getUuidWithSFId(sfId: string | string[], instituteId?: string, programId?: string) {
     const sfContacts: SFContact[] = await this.sfService.generics.contacts.get(
-      'Id, Name, Email, prod_uuid__c, dev_uuid__c',
+      'Id, Name, Email, prod_uuid, dev_uuid',
       {
         Id: sfId,
+        Primary_Educational_Institution: programId,
       },
+      {},
+      instituteId
     );
     if (!sfContacts.length) {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
@@ -87,31 +90,31 @@ export class FirebaseService {
     return Array.isArray(sfId) ? contacts : contacts[0];
   }
 
-  async updateUserPassword(sfId: string, password: string) {
-    const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
-    if (!uuid) {
-      throw new NotFoundException(Errors.SFID_NOT_FOUND);
-    }
-    await admin.auth().updateUser(uuid, {
-      password,
-    });
-  }
+  // async updateUserPassword(sfId: string, password: string) {
+  //   const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
+  //   if (!uuid) {
+  //     throw new NotFoundException(Errors.SFID_NOT_FOUND);
+  //   }
+  //   await admin.auth().updateUser(uuid, {
+  //     password,
+  //   });
+  // }
 
-  async deleteUser(sfId: string) {
-    // [TODO] - Check for Boolean Implementation
-    const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
-    if (!uuid) {
-      throw new NotFoundException(Errors.SFID_NOT_FOUND);
-    }
-    await admin.auth().deleteUser(uuid);
-  }
+  // async deleteUser(sfId: string) {
+  //   // [TODO] - Check for Boolean Implementation
+  //   const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
+  //   if (!uuid) {
+  //     throw new NotFoundException(Errors.SFID_NOT_FOUND);
+  //   }
+  //   await admin.auth().deleteUser(uuid);
+  // }
 
-  async unRegisterUser(uuid: string) {
-    await admin.auth().deleteUser(uuid);
-    const firestore = new admin.firestore.Firestore();
-    const doc = firestore.collection('/users').doc(uuid);
-    doc ?? doc.delete();
-  }
+  // async unRegisterUser(uuid: string) {
+  //   await admin.auth().deleteUser(uuid);
+  //   const firestore = new admin.firestore.Firestore();
+  //   const doc = firestore.collection('/users').doc(uuid);
+  //   doc ?? doc.delete();
+  // }
 
   // Service Methods
 
@@ -119,22 +122,31 @@ export class FirebaseService {
     sfId: string,
     title: string,
     body: string,
-    notificationData?: PushNotificationData,
+    payload: any,
+    instituteId: string,
+    programId: string
   ) {
-    const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
+    const uuid = ((await this.getUuidWithSFId(sfId, instituteId, programId)) as Contact).uuid;
+    console.log('uuid', uuid);
+    
     if (!uuid) {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
     }
 
     const _db = admin.firestore();
+    console.log('_db', _db);
+    
     const _messaging = admin.messaging();
+    console.log('_messaging', _messaging);
 
     const userDoc = await _db.collection('users').doc(uuid).get();
+    console.log('userDoc', userDoc);
     if (!userDoc.exists) {
       throw new NotFoundException(Errors.USER_NOT_FOUND);
     }
-    const user = userDoc.data();
-    if (user.fcmTokens && user.fcmTokens.length > 0) {
+    const user = await userDoc.data();
+    console.log('user', user);
+    if (user.fcmTokens && user.fcmTokens.length > 0) {  
       const message: any = {
         tokens: user.fcmTokens,
         notification: {
@@ -142,20 +154,26 @@ export class FirebaseService {
           body,
         },
       };
-
-      if (notificationData) {
+      console.log('message', message);
+      
+      if (payload) {
         message.data = {
-          type: notificationData.type,
-          data: JSON.stringify(notificationData.data),
+          type: payload.type,
+          data: JSON.stringify(payload.data),
         };
       }
-
-      return await _messaging.sendMulticast(message);
+      console.log('message', message);
+      
+      const send = await _messaging.sendMulticast(message);
+      console.log('send', send);
+      
+      return send; 
+      // return await _messaging.sendMulticast(message);
     }
   }
 
-  async deleteFile(path: string) {
-    const bucket = admin.storage().bucket();
-    await bucket.file(path).delete();
-  }
+  // async deleteFile(path: string) {
+  //   const bucket = admin.storage().bucket();
+  //   await bucket.file(path).delete();
+  // }
 }

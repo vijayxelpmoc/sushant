@@ -87,3 +87,23 @@ functions:
           method: DELETE
           path: notifications/deleteAll
           cors: true
+      - http:
+          method: GET
+          path: notifications/payload/opportunity
+          cors: true
+      - http:
+          method: GET
+          path: notifications/payload/consideration
+          cors: true
+      - http:
+          method: GET
+          path: notifications/payload/modification
+          cors: true
+      - http:
+          method: GET
+          path: notifications/payload/todo
+          cors: true
+      - http:
+          method: GET
+          path: notifications/payload/approval
+          cors: true
