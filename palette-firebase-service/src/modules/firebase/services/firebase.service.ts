@@ -94,6 +94,7 @@ export class FirebaseService {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
     }
     const contacts: Contact[] = sfContacts.map(this._mapContactUUID);
+    
     return Array.isArray(sfId) ? contacts : contacts[0];
   }
 
