@@ -11,7 +11,7 @@ export interface GetGuidesResponse {
   
   export interface GetGuidesSFResponse {
     attributes: GetGuidesAttributes;
-    Name: string;
+    Guide_Name: string;
     Guide_Description: string;
     Event_String: string;
     Role: string;
