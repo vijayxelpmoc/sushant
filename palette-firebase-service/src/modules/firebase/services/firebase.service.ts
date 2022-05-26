@@ -3,6 +3,7 @@ import {
     UnauthorizedException,
     NotFoundException,
     Logger,
+    InternalServerErrorException,
   } from '@nestjs/common';
   import {
     Role,
@@ -13,7 +14,7 @@ import {
   import * as admin from 'firebase-admin';
   import { SfService } from '@gowebknot/palette-salesforce-service';
   
-  import { Contact, PushNotificationData, SFContact } from 'src/modules/firebase/types';
+  import { Contact, FirestoreUser, PushNotificationData, SFContact } from 'src/modules/firebase/types';
   import { Errors } from 'src/constants';
   import { UuidDto } from '../dtos/uuid.dto';
 
@@ -57,7 +58,7 @@ export class FirebaseService {
       sfId: contact.Id,
       email: contact.Email,
       uuid: contact[
-        process.env.NODE_ENV === 'dev' ? 'dev_uuid__c' : 'prod_uuid__c'
+        process.env.NODE_ENV === 'development' ? 'dev_uuid' : 'prod_uuid'
       ],
     };
   }
@@ -66,20 +67,29 @@ export class FirebaseService {
 
   async getAllUuidRecords() {
     const sfContacts: SFContact[] = await this.sfService.generics.contacts.get(
-      'Id, Name, Email, prod_uuid__c, dev_uuid__c',
+      'Id, Name, Email, prod_uuid, dev_uuid',
       {},
     );
     const contacts: Contact[] = sfContacts.map(this._mapContactUUID);
     return contacts;
   }
 
-  async getUuidWithSFId(sfId: string | string[]) {
+  async getUuidWithSFId(
+    sfId: string | string[],
+    instituteId: string,
+    programId: string,
+  ) {
     const sfContacts: SFContact[] = await this.sfService.generics.contacts.get(
-      'Id, Name, Email, prod_uuid__c, dev_uuid__c',
+      'Id, Name, Email, prod_uuid, dev_uuid',
       {
         Id: sfId,
+        Primary_Educational_Institution: programId,
       },
+      {},
+      instituteId,
     );
+    // console.log('sfContacts', sfContacts);
+
     if (!sfContacts.length) {
       throw new NotFoundException(Errors.SFID_NOT_FOUND);
     }
@@ -87,24 +97,24 @@ export class FirebaseService {
     return Array.isArray(sfId) ? contacts : contacts[0];
   }
 
-  async updateUserPassword(sfId: string, password: string) {
-    const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
-    if (!uuid) {
-      throw new NotFoundException(Errors.SFID_NOT_FOUND);
-    }
-    await admin.auth().updateUser(uuid, {
-      password,
-    });
-  }
+  // async updateUserPassword(sfId: string, password: string) {
+  //   const uuid = ((await this.getUuidWithSFId(sfId,instituteId,programId)) as Contact).uuid;
+  //   if (!uuid) {
+  //     throw new NotFoundException(Errors.SFID_NOT_FOUND);
+  //   }
+  //   await admin.auth().updateUser(uuid, {
+  //     password,
+  //   });
+  // }
 
-  async deleteUser(sfId: string) {
-    // [TODO] - Check for Boolean Implementation
-    const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
-    if (!uuid) {
-      throw new NotFoundException(Errors.SFID_NOT_FOUND);
-    }
-    await admin.auth().deleteUser(uuid);
-  }
+  // async deleteUser(sfId: string) {
+  //   // [TODO] - Check for Boolean Implementation
+  //   const uuid = ((await this.getUuidWithSFId(sfId,instituteId,programId)) as Contact).uuid;
+  //   if (!uuid) {
+  //     throw new NotFoundException(Errors.SFID_NOT_FOUND);
+  //   }
+  //   await admin.auth().deleteUser(uuid);
+  // }
 
   async unRegisterUser(uuid: string) {
     await admin.auth().deleteUser(uuid);
@@ -119,21 +129,44 @@ export class FirebaseService {
     sfId: string,
     title: string,
     body: string,
+    instituteId: string,
+    programId: string,
     notificationData?: PushNotificationData,
   ) {
-    const uuid = ((await this.getUuidWithSFId(sfId)) as Contact).uuid;
-    if (!uuid) {
-      throw new NotFoundException(Errors.SFID_NOT_FOUND);
+    console.log('notificationData', notificationData);
+
+    console.log(sfId);
+
+    const uuidObj = (await this.getUuidWithSFId(
+      sfId,
+      instituteId,
+      programId,
+    )) as Contact;
+
+    if (!uuidObj.uuid) {
+      throw new NotFoundException('User Uuid not found');
     }
 
-    const _db = admin.firestore();
-    const _messaging = admin.messaging();
+    const uuid = uuidObj.uuid;
 
-    const userDoc = await _db.collection('users').doc(uuid).get();
-    if (!userDoc.exists) {
-      throw new NotFoundException(Errors.USER_NOT_FOUND);
+    const db = admin.firestore();
+    const messaging = admin.messaging();
+
+    const userDocRef = db.collection('users').doc(uuid);
+
+    const userDoc = await userDocRef.get();
+    if (!userDoc) {
+      throw new InternalServerErrorException('User Doc not found in firestore');
     }
-    const user = userDoc.data();
+
+    const user = userDoc.data() as FirestoreUser;
+
+    if (!user) {
+      throw new InternalServerErrorException(
+        'User is undefined ' + sfId + ' - ' + uuid,
+      );
+    }
+
     if (user.fcmTokens && user.fcmTokens.length > 0) {
       const message: any = {
         tokens: user.fcmTokens,
@@ -150,7 +183,7 @@ export class FirebaseService {
         };
       }
 
-      return await _messaging.sendMulticast(message);
+      return await messaging.sendMulticast(message);
     }
   }
 

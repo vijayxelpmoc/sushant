@@ -17,10 +17,15 @@ import {
   ApprovalTodoResponse,
 } from './types/admin-interface';
 import { env } from 'process';
+import axios from 'axios';
 
 @Injectable()
 export class AdminService {
   private notifier: Notifier;
+  private URL =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/firebase/testNotif'
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/testNotif`;
   constructor(private readonly sfService: SfService) {
     // this.notifier = new Notifier();
   }
@@ -145,8 +150,7 @@ export class AdminService {
       throw new NotFoundException(`parent with ID "${id}" not found`);
     }
 
-
-    const { 
+    const {
       facebook,
       whatsapp,
       instagram,
@@ -282,7 +286,7 @@ export class AdminService {
           startDate: event.Start_Date,
           endDate: event.End_Date,
           description: event.Description,
-          Program:programId,
+          Program: programId,
           approvalStatus:
             type === 'Opportunity Removal Request'
               ? event.Removal_Status
@@ -311,7 +315,6 @@ export class AdminService {
       {},
       instituteId,
     );
-    
 
     const oppor = await this.sfService.models.accounts.get(
       'Listed_by,Listed_by.Name,Listed_by.Id,Listed_by.Profile_Picture,Listed_by.Phone',
@@ -347,7 +350,7 @@ export class AdminService {
           endDate: event.End_Date,
           description: event.Description,
           approvalStatus: event.Status,
-          Program:programId,
+          Program: programId,
           type: notification[0].Type,
         };
         //listing obj.
@@ -595,23 +598,42 @@ export class AdminService {
 
         notificationTitle = `Opportunity ${opp[0].Name}`;
         notificationMsg = `Opportunity ${opp[0].Name} approved`;
-        // try {
-        //   // firebase notification for creator.
-        //   await this.firebaseService.sendNotification(
-        //     opp[0].Listed_by,
-        //     notificationTitle,
-        //     notificationMsg,
-        //     {
-        //       data: await this.utilityService.GetOpportunityNotificationData(
-        //         id,
-        //         userId,
-        //       ),
-        //       type: 'opportunity approval request',
-        //     },
-        //   );
-        // } catch (err) {
-        //   // console.log(`err`, err);
-        // }
+        try {
+          // firebase notification for creator.
+          const res = await axios.post(this.URL, {
+            instituteId,
+            programId,
+            userId: opp[0].Listed_by,
+            title: notificationTitle,
+            message: notificationMsg,
+            data: {
+              data: await this.GetOpportunityNotificationData(
+                id,
+                userId,
+                instituteId,
+                programId,
+              ),
+              type: 'opportunity approval request',
+            },
+          });
+          // console.log('res', res);
+
+          // return res;
+          //   await this.firebaseService.sendNotification(
+          //     opp[0].Listed_by,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetOpportunityNotificationData(
+          //         id,
+          //         userId,
+          //       ),
+          //       type: 'opportunity approval request',
+          //     },
+          //   );
+        } catch (err) {
+          console.log(`err`, err.response.data);
+        }
         // create SF notification for creator
         await this.sfService.models.notifications.create(
           {
@@ -657,23 +679,42 @@ export class AdminService {
         // notification for creator.
         notificationTitle = `Opportunity ${opp[0].Name}`;
         notificationMsg = `Opportunity ${opp[0].Name} removal approved.`;
-        // try {
-        //   // firebase notification.
-        //   await this.firebaseService.sendNotification(
-        //     opp[0].Listed_by,
-        //     notificationTitle,
-        //     notificationMsg,
-        //     {
-        //       data: await this.utilityService.GetOpportunityNotificationData(
-        //         id,
-        //         userId,
-        //       ),
-        //       type: 'opportunity removal request',
-        //     },
-        //   );
-        // } catch (err) {
-        //   // console.log(`err`, err);
-        // }
+        try {
+          const res = await axios.post(this.URL, {
+            instituteId,
+            programId,
+            userId: opp[0].Listed_by,
+            title: notificationTitle,
+            message: notificationMsg,
+            data: {
+              data: await this.GetOpportunityNotificationData(
+                id,
+                userId,
+                instituteId,
+                programId,
+              ),
+              type: 'opportunity removal request',
+            },
+          });
+          // console.log('res', res);
+
+          // return res;
+          //   // firebase notification.
+          //   await this.firebaseService.sendNotification(
+          //     opp[0].Listed_by,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetOpportunityNotificationData(
+          //         id,
+          //         userId,
+          //       ),
+          //       type: 'opportunity removal request',
+          //     },
+          //   );
+        } catch (err) {
+          console.log(`err`, err.response.data);
+        }
         // create SF notification for creator.
         await this.sfService.models.notifications.create(
           {
@@ -706,20 +747,34 @@ export class AdminService {
         if (recc.length > 0) {
           recc.map(async (rec) => {
             reccIds.push(rec.Id);
-            // try {
-            //   // firebase notification.
-            //   await this.firebaseService.sendNotification(
-            //     rec.Assignee,
-            //     notificationTitle,
-            //     notificationMsg,
-            //     {
-            //       data: 'CREATEPAYLOAD',
-            //       type: 'opportunity removed',
-            //     },
-            //   );
-            // } catch (err) {
-            //   // console.log(`err`, err);
-            // }
+            try {
+              const res = await axios.post(this.URL, {
+                instituteId,
+                programId,
+                userId: rec.Assignee,
+                title: notificationTitle,
+                message: notificationMsg,
+                data: {
+                  data: 'CREATEPAYLOAD',
+                  type: 'opportunity removed',
+                },
+              });
+              // console.log('res', res);
+
+              // return res;
+              //   // firebase notification.
+              //   await this.firebaseService.sendNotification(
+              //     rec.Assignee,
+              //     notificationTitle,
+              //     notificationMsg,
+              //     {
+              //       data: 'CREATEPAYLOAD',
+              //       type: 'opportunity removed',
+              //     },
+              //   );
+            } catch (err) {
+              console.log(`err`, err.response.data);
+            }
             // creating Sf notification.
             await this.sfService.models.notifications.create(
               {
@@ -773,19 +828,38 @@ export class AdminService {
         connectedTodoIds.map(async (event) => {
           notificationTitle = `Todo removed`;
           notificationMsg = `Todo has been removed`;
-          // try {
-          //   await this.firebaseService.sendNotification(
-          //     event.Assignee,
-          //     notificationTitle,
-          //     notificationMsg,
-          //     {
-          //       data: await this.utilityService.GetTodoNotificationData(id),
-          //       type: 'opportunity removal',
-          //     },
-          //   );
-          // } catch (err) {
-          //   // console.log('err', err);
-          // }
+          try {
+            const res = await axios.post(this.URL, {
+              instituteId,
+              programId,
+              userId: event.Assignee,
+              title: notificationTitle,
+              message: notificationMsg,
+              data: {
+                data: await this.GetOpportunityNotificationData(
+                  id,
+                  userId,
+                  instituteId,
+                  programId,
+                ),
+                type: 'opportunity removal',
+              },
+            });
+            // console.log('res', res);
+
+            // return res;
+            //   await this.firebaseService.sendNotification(
+            //  event.Assignee,
+            //     notificationTitle,
+            //     notificationMsg,
+            //     {
+            //       data: await this.utilityService.GetTodoNotificationData(id),
+            //       type: 'opportunity removal',
+            //     },
+            //   );
+          } catch (err) {
+            console.log('err', err.response.data);
+          }
           // create SF notification for creator.
           await this.sfService.models.notifications.create(
             {
@@ -866,20 +940,39 @@ export class AdminService {
 
       notificationTitle = `Opportunity ${opp[0].Name}`;
       notificationMsg = `Opportunity ${opp[0].Name} modification request approved.`;
-      // try {
-      //   // Push Notification for creator.
-      //   await this.firebaseService.sendNotification(
-      //     opp[0].Listed_by,
-      //     notificationTitle,
-      //     notificationMsg,
-      //     {
-      //       data: await this.utilityService.GetModificationNotificationData(id),
-      //       type: 'opportunity modification request',
-      //     },
-      //   );
-      // } catch (err) {
-      //   // console.log(`err`, err);
-      // }
+      try {
+        const res = await axios.post(this.URL, {
+          instituteId,
+          programId,
+          userId: opp[0].Listed_by,
+          title: notificationTitle,
+          message: notificationMsg,
+          data: {
+            data: await this.GetOpportunityNotificationData(
+              id,
+              userId,
+              instituteId,
+              programId,
+            ),
+            type: 'opportunity modification request',
+          },
+        });
+        // console.log('res', res);
+
+        // return res;
+        //   // Push Notification for creator.
+        //   await this.firebaseService.sendNotification(
+        //     opp[0].Listed_by,
+        //     notificationTitle,
+        //     notificationMsg,
+        //     {
+        //       data: await this.utilityService.GetModificationNotificationData(id),
+        //       type: 'opportunity modification request',
+        //     },
+        //   );
+      } catch (err) {
+        console.log(`err`, err.response.data);
+      }
       // create sf notification for creator.
       await this.sfService.models.notifications.create(
         {
@@ -919,20 +1012,34 @@ export class AdminService {
             instituteId,
           );
 
-          // try {
-          //   // Push Notification for creator.
-          //   await this.firebaseService.sendNotification(
-          //     rec.Assignee,
-          //     notificationTitle,
-          //     notificationMsg,
-          //     {
-          //       data: 'CREATEPAYLOAD',
-          //       type: 'opportunity modification request',
-          //     },
-          //   );
-          // } catch (err) {
-          //   // console.log(`err`, err);
-          // }
+          try {
+            const response = await axios.post(this.URL, {
+              instituteId,
+              programId,
+              userId: rec.Assignee,
+              title: notificationTitle,
+              message: notificationMsg,
+              data: {
+                data: 'CREATEPAYLOAD',
+                type: 'opportunity modification request',
+              },
+            });
+            // console.log(response);
+
+            // return response;
+            //   // Push Notification for creator.
+            //   await this.firebaseService.sendNotification(
+            //     rec.Assignee,
+            //     notificationTitle,
+            //     notificationMsg,
+            //     {
+            //       data: 'CREATEPAYLOAD',
+            //       type: 'opportunity modification request',
+            //     },
+            //   );
+          } catch (err) {
+            console.log(`err`, err.response.data);
+          }
           // create notification for assignees.
           await this.sfService.models.notifications.create(
             {
@@ -985,20 +1092,34 @@ export class AdminService {
             instituteId,
           );
 
-          // try {
-          //   // Push Notification for creator.
-          //   await this.firebaseService.sendNotification(
-          //     todo.Assignee,
-          //     notificationTitle,
-          //     notificationMsg,
-          //     {
-          //       data: 'CREATEPAYLOAD',
-          //       type: 'opportunity modification request',
-          //     },
-          //   );
-          // } catch (err) {
-          //   // console.log(`err`, err);
-          // }
+          try {
+            const res = await axios.post(this.URL, {
+              instituteId,
+              programId,
+              userId: todo.Assignee,
+              title: notificationTitle,
+              message: notificationMsg,
+              data: {
+                data: 'CREATEPAYLOAD',
+                type: 'opportunity modification request',
+              },
+            });
+            // console.log('res', res);
+
+            // return res;
+            //   // Push Notification for creator.
+            //   await this.firebaseService.sendNotification(
+            //     todo.Assignee,
+            //     notificationTitle,
+            //     notificationMsg,
+            //     {
+            //       data: 'CREATEPAYLOAD',
+            //       type: 'opportunity modification request',
+            //     },
+            //   );
+          } catch (err) {
+            console.log(`err`, err.response.data);
+          }
           // create notification for assignees
           await this.sfService.models.notifications.create(
             {
@@ -1044,7 +1165,7 @@ export class AdminService {
         instituteId,
       );
       // console.log(opp);
-      
+
       if (opp.length === 0) {
         throw new NotFoundException(`Opportunity Not Found!`);
       }
@@ -1070,23 +1191,42 @@ export class AdminService {
 
         notificationTitle = `Opportunity ${opp[0].Name}`;
         notificationMsg = `Opportunity ${opp[0].Name} rejected`;
-        // try {
-        //   // firebase notification for creator.
-        //   await this.firebaseService.sendNotification(
-        //     opp[0].Listed_by,
-        //     notificationTitle,
-        //     notificationMsg,
-        //     {
-        //       data: await this.utilityService.GetOpportunityNotificationData(
-        //         id,
-        //         userId,
-        //       ),
-        //       type: 'opportunity approval request',
-        //     },
-        //   );
-        // } catch (err) {
-        //   // console.log(`err`, err);
-        // }
+        try {
+          const res = await axios.post(this.URL, {
+            instituteId,
+            programId,
+            userId: opp[0].Listed_by,
+            title: notificationTitle,
+            message: notificationMsg,
+            data: {
+              data: await this.GetOpportunityNotificationData(
+                id,
+                userId,
+                instituteId,
+                programId,
+              ),
+              type: 'opportunity approval request',
+            },
+          });
+          // console.log('res', res);
+
+          // return res;
+          //   // firebase notification for creator.
+          //   await this.firebaseService.sendNotification(
+          //     opp[0].Listed_by,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetOpportunityNotificationData(
+          //         id,
+          //         userId,
+          //       ),
+          //       type: 'opportunity approval request',
+          //     },
+          //   );
+        } catch (err) {
+          console.log(`err`, err.response.data);
+        }
         // create sf notification for creator.
         await this.sfService.models.notifications.create(
           {
@@ -1120,37 +1260,57 @@ export class AdminService {
         // notification.
         notificationTitle = `Opportunity ${opp[0].Name}`;
         notificationMsg = `Opportunity ${opp[0].Name} removal request is rejected`;
-        // try {
-        //   // firebase notification for creator.
-        //   await this.firebaseService.sendNotification(
-        //     opp[0].Listed_by,
-        //     notificationTitle,
-        //     notificationMsg,
-        //     {
-        //       data: await this.utilityService.GetOpportunityNotificationData(
-        //         id,
-        //         userId,
-        //       ),
-        //       type: 'opportunity removal request',
-        //     },
-        //   );
-        // } catch (err) {
-        //   // console.log(`err`, err);
-        // }
+        try {
+          const res = await axios.post(this.URL, {
+            instituteId,
+            programId,
+            userId: opp[0].Listed_by,
+            title: notificationTitle,
+            message: notificationMsg,
+            data: {
+              data: await this.GetOpportunityNotificationData(
+                id,
+                userId,
+                instituteId,
+                programId,
+              ),
+
+              type: 'opportunity removal request',
+            },
+          });
+          // console.log('res', res);
+
+          // return res;
+          //   // firebase notification for creator.
+          //   await this.firebaseService.sendNotification(
+          //     opp[0].Listed_by,
+          //     notificationTitle,
+          //     notificationMsg,
+          //     {
+          //       data: await this.utilityService.GetOpportunityNotificationData(
+          //         id,
+          //         userId,
+          //       ),
+          //       type: 'opportunity removal request',
+          //     },
+          //   );
+        } catch (err) {
+          console.log(`err`, err.response.data);
+        }
         // create sf notification for creator.
-        await this.sfService.models.notifications.create(
-          {
-            Title: notificationMsg,
-            Contact: opp[0].Listed_by,
-            Opportunity: id,
-            Type: 'Opportunity Removal Rejected',
-            Notification_By: userId,
-            Created_at: new Date(),
-            Is_Read: false,
-            Program: programId,
-          },
-          instituteId,
-        );
+        // await this.sfService.models.notifications.create(
+        //   {
+        //     Title: notificationMsg,
+        //     Contact: opp[0].Listed_by,
+        //     Opportunity: id,
+        //     Type: 'Opportunity Removal Rejected',
+        //     Notification_By: userId,
+        //     Created_at: new Date(),
+        //     Is_Read: false,
+        //     Program: programId,
+        //   },
+        //   instituteId,
+        // );
       }
       return { statusCode: 200, message: 'Rejected' };
     }
@@ -1202,20 +1362,39 @@ export class AdminService {
       // notification.
       notificationTitle = `Opportunity ${opp[0].Name}`;
       notificationMsg = `Opportunity ${opp[0].Name} modification request is rejected`;
-      // try {
-      //   // Push Notification for creator.
-      //   await this.firebaseService.sendNotification(
-      //     opp[0].Listed_by,
-      //     notificationTitle,
-      //     notificationMsg,
-      //     {
-      //       data: await this.utilityService.GetModificationNotificationData(id),
-      //       type: 'opportunity modification request',
-      //     },
-      //   );
-      // } catch (err) {
-      //   // console.log(`err`, err);
-      // }
+      try {
+        const res = await axios.post(this.URL, {
+          instituteId,
+          programId,
+          userId: opp[0].Listed_by,
+          title: notificationTitle,
+          message: notificationMsg,
+          data: {
+            data: await this.GetOpportunityNotificationData(
+              id,
+              userId,
+              instituteId,
+              programId,
+            ),
+            type: 'opportunity modification request',
+          },
+        });
+        // console.log('res', res);
+
+        // return res;
+        //   // Push Notification for creator.
+        //   await this.firebaseService.sendNotification(
+        //     opp[0].Listed_by,
+        //     notificationTitle,
+        //     notificationMsg,
+        //     {
+        //       data: await this.utilityService.GetModificationNotificationData(id),
+        //       type: 'opportunity modification request',
+        //     },
+        //   );
+      } catch (err) {
+        console.log(`err`, err.response.data);
+      }
       // create sf notification for creator.
       await this.sfService.models.notifications.create(
         {
@@ -1234,5 +1413,155 @@ export class AdminService {
       return { statusCode: 200, message: 'Rejected' };
     }
     return { statusCode: 400, message: 'Failure' };
+  }
+
+  async GetOpportunityNotificationData(
+    OppId: string,
+    userId: string,
+    instituteId: string,
+    programId: string,
+  ): Promise<any> {
+    if (OppId == null || OppId == '' || userId == null || userId == '') {
+      throw new NotFoundException();
+    }
+    const opportunity = await this.sfService.models.accounts.get(
+      '*',
+      { Id: OppId, Program: programId },
+      {},
+      instituteId,
+    );
+    // not found.
+    if (opportunity.length == 0) {
+      throw new NotFoundException(`Oops, Not Found!`);
+    }
+
+    const InstitueObj = {};
+    const interestedUsers = [];
+    const enrolledUsers = [];
+
+    // institute from affiliation.
+    const InstitutesData = await this.sfService.models.affiliations.get(
+      'Organization',
+      { Contact: userId, Organization: programId },
+      {},
+      instituteId,
+    );
+    if (InstitutesData.length > 0) {
+      const Institutes = await this.sfService.models.accounts.get(
+        '*',
+        {
+          Id: InstitutesData[0].Organization,
+          Program: programId,
+        },
+        {},
+        instituteId,
+      );
+      if (Institutes.length > 0) {
+        // mapping institute id : institute name.
+        Institutes.map((ins) => {
+          InstitueObj[ins.Id] = ins.Name;
+        });
+      }
+    }
+
+    // interested users in opportunity.
+    const interestedUsersData = await this.sfService.models.recommendations.get(
+      'Assignee',
+      { Event: OppId, Program: programId },
+      {},
+      instituteId,
+    );
+    if (interestedUsersData.length > 0) {
+      interestedUsersData.map((interested) => {
+        interestedUsers.push(interested.Assignee);
+      });
+    }
+
+    // enrolled users in opportunity.
+    const enrolledUsersData = await this.sfService.models.todos.get(
+      'Assignee',
+      {
+        Opportunit_Id: OppId,
+        Program: programId,
+      },
+      {},
+      instituteId,
+    );
+    if (enrolledUsersData.length > 0) {
+      enrolledUsersData.map((enrolled) => {
+        enrolledUsers.push(enrolled.Assignee);
+      });
+    }
+
+    const wishListedEvent = await this.sfService.models.recommendations.get(
+      'Id',
+      {
+        Event: OppId,
+        Recommended_by: userId,
+        Program: programId,
+      },
+      {},
+      instituteId,
+    );
+    const recomendedEvent = await this.sfService.models.recommendations.get(
+      'Id',
+      {
+        Event: OppId,
+        Program: programId,
+      },
+      {},
+      instituteId,
+    );
+    const enrolledEvent = await this.sfService.models.todos.get(
+      'Id',
+      {
+        Opportunit_Id: OppId,
+        Program: programId,
+      },
+      {},
+      instituteId,
+    );
+
+    const opportunityDataObj = {
+      activity: {
+        activity_id: opportunity[0].Id,
+        name: opportunity[0].Name,
+        category: opportunity[0].Category,
+        start_date: opportunity[0].Start_Date,
+        end_date: opportunity[0].End_Date,
+        description: opportunity[0].Description,
+        venue: opportunity[0].Venue,
+        phone: opportunity[0].Phone,
+        shipping_address: opportunity.ShippingAddress
+          ? {
+              city: opportunity[0].ShippingAddress.city,
+              country: opportunity[0].ShippingAddress.country,
+              postal_code: opportunity[0].ShippingAddress.postalCode,
+              state: opportunity[0].ShippingAddress.state,
+              street: opportunity[0].ShippingAddress.street,
+            }
+          : {
+              city: null,
+              country: null,
+              postal_code: null,
+              state: null,
+              street: null,
+            },
+        website: opportunity[0].Website,
+        ListedBy: opportunity[0].Listed_by,
+        OpportunityScope: opportunity[0].opportunityScope,
+        institute: {
+          Id: opportunity[0].ParentId,
+          name: InstitueObj[opportunity[0].ParentId],
+        },
+        interestedUsers: interestedUsers,
+        enrolledUsers: enrolledUsers,
+      },
+      wishListedEvent: wishListedEvent.length > 0 ? true : false,
+      recomendedEvent: recomendedEvent.length > 0 ? true : false,
+      enrolledEvent: enrolledEvent.length > 0 ? true : false,
+      resources: [],
+    };
+    return opportunityDataObj;
   }
 }
