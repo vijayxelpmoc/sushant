@@ -10,7 +10,6 @@ import {
   Param,
 } from '@nestjs/common';
 import { FirebaseService } from './services/firebase.service';
-import { FirebaseChatBackupService } from './services/firebase-chat-backup.service';
 import { UuidDto } from './dtos/uuid.dto';
 import { PushNotificationData } from '@gowebknot/palette-wrapper';
 
@@ -20,7 +19,6 @@ import { PushNotificationData } from '@gowebknot/palette-wrapper';
 export class FirebaseController {
   constructor(
     private readonly firebaseService: FirebaseService,
-    private readonly firebaseChatBackupService: FirebaseChatBackupService,
   ) {}
 
   // [TODO] - Add necessary firebase API's Here
