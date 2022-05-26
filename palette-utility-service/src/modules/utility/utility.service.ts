@@ -293,7 +293,7 @@ export class UtilityService {
     console.log("filteredGuides",filteredGuides);
     
 
-    const guidesResponse: Array<GetGuidesResponse> = filteredGuides.map(c => {
+    const guidesResponse: Array<GetGuidesResponse> = responseData.map(c => {
       return {
         name: c.Guide_Name,
         description: c.Guide_Description,
