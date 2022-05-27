@@ -4,19 +4,27 @@ useDotenv: true
 plugins:
   - serverless-offline
   - serverless-deployment-bucket
+  - serverless-esbuild
 
-
+custom:
+  esbuild:
+    bundle: true
+    minify: false
+    sourcemap: true
+    exclude: 'aws-sdk'
+    target: node14
+    define:
+      'require.resolve': undefined
+    platform: node
+    concurrency: 10
+    
 package:
   individually: true
 
 provider:
   name: aws
-  runtime: nodejs14.x
+  runtime: nodejs12.x
   region: ${env:PALETTE_AWS_REGION}
-  ecr:
-    images:
-      appimage:
-        path: ./
   apiGateway:
     minimumCompressionSize: 1024
     restApiId: ${env:PALETTE_API_GATEWAY_ID}
@@ -49,25 +57,20 @@ provider:
     FIREBASE_STORAGE_BUCKET: ${env:FIREBASE_STORAGE_BUCKET}
     FIREBASE_TOKEN_BASE_URL: ${env:FIREBASE_TOKEN_BASE_URL}
     FIREBASE_LOG_FILE_PASSWORD: ${env:FIREBASE_LOG_FILE_PASSWORD}
-  iamManagedPolicies:
-  - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
+  iam.role.managedPolicies:
+    - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
 
 functions:
   main:
-    image:
-      name: appimage
-      command:
-        - dist/lambda.handler
-      entryPoint:
-        - '/lambda-entrypoint.sh'
+    handler: dist/lambda.handler  
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}
-      - http:  
+      - http:
           method: PATCH
           path: firebase/uuid
           cors: true
-      - http:  
+      - http:
           method: POST
           path: firebase/testNotif
           cors: true
