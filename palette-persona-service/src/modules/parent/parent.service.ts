@@ -75,6 +75,9 @@ export class ParentService {
       instituteId,
     );
 
+    console.log('studentList', studentList);
+    
+
     const students: Array<{
       Id: string;
       Name: string;
