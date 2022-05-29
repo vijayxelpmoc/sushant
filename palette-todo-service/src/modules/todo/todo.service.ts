@@ -1315,8 +1315,9 @@ export class TodoService {
       throw new BadRequestException("Tasks doesn't belong to the same group");
     }
 
+    console.log({aa: filteredTasks[0].Listed_by});
     if (
-      filteredTasks[0].Listed_by === userId ||
+      filteredTasks[0].Listed_by.Id === userId ||
       RecordType === 'Administrator'
     ) {
       if (updateTodoDto.hasOwnProperty('name')) {
@@ -1413,18 +1414,6 @@ export class TodoService {
                 });
                 console.log(response);
 
-                // return response;
-                // await this.firebaseService.sendNotification(
-                //   user,
-                //   notificationTitle,
-                //   notificationMsg,
-                //   {
-                //     data: await this.utilityService.GetTodoNotificationData(
-                //       mytodo.Id,
-                //     ),
-                //     type: 'Update Todo',
-                //   },
-                // );
               } catch (err) {
                 console.log('err', err);
               }
