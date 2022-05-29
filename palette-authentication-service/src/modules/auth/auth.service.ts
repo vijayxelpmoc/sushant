@@ -103,7 +103,7 @@ export class AuthService {
     const user = await this._getUser({
       Palette_Email: authValidateDto.email,
       Primary_Educational_Institution: programId,
-      Record_Type_Name: role,
+      Record_Type_Name: role.toUpperCase(),
     },
     {},
     instituteId,
