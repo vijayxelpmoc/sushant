@@ -144,7 +144,7 @@ export class AdvisorService {
       whatsapp,
       instagram,
       website,
-      website_Title,
+      websiteTitle,
       github,
       linkedin,
     } = updateSfAdvisorDto;
@@ -157,7 +157,7 @@ export class AdvisorService {
     updateObj.Github = github;
     updateObj.LinkedIn_URL = linkedin;
     updateObj.Website = website;
-    updateObj.Website_Title = website_Title;
+    updateObj.Website_Title = websiteTitle;
 
     // const updateObj: any = {};
     // updateObj.Primary_Educational_Institution = programId;

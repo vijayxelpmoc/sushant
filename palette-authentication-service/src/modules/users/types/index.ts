@@ -12,10 +12,19 @@ export interface User {
   Is_Deactive: boolean;
 }
 
+// export enum Roles {
+//   Student = 'Student',
+//   Guardian = 'Guardian',
+//   Admin = 'Admin',
+//   Observer = 'Observer',
+//   Advisor = 'Advisor',
+//   Faculty = 'Faculty/Staff',
+// }
+
 export enum Roles {
   Student = 'Student',
   Guardian = 'Guardian',
-  Admin = 'Admin',
+  Admin = 'Administrator',
   Observer = 'Observer',
   Advisor = 'Advisor',
   Faculty = 'Faculty/Staff',

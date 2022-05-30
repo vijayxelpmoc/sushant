@@ -20,7 +20,7 @@ export class UpdateSfAdvisorDto {
 
   @IsOptional()
   @IsString()
-  website_Title: string;
+  websiteTitle: string;
 
   @IsOptional()
   @IsString()

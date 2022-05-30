@@ -3887,15 +3887,18 @@ export class OpportunityService {
   }
 
   async testing(request: any, userId: string, instituteId: string, programId: string): Promise<OpportunityPayloadResponse> {
-    const HTTP = `https`;
-    const HOST = request.headers.host;
     const oppId = '0014x000016xYnIAAU';
+    let payloadData = null;
+    let URL = null;
+    // retrieve payload 
     try {
-      // SERVER
-        // let URL = `${HTTP}://${HOST}/notifications/payload/opportunity?oppId=${oppId}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`;
-      // LOCAL
-      let URL = `http://localhost:9000/notifications/payload/opportunity?oppId=${oppId}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`;
-      console.log('URL', URL);
+      // server url
+      // const HTTP = `https`;
+      // const HOST = request.headers.host;
+      // let URL = `${HTTP}://${HOST}/notifications/payload/opportunity?oppId=${oppId}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`;
+      
+      // local url
+      URL = `http://localhost:9000/notifications/payload/opportunity?oppId=${oppId}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`;
       
       const Response = await axios.get<any>(
         URL,
@@ -3905,17 +3908,36 @@ export class OpportunityService {
           },
         },
       );
-      // console.log('Response', Response.data);
-      return Response.data;
+      payloadData = Response.data;
     } catch (error) {
+      console.log('payload error', error);
       throw new BadRequestException('An unexpected error occurred');
-      // if (axios.isAxiosError(error)) {
-      //   console.log('error message: ', error.message);
-      //   return error.message;
-      // } else {
-      //   console.log('unexpected error: ', error);
-      //   return 'An unexpected error occurred';
-      // }
+    }
+    
+    try {
+      URL = `http://localhost:3000/firebase/send-notification`;
+      const createResponse = await axios.post<any>(
+        URL,
+        { 
+          sfId: '0034x000012AlR8AAK',
+          title: 'Opportunity adv opp',
+          body: 'New adv opp Opportunity',
+          payload: { data: payloadData, type: 'Create opportunity' },
+          instituteId: '9b7a7291-9c01-4c04-95e4-762f30549e80',
+          programId: '0014x00000rHnmiAAC'
+        },
+        {
+          headers: {
+            'Content-Type': 'application/json',
+            Accept: 'application/json',
+          },
+        },
+      );
+      
+      return createResponse.data;
+    } catch (error) {
+      console.log('notification error', error);
+      throw new BadRequestException('An unexpected error occurred');
     }
   }
 }
