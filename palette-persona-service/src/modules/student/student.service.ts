@@ -152,8 +152,6 @@ export class StudentService {
       throw new NotFoundException(`student with ID "${id}" not found`);
     }
 
-    console.log(responseData);
-
     const {
       Id,
       Name,

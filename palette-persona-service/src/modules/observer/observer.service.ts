@@ -66,23 +66,6 @@ export class ObserverService {
       Account_Name,
     } = responseData[0];
 
-    const institutesListRaw: ObserverSFInstitutesList[] = await this.sfService.models.affiliations.get(
-      'Id, Affiliation_Name, Organization, Affiliation_Type, Contact.Id, End_Date, Start_Date, Role,  Description, Designation',
-      {
-        Contact: id,
-        Organization: programId,
-      },
-      {},
-      instituteId
-    );
-
-    const institutesList: ObserverInstitute[] = await this.observerInstituteMapping(
-      id,
-      institutesListRaw,
-      instituteId,
-      programId,
-    );
-
     const ObserverData: ObserverBEResponse = {
       Id: Id,
       name: Name,
@@ -91,7 +74,7 @@ export class ObserverService {
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,
-      institutes: institutesList,
+      institutes: [],
       mailingCity: MailingCity,
       mailingCountry: MailingCountry,
       mailingState: MailingState,
@@ -105,6 +88,40 @@ export class ObserverService {
       github_link: Github,
       linkedin_link: LinkedIn_URL,
     };
+
+    if (instituteId.startsWith('paws__')) {
+      const instituteDetails = (
+        await this.sfService.paws.programDetails(
+          programId,
+          instituteId,
+        )
+      )[0];
+
+      ObserverData.institutes.push({
+        institute_id: programId,
+        institute_name: instituteDetails.Name,
+        instituteLogo: instituteDetails.Logo,
+      });
+    } else {
+      const institutesListRaw: ObserverSFInstitutesList[] = await this.sfService.models.affiliations.get(
+        'Id, Affiliation_Name, Organization, Affiliation_Type, Contact.Id, End_Date, Start_Date, Role,  Description, Designation',
+        {
+          Contact: id,
+          Organization: programId,
+        },
+        {},
+        instituteId
+      );
+  
+      const institutesList: ObserverInstitute[] = await this.observerInstituteMapping(
+        id,
+        institutesListRaw,
+        instituteId,
+        programId,
+      );
+
+      ObserverData.institutes = institutesList;
+    }
 
     return {
       statusCode: 200,
