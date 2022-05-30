@@ -868,7 +868,7 @@ export class TodoService {
     if (draft.assignee.length) {
       const assigneeTodos: SFTodo[] = [];
       // Create a todo for all the assignees
-      for (const assignee of draft.assignee) {
+            for (const assignee of draft.assignee) {
         assigneeTodos.push({
           ...todoObj,
           Assignee: assignee,
