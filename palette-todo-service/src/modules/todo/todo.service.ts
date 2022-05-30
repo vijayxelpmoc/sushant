@@ -56,7 +56,7 @@ export class TodoService {
   private notifier: Notifier;
   private URL =
     process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/firebase/testNotif'
+      ? 'http://localhost:3000/dev/firebase/testNotif'
       : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/testNotif`;
   constructor(private sfService: SfService) {
     // LOCAL
