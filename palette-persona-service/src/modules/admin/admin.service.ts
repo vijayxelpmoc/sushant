@@ -71,30 +71,6 @@ export class AdminService {
       Profile_Picture,
     } = responseData[0];
 
-    const getInstitute = await this.sfService.models.affiliations.get(
-      'Organization',
-      {
-        Contact: id,
-        Organization: programId,
-        // Role: 'Admin',
-      },
-      {},
-      instituteId,
-    );
-
-    const Institute_Id = getInstitute[0].Organization; // Real Institute Id
-
-    const institute: AdminInstituteName[] | null =
-      await this.sfService.models.accounts.get(
-        'Id, Account_Name, program_logo',
-        {
-          Id: Institute_Id,
-          // Program: programId,
-        },
-        {},
-        instituteId,
-      );
-
     const adminData: AdminBEResponse = {
       Id: Id,
       name: Name,
@@ -102,9 +78,9 @@ export class AdminService {
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,
-      instituteId: institute[0].Id,
-      instituteLogo: institute[0].program_logo,
-      institute_name: institute[0].Account_Name,
+      instituteId: null,
+      instituteLogo: null,
+      institute_name: null,
       designation: Designation,
       mailingCity: MailingCity,
       mailingCountry: MailingCountry,
@@ -119,6 +95,46 @@ export class AdminService {
       github_link: Github,
       linkedin_link: LinkedIn_URL,
     };
+
+    if (instituteId.startsWith('paws__')) {
+      const instituteDetails = (
+        await this.sfService.paws.programDetails(
+          programId,
+          instituteId,
+        )
+      )[0];
+
+      adminData.instituteId = programId;
+      adminData.instituteLogo = instituteDetails.Logo;
+      adminData.institute_name = instituteDetails.Name;
+    } else {
+      const getInstitute = await this.sfService.models.affiliations.get(
+        'Organization',
+        {
+          Contact: id,
+          Organization: programId,
+          // Role: 'Admin',
+        },
+        {},
+        instituteId,
+      );
+  
+      const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+  
+      const institute: AdminInstituteName[] | null = await this.sfService.models.accounts.get(
+        'Id, Account_Name, program_logo',
+        {
+          Id: Institute_Id,
+          // Program: programId,
+        },
+        {},
+        instituteId,
+      );
+
+      adminData.instituteId = institute[0].Id;
+      adminData.instituteLogo = institute[0].program_logo;
+      adminData.institute_name = institute[0].Account_Name;
+    }
 
     return {
       statusCode: 200,
