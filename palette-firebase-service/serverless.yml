@@ -57,12 +57,17 @@ provider:
     FIREBASE_STORAGE_BUCKET: ${env:FIREBASE_STORAGE_BUCKET}
     FIREBASE_TOKEN_BASE_URL: ${env:FIREBASE_TOKEN_BASE_URL}
     FIREBASE_LOG_FILE_PASSWORD: ${env:FIREBASE_LOG_FILE_PASSWORD}
-  iam.role.managedPolicies:
+  iamManagedPolicies:
     - 'arn:aws:iam::aws:policy/AmazonSQSFullAccess'
 
 functions:
   main:
-    handler: dist/lambda.handler  
+    image:
+      name: appimage
+      command:
+        - dist/lambda.handler
+      entryPoint:
+        - '/lambda-entrypoint.sh'
     events:
       - sqs:
           arn: ${env:PALETTE_AWS_SQS_FIREBASE_QUEUE_ARN}
