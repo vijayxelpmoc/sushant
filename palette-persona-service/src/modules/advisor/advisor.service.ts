@@ -62,30 +62,6 @@ export class AdvisorService {
       Profile_Picture,
     } = responseData[0];
 
-    const getInstitute = await this.sfService.models.affiliations.get(
-      'Organization',
-      {
-        Contact: id,
-        Role: 'Advisor',
-        Organization: programId,
-      },
-      {},
-      instituteId,
-    );
-
-    const Institute_Id = getInstitute[0].Organization; // Real Institute Id
-
-    const institute: AdvisorInstituteName[] | null =
-      await this.sfService.models.accounts.get(
-        'Id, Account_Name, program_logo',
-        {
-          Id: Institute_Id,
-          // Program: programId,
-        },
-        {},
-        instituteId,
-      );
-
     const advisorData: AdvisorBEResponse = {
       Id: Id,
       name: Name,
@@ -93,9 +69,9 @@ export class AdvisorService {
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,
-      instituteId: institute[0].Id,
-      instituteLogo: institute[0].program_logo,
-      institute_name: institute[0].Account_Name,
+      instituteId: null,
+      instituteLogo: null,
+      institute_name: null,
       designation: Designation,
       mailingCity: MailingCity,
       mailingCountry: MailingCountry,
@@ -110,6 +86,46 @@ export class AdvisorService {
       github_link: Github,
       linkedin_link: LinkedIn_URL,
     };
+
+    if (instituteId.startsWith('paws__')) {
+      const instituteDetails = (
+        await this.sfService.paws.programDetails(
+          programId,
+          instituteId,
+        )
+      )[0];
+
+      advisorData.instituteId = programId;
+      advisorData.instituteLogo = instituteDetails.Logo;
+      advisorData.institute_name = instituteDetails.Name;
+    } else {
+      const getInstitute = await this.sfService.models.affiliations.get(
+        'Organization',
+        {
+          Contact: id,
+          Role: 'Advisor',
+          Organization: programId,
+        },
+        {},
+        instituteId,
+      );
+  
+      const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+  
+      const institute: AdvisorInstituteName[] | null = await this.sfService.models.accounts.get(
+        'Id, Account_Name, program_logo',
+        {
+          Id: Institute_Id,
+          // Program: programId,
+        },
+        {},
+        instituteId,
+      );
+
+      advisorData.instituteId= institute[0].Id;
+      advisorData.instituteLogo= institute[0].program_logo;
+      advisorData.institute_name= institute[0].Account_Name;
+    }
 
     return {
       statusCode: 200,
