@@ -18,24 +18,27 @@ import { GuardianSubRoles } from '@src/roles/roles.enum';
 import { UpdateSfParentDto } from './dto/parent-update-profile.dto';
 @Injectable()
 export class ParentService {
-  constructor(
-    private readonly sfService: SfService
-  ) {}
+  constructor(private readonly sfService: SfService) {}
 
   /** sends parent details on the basis of the id
    *  @param {string} id - The id of the parent
    * @returns {Object} ParentBEResponse Interface
    */
-   async getParent(id: string, instituteId: string, programId: string): Promise<any> {
-    const responseData: SFParentContact[] = await this.sfService.generics.contacts.get(
-      'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name, Primary_Educational_Institution',
-      {
-        Id: id,
-        Primary_Educational_Institution: programId,
-      },
-      {},
-      instituteId,
-    );
+  async getParent(
+    id: string,
+    instituteId: string,
+    programId: string,
+  ): Promise<any> {
+    const responseData: SFParentContact[] =
+      await this.sfService.generics.contacts.get(
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name, Primary_Educational_Institution',
+        {
+          Id: id,
+          Primary_Educational_Institution: programId,
+        },
+        {},
+        instituteId,
+      );
 
     if (!responseData) {
       throw new NotFoundException(`parent with ID "${id}" not found`);
@@ -64,19 +67,17 @@ export class ParentService {
       Account_Name,
     } = responseData[0];
 
-    const studentList: ParentStudentListSF[] = await this.sfService.models.relationships.get(
-      'Id, Name, Contact.Id, Type, Relationship_Explanation, Related_Contact.Id, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
-      {
-        Related_Contact: Id,
-        Type: GuardianSubRoles,
-        Program: programId,
-      },
-      {},
-      instituteId,
-    );
-
-    console.log('studentList', studentList);
-    
+    const studentList: ParentStudentListSF[] =
+      await this.sfService.models.relationships.get(
+        'Id, Contact.Id, Type, Relationship_Explanation, Related_Contact.Id, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
+        {
+          Related_Contact: Id,
+          Type: [...GuardianSubRoles],
+          Program: programId,
+        },
+        {},
+        instituteId,
+      );
 
     const students: Array<{
       Id: string;
@@ -84,28 +85,7 @@ export class ParentService {
       profilePicture: string;
     }> = [];
 
-    const getInstitute = await this.sfService.models.affiliations.get(
-      'Organization',
-      {
-        Contact: id,
-        Organization: programId,
-        // Role: 'Guardian',
-      },
-      {},
-      instituteId,
-    );
-
-    const Institute_Id = getInstitute[0].Organization; // Real Institute Id
-    // const Institute_Id = responseData[0].Primary_Educational_Institution__c;
-
-    const institute:
-      | ParentInstituteName[]
-      | null = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', {
-      Id: Institute_Id,
-      // Program: programId,
-    }, {}, instituteId);
-
-    studentList.map(student => {
+    studentList.map((student) => {
       if (student.Contact.Is_Deactive === false) {
         const filterObj = {
           Id: student.Contact.Id,
@@ -116,15 +96,14 @@ export class ParentService {
       }
     });
 
-    const parentData: ParentBEResponse = {
+    console.log(studentList);
+
+    // const parentData: ParentBEResponse = {
+    const parentData: any = {
       Id: Id,
       name: Name,
-      firebase_uuid:
-        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
+      firebase_uuid: process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
       phone: Phone,
-      instituteId: institute[0].Id,
-      instituteLogo: institute[0].program_logo,
-      institute_name: institute[0].Account_Name,
       email: Palette_Email,
       profilePicture: Profile_Picture,
       pupils: students,
@@ -142,6 +121,47 @@ export class ParentService {
       linkedin_link: LinkedIn_URL,
     };
 
+    if (instituteId.startsWith('paws__')) {
+      const institute = (
+        await this.sfService.paws.programDetails(programId, instituteId)
+      )[0];
+      Object.assign(parentData, {
+        instituteId: institute.Id,
+        instituteLogo: institute.program_logo,
+        institute_name: institute.Account_Name,
+      });
+    } else {
+      const getInstitute = await this.sfService.models.affiliations.get(
+        'Organization',
+        {
+          Contact: id,
+          Organization: programId,
+          // Role: 'Guardian',
+        },
+        {},
+        instituteId,
+      );
+
+      const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+      // const Institute_Id = responseData[0].Primary_Educational_Institution__c;
+
+      const institute: ParentInstituteName[] | null =
+        await this.sfService.models.accounts.get(
+          'Id, Account_Name, program_logo',
+          {
+            Id: Institute_Id,
+            // Program: programId,
+          },
+          {},
+          instituteId,
+        );
+
+      Object.assign(parentData, {
+        instituteId: institute[0].Id,
+        instituteLogo: institute[0].program_logo,
+        institute_name: institute[0].Account_Name,
+      });
+    }
     return {
       statusCode: 200,
       message: Responses.PROFILE_FETCHED,
@@ -159,28 +179,29 @@ export class ParentService {
     instituteId: string,
     programId: string,
   ) {
-    const responseData: SFParentContact[] = await this.sfService.generics.contacts.get(
-      'Name, Palette_Email',
-      {
-        Id: id,
-        Primary_Educational_Institution: programId,
-      },
-      {},
-      instituteId,
-    );
+    const responseData: SFParentContact[] =
+      await this.sfService.generics.contacts.get(
+        'Name, Palette_Email',
+        {
+          Id: id,
+          Primary_Educational_Institution: programId,
+        },
+        {},
+        instituteId,
+      );
 
     if (!responseData) {
       throw new NotFoundException(`parent with ID "${id}" not found`);
     }
 
-    const { 
-      facebook, 
-      whatsapp, 
-      instagram, 
-      website, 
-      website_Title, 
-      github, 
-      linkedin, 
+    const {
+      facebook,
+      whatsapp,
+      instagram,
+      website,
+      website_Title,
+      github,
+      linkedin,
     } = updateSfParentDto;
 
     const updateObj: any = {};
@@ -230,11 +251,8 @@ export class ParentService {
     //   updateObj.LinkedIn_URL = linkedin;
     // }
 
-    const updateUser: ParentUpdateResponse = await this.sfService.generics.contacts.update(
-      id,
-      updateObj,
-      instituteId,
-    );
+    const updateUser: ParentUpdateResponse =
+      await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
     if (updateUser.id && updateUser.success) {
       return {

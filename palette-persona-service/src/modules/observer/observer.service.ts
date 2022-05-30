@@ -28,16 +28,21 @@ export class ObserverService {
    *  @param {string} id - The id of the admin
    * @returns {Object} AdminBEResponse Interface
    */
-   async getObserver(id: string, instituteId: string, programId: string): Promise<any> {
-    const responseData: SFObserverContact[] = await this.sfService.generics.contacts.get(
-      'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name',
-      {
-        Id: id,
-        Primary_Educational_Institution: programId,
-      },
-      {},
-      instituteId
-    );
+  async getObserver(
+    id: string,
+    instituteId: string,
+    programId: string,
+  ): Promise<any> {
+    const responseData: SFObserverContact[] =
+      await this.sfService.generics.contacts.get(
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Profile_Picture, Account_Name',
+        {
+          Id: id,
+          Primary_Educational_Institution: programId,
+        },
+        {},
+        instituteId,
+      );
 
     if (!responseData) {
       throw new NotFoundException(`Observer with ID "${id}" not found`);
@@ -69,8 +74,7 @@ export class ObserverService {
     const ObserverData: ObserverBEResponse = {
       Id: Id,
       name: Name,
-      firebase_uuid:
-        process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
+      firebase_uuid: process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,
@@ -91,10 +95,7 @@ export class ObserverService {
 
     if (instituteId.startsWith('paws__')) {
       const instituteDetails = (
-        await this.sfService.paws.programDetails(
-          programId,
-          instituteId,
-        )
+        await this.sfService.paws.programDetails(programId, instituteId)
       )[0];
 
       ObserverData.institutes.push({
@@ -103,22 +104,24 @@ export class ObserverService {
         instituteLogo: instituteDetails.Logo,
       });
     } else {
-      const institutesListRaw: ObserverSFInstitutesList[] = await this.sfService.models.affiliations.get(
-        'Id, Affiliation_Name, Organization, Affiliation_Type, Contact.Id, End_Date, Start_Date, Role,  Description, Designation',
-        {
-          Contact: id,
-          Organization: programId,
-        },
-        {},
-        instituteId
-      );
-  
-      const institutesList: ObserverInstitute[] = await this.observerInstituteMapping(
-        id,
-        institutesListRaw,
-        instituteId,
-        programId,
-      );
+      const institutesListRaw: ObserverSFInstitutesList[] =
+        await this.sfService.models.affiliations.get(
+          'Id, Affiliation_Name, Organization, Affiliation_Type, Contact.Id, End_Date, Start_Date, Role,  Description, Designation',
+          {
+            Contact: id,
+            Organization: programId,
+          },
+          {},
+          instituteId,
+        );
+
+      const institutesList: ObserverInstitute[] =
+        await this.observerInstituteMapping(
+          id,
+          institutesListRaw,
+          instituteId,
+          programId,
+        );
 
       ObserverData.institutes = institutesList;
     }
@@ -128,7 +131,7 @@ export class ObserverService {
       message: Responses.PROFILE_FETCHED,
       data: ObserverData,
     };
-  } 
+  }
 
   async observerInstituteMapping(
     userId: string,
@@ -137,12 +140,17 @@ export class ObserverService {
     programId: string,
   ): Promise<ObserverInstitute[]> {
     return await Promise.all(
-      institutesListRaw.map(async c => {
-        const getInstitute = await this.sfService.models.affiliations.get('*', {
-          Contact: userId,
-          Role: 'Observer',
-          Organization: programId,
-        }, {}, instituteId);
+      institutesListRaw.map(async (c) => {
+        const getInstitute = await this.sfService.models.affiliations.get(
+          '*',
+          {
+            Contact: userId,
+            Role: 'Observer',
+            Organization: programId,
+          },
+          {},
+          instituteId,
+        );
 
         const Institute_Id = getInstitute[0].Organization; // Real Institute Id
 
@@ -152,7 +160,7 @@ export class ObserverService {
             Id: Institute_Id,
           },
           {},
-          instituteId
+          instituteId,
         );
         const instituteObj = {
           // institute_id: c.Id,
@@ -186,7 +194,7 @@ export class ObserverService {
       throw new NotFoundException(`Observer with #${id} not found`);
     }
 
-    const { 
+    const {
       facebook,
       whatsapp,
       instagram,
@@ -246,7 +254,12 @@ export class ObserverService {
     const updateUser: ObserverUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-    if (updateUser.id && updateUser.success) {
+    if (instituteId.startsWith('paws__') && updateUser[0].Id) {
+      return {
+        statusCode: 200,
+        message: Responses.PROFILE_UPDATED,
+      };
+    } else if (updateUser.id && updateUser.success) {
       return { status: 200, message: Responses.OBSERVER_SAVED };
     } else {
       throw new BadRequestException(Errors.OBSERVER_SAVE_ERROR);

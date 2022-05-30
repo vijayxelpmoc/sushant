@@ -25,7 +25,7 @@ export class AdvisorService {
   async getAdvisor(id: string, instituteId: string, programId: string) {
     const responseData: SFAdvisorContact[] =
       await this.sfService.generics.contacts.get(
-        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Account_Name, Profile_Picture',
         {
           Id: id,
           Primary_Educational_Institution: programId,
@@ -57,7 +57,7 @@ export class AdvisorService {
       Website_Title,
       Github,
       LinkedIn_URL,
-      Designation,
+      Designation = '',
       Account_Name,
       Profile_Picture,
     } = responseData[0];
@@ -89,10 +89,7 @@ export class AdvisorService {
 
     if (instituteId.startsWith('paws__')) {
       const instituteDetails = (
-        await this.sfService.paws.programDetails(
-          programId,
-          instituteId,
-        )
+        await this.sfService.paws.programDetails(programId, instituteId)
       )[0];
 
       advisorData.instituteId = programId;
@@ -109,22 +106,23 @@ export class AdvisorService {
         {},
         instituteId,
       );
-  
-      const Institute_Id = getInstitute[0].Organization; // Real Institute Id
-  
-      const institute: AdvisorInstituteName[] | null = await this.sfService.models.accounts.get(
-        'Id, Account_Name, program_logo',
-        {
-          Id: Institute_Id,
-          // Program: programId,
-        },
-        {},
-        instituteId,
-      );
 
-      advisorData.instituteId= institute[0].Id;
-      advisorData.instituteLogo= institute[0].program_logo;
-      advisorData.institute_name= institute[0].Account_Name;
+      const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+
+      const institute: AdvisorInstituteName[] | null =
+        await this.sfService.models.accounts.get(
+          'Id, Account_Name, program_logo',
+          {
+            Id: Institute_Id,
+            // Program: programId,
+          },
+          {},
+          instituteId,
+        );
+
+      advisorData.instituteId = institute[0].Id;
+      advisorData.instituteLogo = institute[0].program_logo;
+      advisorData.institute_name = institute[0].Account_Name;
     }
 
     return {
@@ -215,7 +213,12 @@ export class AdvisorService {
 
     const updateUser: AdvisorUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
-    if (updateUser.id && updateUser.success) {
+    if (instituteId.startsWith('paws__') && updateUser[0].Id) {
+      return {
+        statusCode: 200,
+        message: Responses.PROFILE_UPDATED,
+      };
+    } else if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,

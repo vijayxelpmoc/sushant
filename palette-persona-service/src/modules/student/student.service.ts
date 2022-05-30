@@ -192,15 +192,7 @@ export class StudentService {
       firebase_uuid: process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
       DOB: Birthdate,
       gender: Gender,
-      education: [
-        // {
-        //   instituteId: institute[0].Id,
-        //   instituteLogo: institute[0].program_logo,
-        //   institute_name: institute[0].Account_Name,
-        //   course: Grade,
-        //   roll_no: Student_ID,
-        // },
-      ],
+      education: [],
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,

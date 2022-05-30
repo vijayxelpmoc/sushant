@@ -33,7 +33,7 @@ export class AdminService {
   async getAdmin(id: string, instituteId: string, programId: string) {
     const responseData: SFAdminContact[] =
       await this.sfService.generics.contacts.get(
-        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Account_Name, Profile_Picture, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode',
         // "Id,Name",
         {
           Id: id,
@@ -81,7 +81,7 @@ export class AdminService {
       instituteId: null,
       instituteLogo: null,
       institute_name: null,
-      designation: Designation,
+      designation: '',
       mailingCity: MailingCity,
       mailingCountry: MailingCountry,
       mailingState: MailingState,
@@ -98,10 +98,7 @@ export class AdminService {
 
     if (instituteId.startsWith('paws__')) {
       const instituteDetails = (
-        await this.sfService.paws.programDetails(
-          programId,
-          instituteId,
-        )
+        await this.sfService.paws.programDetails(programId, instituteId)
       )[0];
 
       adminData.instituteId = programId;
@@ -118,18 +115,19 @@ export class AdminService {
         {},
         instituteId,
       );
-  
+
       const Institute_Id = getInstitute[0].Organization; // Real Institute Id
-  
-      const institute: AdminInstituteName[] | null = await this.sfService.models.accounts.get(
-        'Id, Account_Name, program_logo',
-        {
-          Id: Institute_Id,
-          // Program: programId,
-        },
-        {},
-        instituteId,
-      );
+
+      const institute: AdminInstituteName[] | null =
+        await this.sfService.models.accounts.get(
+          'Id, Account_Name, program_logo',
+          {
+            Id: Institute_Id,
+            // Program: programId,
+          },
+          {},
+          instituteId,
+        );
 
       adminData.instituteId = institute[0].Id;
       adminData.instituteLogo = institute[0].program_logo;
@@ -226,7 +224,12 @@ export class AdminService {
     const updateUser: AdminUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-    if (updateUser.id && updateUser.success) {
+    if (instituteId.startsWith('paws__') && updateUser[0].Id) {
+      return {
+        statusCode: 200,
+        message: Responses.PROFILE_UPDATED,
+      };
+    } else if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,
