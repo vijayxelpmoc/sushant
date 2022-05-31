@@ -41,9 +41,9 @@ export class AuthService {
   private readonly logger = new Logger(AuthService.name);
 
   constructor(
-    private sfService: SfService, 
-    private jwtService: JwtService, 
-    private configService: ConfigService
+    private sfService: SfService,
+    private jwtService: JwtService,
+    private configService: ConfigService,
   ) {
     // this._cryptr = new Cryptr(configService.get<string>('PASSWORD_HASHING_KEY'));
     this._notifier = new Notifier();
@@ -86,28 +86,45 @@ export class AuthService {
     );
   }
 
-  async _getUser(identifier: SFField, sort?: SFField, instituteId?: string): Promise<User> {
+  async _getUser(
+    identifier: SFField,
+    sort?: SFField,
+    instituteId?: string,
+  ): Promise<User> {
     const _userFields =
       'Id, Palette_Email, Name, Contact_Record_Type, Phone, IsRegisteredOnPalette, Palette_Key, Record_Type_Name, prod_uuid, dev_uuid, Is_Deactive';
 
     const user: User = (
-      await this.sfService.generics.contacts.get(_userFields, identifier, sort, instituteId)
+      await this.sfService.generics.contacts.get(
+        _userFields,
+        identifier,
+        sort,
+        instituteId,
+      )
     )[0];
-    
+
     return user;
   }
 
   // Service Methods
 
-  async validateUser(authValidateDto: AuthValidateDto, instituteId: string,  programId: string, role: string) {
-    const user = await this._getUser({
-      Palette_Email: authValidateDto.email,
-      Primary_Educational_Institution: programId,
-      Record_Type_Name: role.toUpperCase(),
-    },
-    {},
-    instituteId,
+  async validateUser(
+    authValidateDto: AuthValidateDto,
+    instituteId: string,
+    programId: string,
+    role: string,
+  ) {
+    const user = await this._getUser(
+      {
+        Palette_Email: authValidateDto.email,
+        Primary_Educational_Institution: programId,
+        Record_Type_Name: role,
+      },
+      {},
+      instituteId,
     );
+
+    console.log(user);
 
     if (!user) {
       throw new NotFoundException(Errors.USER_NOT_FOUND);
@@ -127,10 +144,16 @@ export class AuthService {
     };
   }
 
-  async login(authLoginDto: AuthLoginDto, instituteId: string, programId: string, role: string) {
+  async login(
+    authLoginDto: AuthLoginDto,
+    instituteId: string,
+    programId: string,
+    role: string,
+  ) {
     this.logger.log('NEW login Request');
-  
-    const user = await this._getUser({ 
+
+    const user = await this._getUser(
+      {
         Palette_Email: authLoginDto.email,
         Primary_Educational_Institution: programId,
         Record_Type_Name: role,
@@ -138,11 +161,10 @@ export class AuthService {
       {},
       instituteId,
     );
-    
+
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-    
 
     // Validate the password
     // [INFO] The monolith implementation of Palette uses Cryptr for hashing,
@@ -165,9 +187,7 @@ export class AuthService {
     }
 
     const uuid =
-      process.env.NODE_ENV === 'production'
-        ? user.prod_uuid
-        : user.dev_uuid;
+      process.env.NODE_ENV === 'production' ? user.prod_uuid : user.dev_uuid;
 
     return {
       statusCode: 200,
@@ -184,16 +204,17 @@ export class AuthService {
   async resetPassword(
     authResetPasswordDto: AuthResetPasswordDto,
     userId: string,
-    instituteId: string, 
-    programId: string, 
+    instituteId: string,
+    programId: string,
     role: string,
   ) {
     const { oldPassword, newPassword } = authResetPasswordDto;
     // Get the old password of the user from salesforce
-    const user = await this._getUser({ 
+    const user = await this._getUser(
+      {
         Id: userId,
         Primary_Educational_Institution: programId,
-        Record_Type_Name: role, 
+        Record_Type_Name: role,
       },
       {},
       instituteId,
@@ -205,7 +226,7 @@ export class AuthService {
     // Validate the password
     const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
-    
+
     this.logger.log(`REC : ${oldPassword} ${newPassword}`);
     this.logger.log(`OLD : ${decryptedPassword}`);
     if (oldPassword !== decryptedPassword) {
@@ -214,7 +235,8 @@ export class AuthService {
 
     // Encrypt the new password and update the user
     const newPasswordHash = cryptr.encrypt(newPassword);
-    await this.sfService.generics.contacts.update(userId, 
+    await this.sfService.generics.contacts.update(
+      userId,
       {
         Palette_Key: newPasswordHash,
       },
@@ -230,12 +252,17 @@ export class AuthService {
     };
   }
 
-  async forgotPassword(authForgotPasswordDto: AuthForgotPasswordDto, instituteId: string, programId: string, role: string) {
+  async forgotPassword(
+    authForgotPasswordDto: AuthForgotPasswordDto,
+    instituteId: string,
+    programId: string,
+    role: string,
+  ) {
     const user = await this._getUser(
       {
         Palette_Email: authForgotPasswordDto.email,
         Primary_Educational_Institution: programId,
-        Record_Type_Name: role, 
+        Record_Type_Name: role,
       },
       {},
       instituteId,
@@ -243,7 +270,7 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-    
+
     if (user.IsRegisteredOnPalette === false) {
       throw new UnauthorizedException(Errors.NOT_REGISTERED_ERROR);
     }
@@ -255,7 +282,7 @@ export class AuthService {
     otpMgr.email = user.Palette_Email;
     otpMgr.otp = String(otp);
     otpMgr.for = OtpChecks.FORGOT_PASSWORD;
-    await otpMgr.save();    
+    await otpMgr.save();
 
     // Send the otp to user via email and sms.
     this._notifier.send(NotificationType.SMS, {
@@ -284,7 +311,7 @@ export class AuthService {
       message: Responses.OTP_SENT_SUCCESS,
     };
   }
-  
+
   async forgotPasswordValidateOtp(
     authForgotPasswordValidateOtpDto: AuthForgotPasswordValidateOtpDto,
     instituteId: string,
@@ -297,7 +324,7 @@ export class AuthService {
       where: {
         email,
         for: OtpChecks.FORGOT_PASSWORD,
-      }
+      },
     });
     if (!userOtpMgr) {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
@@ -335,18 +362,19 @@ export class AuthService {
   async forgotPasswordSetNew(
     authForgotPasswordSetNewDto: AuthForgotPasswordSetNewDto,
     instituteId: string,
-    programId: string, 
+    programId: string,
     role: string,
   ) {
     const { email, newPassword, senderValidationId } =
       authForgotPasswordSetNewDto;
-    const user = await this._getUser({
-        Palette_Email__c: email,
+    const user = await this._getUser(
+      {
+        Palette_Email: email,
         Primary_Educational_Institution: programId,
-        Record_Type_Name: role, 
+        Record_Type_Name: role,
       },
       {},
-      instituteId
+      instituteId,
     );
     if (!user) {
       throw new UnauthorizedException(Errors.MALFORMED_REQUEST);
@@ -356,7 +384,7 @@ export class AuthService {
       where: {
         email,
         for: OtpChecks.FORGOT_PASSWORD,
-        senderValidationId
+        senderValidationId,
       },
     });
     if (!userOtpMgr) {
@@ -365,10 +393,12 @@ export class AuthService {
 
     const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const newPasswordHash = cryptr.encrypt(newPassword);
-    await this.sfService.generics.contacts.update(user.Id, {
+    await this.sfService.generics.contacts.update(
+      user.Id,
+      {
         Palette_Key: newPasswordHash,
-      }, 
-      instituteId
+      },
+      instituteId,
     );
 
     return {
@@ -385,55 +415,61 @@ export class AuthService {
     });
   }
 
-
   async getMultiplePrograms(instituteId: string): Promise<any> {
     let EDUCATIONAL_INSTITUTION = AccountRecordType.EDUCATIONAL_INSTITUTION;
-    const programs = await this.sfService.models.accounts.get('Id, Account_Name, program_logo', { Record_Type_Name: EDUCATIONAL_INSTITUTION }, {}, instituteId);
+    const programs = await this.sfService.models.accounts.get(
+      'Id, Account_Name, program_logo',
+      { Record_Type_Name: EDUCATIONAL_INSTITUTION },
+      {},
+      instituteId,
+    );
 
     // console.log('programs', programs);
     const institutePrograms = [];
-    programs.map(program => {
+    programs.map((program) => {
       const programObj = {};
       programObj['Id'] = program.Id;
       programObj['Name'] = program.Account_Name;
       programObj['Logo'] = program.program_logo;
       institutePrograms.push(programObj);
     });
-    
-    return { 
-      statusCode: 200, 
-      message: 'Programs fetched successfully', 
+
+    return {
+      statusCode: 200,
+      message: 'Programs fetched successfully',
       data: institutePrograms,
     };
   }
 
   async getProgramRoles(instituteId: string): Promise<any> {
     const Roles = [
-      Role.Administrator, 
-      Role.Advisor, 
-      Role.Faculty, 
-      Role.Observer, 
-      Role.Parent, 
-      Role.Student
+      Role.Administrator,
+      Role.Advisor,
+      Role.Faculty,
+      Role.Observer,
+      Role.Parent,
+      Role.Student,
     ];
-  
-    return { 
-      statusCode: 200, 
-      message: 'Programs roles fetched successfully', 
+
+    return {
+      statusCode: 200,
+      message: 'Programs roles fetched successfully',
       data: Roles,
     };
   }
 
-  async getProgramOpportunities(instituteId: string, programId: string, role: string) {
+  async getProgramOpportunities(
+    instituteId: string,
+    programId: string,
+    role: string,
+  ) {
     // console.log('instituteId', instituteId);
     // console.log('programId', programId);
     // console.log('role', role);
-    
     // const acc = await this.sfService.models.accounts.get('Id, Account_Name', { Program__c: programId }, {}, instituteId);
-    
-    // return { 
-    //   statusCode: 200, 
-    //   message: 'Programs opportunities fetched successfully', 
+    // return {
+    //   statusCode: 200,
+    //   message: 'Programs opportunities fetched successfully',
     //   data: acc,
     // };
   }

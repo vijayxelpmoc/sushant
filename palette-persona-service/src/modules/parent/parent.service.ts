@@ -72,7 +72,7 @@ export class ParentService {
         'Id, Contact.Id, Type, Relationship_Explanation, Related_Contact.Id, Description, Contact.Name, Contact.Profile_Picture, Contact.Is_Deactive',
         {
           Related_Contact: Id,
-          Type: [...GuardianSubRoles],
+          Type: GuardianSubRoles,
           Program: programId,
         },
         {},
@@ -254,7 +254,14 @@ export class ParentService {
     const updateUser: ParentUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-    if (updateUser.id && updateUser.success) {
+    console.log('UU - ', updateUser);
+
+    if (instituteId.startsWith('paws__') && updateUser[0].Id) {
+      return {
+        statusCode: 200,
+        message: Responses.PROFILE_UPDATED,
+      };
+    } else if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,
