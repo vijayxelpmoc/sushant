@@ -15,7 +15,7 @@
     "sls": "npm run build && serverless offline"
   },
   "dependencies": {
-    "@gowebknot/palette-salesforce-service": "^1.0.16-stable",
+    "@gowebknot/palette-salesforce-service": "^1.0.16-pg",
     "@gowebknot/palette-wrapper": "^1.0.9",
     "@nestjs-modules/mailer": "^1.6.1",
     "@nestjs/axios": "^0.0.7",
