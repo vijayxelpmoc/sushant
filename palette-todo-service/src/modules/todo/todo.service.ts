@@ -56,7 +56,7 @@ export class TodoService {
   private notifier: Notifier;
   private URL =
     process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/firebase/testNotif'
+      ? 'http://localhost:3000/dev/firebase/testNotif'
       : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/testNotif`;
   constructor(private sfService: SfService) {
     // LOCAL
@@ -868,7 +868,7 @@ export class TodoService {
     if (draft.assignee.length) {
       const assigneeTodos: SFTodo[] = [];
       // Create a todo for all the assignees
-      for (const assignee of draft.assignee) {
+            for (const assignee of draft.assignee) {
         assigneeTodos.push({
           ...todoObj,
           Assignee: assignee,
@@ -905,7 +905,7 @@ export class TodoService {
           ...todoObj,
           Todo_Scope: 'Global',
           Program: programId,
-          Parentid: draft.InstituteId,
+          Parent_Account: draft.InstituteId,
         },
         instituteId,
       );
