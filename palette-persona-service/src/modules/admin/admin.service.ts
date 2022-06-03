@@ -22,6 +22,7 @@ import axios from 'axios';
 @Injectable()
 export class AdminService {
   private notifier: Notifier;
+  
   private URL =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000/firebase/send-notification'
