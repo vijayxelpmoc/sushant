@@ -56,8 +56,8 @@ export class TodoService {
   private notifier: Notifier;
   private URL =
     process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/dev/firebase/testNotif'
-      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/testNotif`;
+      ? 'http://localhost:3000/firebase/send-notification'
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/send-notification`;
   constructor(private sfService: SfService) {
     // LOCAL
     this.notifier = new Notifier();
@@ -430,12 +430,10 @@ export class TodoService {
           // create push notification
           try {
             const res = await axios.post(this.URL, {
-              instituteId,
-              programId,
-              userId: admin.Contact.Id,
+              sfId: userId,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
+              body: notificationMsg,
+              payload: {
                 data: await this.GetTodoNotificationData(
                   response.id,
                   programId,
@@ -443,6 +441,8 @@ export class TodoService {
                 ),
                 type: 'Create Todo',
               },
+              instituteId,
+              programId,
             });
             console.log('res', res.data);
 
@@ -1398,12 +1398,12 @@ export class TodoService {
               // firebase notification.
               try {
                 const response = await axios.post(this.URL, {
-                  userId: user,
+                  sfId: user,
                   title: notificationTitle,
-                  message: notificationMsg,
+                  body: notificationMsg,
                   instituteId,
                   programId,
-                  data: {
+                  payload: {
                     data: await this.GetTodoNotificationData(
                       mytodo.Id,
                       programId,
@@ -1893,7 +1893,7 @@ export class TodoService {
     // not getting the Created_By name so getting the names of the user by the ids
     const createdUserIds = [];
     const listedByContactIds = [];
-    allToDo.length !== 0 &&
+    allToDo != undefined && allToDo.length !== 0 &&
       allToDo.map((todo) => {
         if (todo.Listed_by) {
           listedByContactIds.push(todo.Listed_by);
