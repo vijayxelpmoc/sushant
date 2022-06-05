@@ -184,7 +184,7 @@ export class AdminService {
     // getting all the guardians of the students
     const studentConnection: StudentConnectionResponseSF[] =
       await this.sfService.models.relationships.get(
-        'Relationship_Number,Contact, Related_Contact, Type',
+        'Relationship_Number, Contact, Related_Contact, Type',
         {
           Contact: studentIds,
           Type: GuardianSubRoles,
@@ -193,7 +193,8 @@ export class AdminService {
         instituteId,
       );
 
-      const relatedContactIds = studentConnection.map((contact) => contact.Contact);
+      const relatedContactIds = studentConnection.map((contact) => contact.Related_Contact);
+      const contactIds = studentConnection.map(contact => contact.Contact)
 
       const relatedContactDetails = await this.sfService.generics.contacts.get(
         'Id, Name, Profile_Picture, Account_Name, Designation, Is_Deactive, IsRegisteredOnPalette',
@@ -204,56 +205,68 @@ export class AdminService {
         instituteId
       );
 
+      const contactDetails = await this.sfService.generics.contacts.get(
+        'Id, Name, Profile_Picture, Account_Name, Designation, Is_Deactive, IsRegisteredOnPalette',
+        {
+          Id: contactIds,
+        },
+        {},
+        instituteId
+      );
+
+      for(const i in studentConnection){
+        studentConnection[i].Related_Contact = relatedContactDetails[i];
+        studentConnection[i].Contact = contactDetails[i];
+      }
+
 
       
     console.log('seventh', studentConnection);
 
-    // const filteredParent: MentorParentResponse[] = [];
-    // const filteredObserver: ObserverParentResponse[] = [];
+    const filteredParent: MentorParentResponse[] = [];
+    const filteredObserver: ObserverParentResponse[] = [];
 
-    // if (studentConnection.length > 0) {
-    //   studentConnection.map((user) => {
-    //     // checking this to exclude the user that are deactivated
-    //     if (user.Related_Contact !== null) {
-    //       if (user.Related_Contact.Is_Deactive === false) {
-    //         const filteredObj = {
-    //           Id: user.Related_Contact.Id,
-    //           name: user.Related_Contact.Name,
-    //           profilePicture: user.Related_Contact.Profile_Picture,
-    //           instituteName: instituteDetails[0].Account_Name,
-    //           designation: user.Contact.Designation,
-    //           role: user.Contact.Designation,
-    //         };
-    //         if (user.Type === 'Observer') {
-    //           filteredObserver.push(filteredObj);
-    //         } else {
-    //           filteredParent.push(filteredObj);
-    //         }
-    //       }
-    //     }
-    //   });
-    // }
+    if (studentConnection.length > 0) {
+      studentConnection.map((user) => {
+        // checking this to exclude the user that are deactivated
+        if (user.Related_Contact) {
+          if (user.Related_Contact.Is_Deactive === false) {
+            const filteredObj = {
+              Id: user.Related_Contact.Id,
+              name: user.Related_Contact.Name,
+              profilePicture: user.Related_Contact.Profile_Picture,
+              instituteName: instituteDetails[0].Account_Name,
+              designation: user.Contact.Designation,
+              role: user.Contact.Designation,
+            };
+            if (user.Type === 'Observer') {
+              filteredObserver.push(filteredObj);
+            } else {
+              filteredParent.push(filteredObj);
+            }
+          }
+        }
+      });
+    }
 
-    // // removing duplicates
-    // const uniqueParents: MentorParentResponse[] = filteredParent.filter(
-    //   (v, i, a) =>
-    //     a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
-    // );
+    // removing duplicates
+    const uniqueParents: MentorParentResponse[] = filteredParent.filter(
+      (v, i, a) =>
+        a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
+    );
 
-    // const uniqueObserver: ObserverParentResponse[] = filteredObserver.filter(
-    //   (v, i, a) =>
-    //     a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
-    // );
+    const uniqueObserver: ObserverParentResponse[] = filteredObserver.filter(
+      (v, i, a) =>
+        a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
+    );
 
     const response: InstituteDetailsResponse = {
       statusCode: 200,
       data: {
-        parents: [],
-        observers: [],
         students: filteredStudents,
         mentors: filteredMentor,
-        // parents: uniqueParents,
-        // observers: uniqueObserver,
+        parents: uniqueParents,
+        observers: uniqueObserver,
         admins: filteredAdmins,
       },
     };
