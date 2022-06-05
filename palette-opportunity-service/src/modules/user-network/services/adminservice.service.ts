@@ -28,61 +28,77 @@ export class AdminService {
   async getAdminInstituteDetails(
     userId: string,
     instituteId: string,
+    programId: string,
   ): Promise<InstituteDetailsResponse> {
     const studentIds = [];
     const filteredAdmins = [];
 
     // getting the institute of the admin
-    const institute: SFInstitute[] =
-      await this.sfService.models.affiliations.get(
-        'Id, Name,  Organization, Organization.Name, Organization.Id',
+    const responseData =
+      await this.sfService.generics.contacts.get(
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
         {
-          Contact: userId,
-          Role: 'Admin',
+          Id: userId,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
       );
+    console.log({responseData});
 
-    console.log('third', institute[0].Organization);
-
-    if (institute.length === 0) {
-      throw new BadRequestException('Admin has no institute assigned');
-    }
-
-    // getting all the admin inside the institute
-    const Admins: SFAdmins[] = await this.sfService.models.affiliations.get(
-      'Contact, Role, Contact.Id, Contact.Name, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Is_Deactive',
+    const instituteDetails = await this.sfService.models.accounts.get(
+      'Id, Name',
       {
-        Organization: institute[0].Organization.Id,
-        Role: 'Admin',
+        Id: responseData[0].Account_Name
       },
       {},
       instituteId,
     );
 
-    console.log('fourth', Admins);
+    console.log({instituteDetails});
 
-    if (Admins.length > 0) {
-      Admins.map((admin) => {
+    // getting all the admin inside the institute
+    const Admins: SFAdmins[] = await this.sfService.models.affiliations.get(
+      'Contact, Role',
+      {
+        Organization: responseData[0].Account_Name,
+        Role: 'Administrator'
+      },
+      {},
+      instituteId,
+    );
+
+    const otherAdminIds = Admins.map((admin) => admin.Contact);
+
+    const otherAdminDetails = await this.sfService.generics.contacts.get(
+      'Id, Name, Profile_Picture, IsRegisteredOnPalette',
+      {
+        Id: otherAdminIds,
+      },
+      {},
+      instituteId
+    );
+
+    console.log('fourth', otherAdminDetails);
+
+    if (otherAdminDetails.length > 0) {
+      otherAdminDetails.map((admin) => {
         // checking this to exclude the user that are deactivated
         // and also excluding the user requesting
         if (
-          admin.Contact.Id !== userId &&
-          admin.Contact
-          // &&
-          // admin.Contact.Is_Deactive === false
+          admin.Id !== userId
+          // admin.Is_Deactive === false
         ) {
           try {
             const adminObj = {
-              Id: admin.Contact.Id,
-              name: admin.Contact.Name,
-              profilePicture: admin.Contact.Profile_Picture || null,
-              isRegistered: admin.Contact.IsRegisteredOnPalette,
+              Id: admin.Id,
+              name: admin.Name,
+              profilePicture: admin.Profile_Picture || null,
+              isRegistered: admin.IsRegisteredOnPalette,
             };
             filteredAdmins.push(adminObj);
           } catch (error) {
-            // console.log(admin);
+            console.error(error);
           }
         }
       });
@@ -92,7 +108,7 @@ export class AdminService {
     const students: SFStudents[] = await this.sfService.generics.contacts.get(
       'Id, Name, Grade, Primary_Educational_Institution, Profile_Picture, Is_Deactive, IsRegisteredOnPalette',
       {
-        Primary_Educational_Institution: institute[0].Organization.Id,
+        Primary_Educational_Institution: responseData[0].Account_Name,
         Record_Type_Name: 'Student',
       },
       {},
@@ -100,18 +116,6 @@ export class AdminService {
     );
 
     console.log('fifth', students);
-
-    // getting all the mentors inside the institute
-    const mentors: SFMentors[] = await this.sfService.models.affiliations.get(
-      'Id, Name, Organization, Affiliation_Type, Contact, Description, Role, Contact.Id, Contact.Name, Contact.Designation, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Palette_Email, Contact.Is_Deactive',
-      {
-        Organization: institute[0].Organization.Id,
-        Role: ['Advisor', 'Observer'],
-      },
-      {},
-      instituteId,
-    );
-    console.log('sixth', mentors);
 
     // filtering the data
     const filteredStudents: StudentResponse[] = [];
@@ -123,9 +127,7 @@ export class AdminService {
             Id: student.Id,
             name: student.Name,
             profilePicture: student.Profile_Picture,
-            institute: student.Primary_Educational_Institution
-              ? student.Primary_Educational_Institution.Id
-              : null,
+            institute: student.Primary_Educational_Institution || null,
             grade: student.Grade,
             isRegistered: student.IsRegisteredOnPalette,
           };
@@ -135,19 +137,44 @@ export class AdminService {
       });
     }
 
+    // getting all the mentors inside the institute
+    const mentors: SFMentors[] = await this.sfService.models.affiliations.get(
+      'Id, Name, Organization, Affiliation_Type, Contact, Description, Role',
+      {
+        Organization: responseData[0].Account_Name,
+        Role: ['Advisor', 'Observer'],
+      },
+      {},
+      instituteId,
+    );
+
+    const otherMentorIds = mentors.map((mentor) => mentor.Contact);
+
+    const otherMentorDetails = await this.sfService.generics.contacts.get(
+      'Id, Name, Profile_Picture, Designation, Is_Deactive, IsRegisteredOnPalette',
+      {
+        Id: otherMentorIds,
+      },
+      {},
+      instituteId
+    );
+
+    console.log('sixth', mentors);
+
+
     const filteredMentor: MentorParentResponse[] = [];
-    if (mentors.length > 0) {
-      mentors.map((mentor) => {
+    if (otherMentorDetails.length > 0) {
+      otherMentorDetails.map((mentor) => {
         // checking this to exclude the user that are deactivated
-        if (mentor.Contact && mentor.Contact.Is_Deactive === false) {
+        if (mentor && mentor.Is_Deactive === false) {
           const filteredObj = {
-            Id: mentor.Contact.Id,
-            name: mentor.Contact.Name,
-            profilePicture: mentor.Contact.Profile_Picture,
-            instituteName: institute[0].Organization.Account_Name,
-            designation: mentor.Contact.Designation,
+            Id: mentor.Id,
+            name: mentor.Name,
+            profilePicture: mentor.Profile_Picture,
+            instituteName: instituteDetails[0].Account_Name,
+            designation: mentor.Designation,
             role: mentor.Role,
-            isRegistered: mentor.Contact.IsRegisteredOnPalette,
+            isRegistered: mentor.IsRegisteredOnPalette,
           };
           filteredMentor.push(filteredObj);
         }
@@ -157,7 +184,7 @@ export class AdminService {
     // getting all the guardians of the students
     const studentConnection: StudentConnectionResponseSF[] =
       await this.sfService.models.relationships.get(
-        'Relationship_Number,Contact.Primary_Educational_Institution, Contact.Designation, Related_Contact,Related_Contact.Id,Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.Palette_Email, Type, Related_Contact.Is_Deactive,Related_Contact.IsRegisteredOnPalette',
+        'Relationship_Number,Contact, Related_Contact, Type',
         {
           Contact: studentIds,
           Type: GuardianSubRoles,
@@ -165,52 +192,68 @@ export class AdminService {
         {},
         instituteId,
       );
+
+      const relatedContactIds = studentConnection.map((contact) => contact.Contact);
+
+      const relatedContactDetails = await this.sfService.generics.contacts.get(
+        'Id, Name, Profile_Picture, Account_Name, Designation, Is_Deactive, IsRegisteredOnPalette',
+        {
+          Id: relatedContactIds,
+        },
+        {},
+        instituteId
+      );
+
+
+      
     console.log('seventh', studentConnection);
 
-    const filteredParent: MentorParentResponse[] = [];
-    const filteredObserver: ObserverParentResponse[] = [];
+    // const filteredParent: MentorParentResponse[] = [];
+    // const filteredObserver: ObserverParentResponse[] = [];
 
-    if (studentConnection.length > 0) {
-      studentConnection.map((user) => {
-        // checking this to exclude the user that are deactivated
-        if (user.Related_Contact !== null) {
-          if (user.Related_Contact.Is_Deactive === false) {
-            const filteredObj = {
-              Id: user.Related_Contact.Id,
-              name: user.Related_Contact.Name,
-              profilePicture: user.Related_Contact.Profile_Picture,
-              instituteName: institute[0].Organization.Account_Name,
-              designation: user.Contact.Designation,
-              role: user.Contact.Designation,
-            };
-            if (user.Type === 'Observer') {
-              filteredObserver.push(filteredObj);
-            } else {
-              filteredParent.push(filteredObj);
-            }
-          }
-        }
-      });
-    }
+    // if (studentConnection.length > 0) {
+    //   studentConnection.map((user) => {
+    //     // checking this to exclude the user that are deactivated
+    //     if (user.Related_Contact !== null) {
+    //       if (user.Related_Contact.Is_Deactive === false) {
+    //         const filteredObj = {
+    //           Id: user.Related_Contact.Id,
+    //           name: user.Related_Contact.Name,
+    //           profilePicture: user.Related_Contact.Profile_Picture,
+    //           instituteName: instituteDetails[0].Account_Name,
+    //           designation: user.Contact.Designation,
+    //           role: user.Contact.Designation,
+    //         };
+    //         if (user.Type === 'Observer') {
+    //           filteredObserver.push(filteredObj);
+    //         } else {
+    //           filteredParent.push(filteredObj);
+    //         }
+    //       }
+    //     }
+    //   });
+    // }
 
-    // removing duplicates
-    const uniqueParents: MentorParentResponse[] = filteredParent.filter(
-      (v, i, a) =>
-        a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
-    );
+    // // removing duplicates
+    // const uniqueParents: MentorParentResponse[] = filteredParent.filter(
+    //   (v, i, a) =>
+    //     a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
+    // );
 
-    const uniqueObserver: ObserverParentResponse[] = filteredObserver.filter(
-      (v, i, a) =>
-        a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
-    );
+    // const uniqueObserver: ObserverParentResponse[] = filteredObserver.filter(
+    //   (v, i, a) =>
+    //     a.findIndex((t) => JSON.stringify(t) === JSON.stringify(v)) === i,
+    // );
 
     const response: InstituteDetailsResponse = {
       statusCode: 200,
       data: {
+        parents: [],
+        observers: [],
         students: filteredStudents,
         mentors: filteredMentor,
-        parents: uniqueParents,
-        observers: uniqueObserver,
+        // parents: uniqueParents,
+        // observers: uniqueObserver,
         admins: filteredAdmins,
       },
     };

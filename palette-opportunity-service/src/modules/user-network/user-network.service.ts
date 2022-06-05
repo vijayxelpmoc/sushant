@@ -1889,8 +1889,9 @@ export class UserNetworkService {
     const adminDetails = await this.adminService.getAdminInstituteDetails(
       userId,
       instituteId,
+      programId
     );
-    // console.log('adminDetails', adminDetails.data);
+    console.log('adminDetails', adminDetails.data);
 
     const checkRepetitonIds = [];
     checkRepetitonIds.push(userId);
