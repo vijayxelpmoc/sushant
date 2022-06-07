@@ -90,8 +90,6 @@ export class TodoController {
     @Query('instituteId') instituteId: string,
     @Query('programId') programId: string,
   ) {
-    console.log(programId);
-
     return await this.todoService.getTodosV2(
       req.user.id,
       req.user.recordTypeName,
@@ -404,13 +402,14 @@ export class TodoController {
     @Request() req,
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
-  ) {
+  ) { 
     return await this.todoService.updateTodo(
       updateTodoDto,
       req.user.id,
       req.user.recordTypeName,
       instituteId,
       programId,
+      req.headers.authorization,
     );
   }
 
