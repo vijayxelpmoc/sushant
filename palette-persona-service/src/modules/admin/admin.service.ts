@@ -228,7 +228,7 @@ export class AdminService {
     const updateUser: AdminUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-   if (updateUser.id && updateUser.success) {
+    if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,
@@ -594,7 +594,7 @@ export class AdminService {
         instituteId,
       );
       console.log(opp);
-      
+
       if (opp.length == 0) {
         throw new NotFoundException(`Opportunity Not Found`);
       }
@@ -624,7 +624,7 @@ export class AdminService {
             {},
           );
           console.log(getPayloadData.data);
-          
+
           // firebase notification for creator.
           const res = await axios.post(this.URL, {
             instituteId,

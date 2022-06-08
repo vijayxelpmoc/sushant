@@ -13,6 +13,7 @@ import {
 } from './types';
 import { StudentUpdateProfileDto } from './dto';
 import { Errors, Responses } from '@src/constants';
+import { formatDate } from '@src/util';
 
 @Injectable()
 export class StudentService {
@@ -83,7 +84,7 @@ export class StudentService {
       id: Id,
       name,
       firebaseUuid: process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
-      dob,
+      dob: formatDate(dob),
       gender,
       email,
       phone,
@@ -190,7 +191,7 @@ export class StudentService {
       Id: Id,
       name: Name,
       firebase_uuid: process.env.NODE_ENV === 'prod' ? prod_uuid : dev_uuid,
-      DOB: Birthdate,
+      DOB: formatDate(Birthdate),
       gender: Gender,
       education: [],
       phone: Phone,
