@@ -53,6 +53,10 @@ import axios from 'axios';
 @Injectable()
 export class TodoService {
   private notifier: Notifier;
+  private PayloadURL =
+    process.env.NODE_ENV === 'development'
+      ? `http://localhost:5000/notifications/payload/todo`
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/notifications/payload/todo`;
   private URL =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000/firebase/send-notification'
@@ -410,7 +414,7 @@ export class TodoService {
         instituteId,
       );
 
-      // console.log(response);
+      console.log("response",response);
 
       if (!isAdmin) {
         const admins = await this.sfService.models.affiliations.get(
@@ -426,6 +430,13 @@ export class TodoService {
         const notificationTitle = `New todo`;
         const notificationMsg = `New todo requested for approval`;
         admins.map(async (admin) => {
+          const getPayloadData = await axios.get(
+            this.PayloadURL +
+              `?todoId=${response.id}&instituteId=${instituteId}&programId=${programId}`,
+            {},
+          );
+          console.log(getPayloadData);
+          
           // create push notification
           try {
             const res = await axios.post(this.URL, {
@@ -433,11 +444,7 @@ export class TodoService {
               title: notificationTitle,
               body: notificationMsg,
               payload: {
-                data: await this.GetTodoNotificationData(
-                  response.id,
-                  programId,
-                  instituteId,
-                ),
+                data: getPayloadData.data,
                 type: 'Create Todo',
               },
               instituteId,
@@ -1416,6 +1423,11 @@ export class TodoService {
                   : mytodo.Listed_by;
               // firebase notification.
               try {
+                const getPayloadData = await axios.get(
+                  this.PayloadURL +
+                    `?todoId=${mytodo.Id}&instituteId=${instituteId}&programId=${programId}`,
+                  {},
+                );
                 const response = await axios.post(
                   this.URL,
                   {
@@ -1425,11 +1437,7 @@ export class TodoService {
                     instituteId,
                     programId,
                     payload: {
-                      data: await this.GetTodoNotificationData(
-                        mytodo.Id,
-                        programId,
-                        instituteId,
-                      ),
+                      data: getPayloadData.data,
                       type: 'Update Todo',
                     },
                   },
@@ -1752,7 +1760,10 @@ export class TodoService {
     for (const resource of createTodoResourcesDto.resources) {
       const resObj = {
         Name: resource.name,
-        Resource_Type: resource.type,
+        Resource_Type:
+          resource.type === 'jpeg' || 'jpg' || 'JPEG' || 'JPG'
+            ? 'JPG'
+            : resource.type,
         URL: resource.url,
         Program: programId,
       };
@@ -1763,23 +1774,31 @@ export class TodoService {
       resources,
       instituteId,
     );
-    // console.log(resourceRes);
+    console.log(resourceRes);
 
     for (const resource of resourceRes) {
-      for (const todoId of todoIds) {
-        const resourceConObj = {
-          Todo: todoId,
-          Resource: resource.id,
-          Program: programId,
-        };
-        resourceCon.push(resourceConObj);
+      console.log('in for', resource);
+      if (resource.success) {
+        for (const todoId of todoIds) {
+          const resourceConObj = {
+            Todo: todoId,
+            Resource: resource.id,
+            Program: programId,
+          };
+          resourceCon.push(resourceConObj);
+          // res.push({
+          //   Id: resource.id,
+          //   Status: 'Added',
+          // });
+        }
       }
     }
-
     await this.sfService.models.resourceConnections.create(
       resourceCon,
       instituteId,
     );
+
+    console.log(resourceCon);
 
     if (isNewTodo) {
       for (const todo of todoList) {

@@ -467,8 +467,8 @@ export class AdvisorService {
           {},
           instituteId,
         );
-        notificationTitle = `Opportunity ${opp[0].Name}`;
-        notificationMsg = `${opp[0].Name} opportunity requested for approval`;
+        notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+        notificationMsg = `${opp[0].Account_Name} opportunity requested for approval`;
         admins.map(async (admin) => {
           // create push notification
           try {
@@ -525,8 +525,8 @@ export class AdvisorService {
           // });
         });
       } else {
-        notificationTitle = `Opportunity ${opp[0].Name}`;
-        notificationMsg = `${opp[0].Name} opportunity rejected`;
+        notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+        notificationMsg = `${opp[0].Account_Name} opportunity rejected`;
         // create push notification
         try {
           const res = await axios.post(this.URL, {
