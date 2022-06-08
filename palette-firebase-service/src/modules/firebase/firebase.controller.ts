@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Patch, Req, UseGuards, Query, Get, Param } from '@nestjs/common';
-// import { FirebaseChatBackupService } from './services/firebase-chat-backup.service';
+import { FirebaseChatBackupService } from './services/firebase-chat-backup.service';
 import { FirebaseService } from './services/firebase.service';
 import { UuidDto } from './dtos/uuid.dto';
 
@@ -8,7 +8,7 @@ import { UuidDto } from './dtos/uuid.dto';
 export class FirebaseController {
     constructor(
         private readonly firebaseService: FirebaseService,
-        // private readonly firebaseChatBackupService: FirebaseChatBackupService,
+        private readonly firebaseChatBackupService: FirebaseChatBackupService,
     ) {}
     
     @Post('send-notification')

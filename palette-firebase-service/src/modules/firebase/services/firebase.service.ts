@@ -169,6 +169,8 @@ export class FirebaseService {
       }
       
       const send = await _messaging.sendMulticast(message);
+      console.log(send);
+      
       
       return send; 
       // return await _messaging.sendMulticast(message);
