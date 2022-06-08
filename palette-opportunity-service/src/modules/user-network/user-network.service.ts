@@ -738,11 +738,11 @@ export class UserNetworkService {
         if (repIds.indexOf(personas[i]['Contact']['Id']) < 0) {
           if (personas[i]['Role'] !== null) {
             let isNull = true; // assuming uuid is null
-            if (process.env.NODE_ENV == 'dev') {
+            if (process.env.NODE_ENV == 'development') {
               if (personas[i].Contact.dev_uuid !== null)
                 // contradiction
                 isNull = false;
-            } else if (process.env.NODE_ENV == 'prod') {
+            } else if (process.env.NODE_ENV == 'production') {
               if (personas[i].Contact.prod_uuid !== null)
                 // contradiction
                 isNull = false;

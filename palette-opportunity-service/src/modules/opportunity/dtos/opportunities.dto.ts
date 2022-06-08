@@ -42,7 +42,7 @@ export class OpportunitiesInfoDto {
   @IsString()
   website: string;
 
-  @IsNotEmpty()
+  @IsOptional()
   @IsString()
   venue: string;
 
