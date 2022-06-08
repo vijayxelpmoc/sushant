@@ -79,13 +79,18 @@ jobs:
         with:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
-          scope: '@gowebknot'
+          scope: "@gowebknot"
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
           aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ secrets.AWS_REGION }}
+
+      - name: Config NPM
+        run: |
+          npm config set legacy-peer-deps true
+
       - name: deploy
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{secrets.PAT}}" > .npmrc
