@@ -7,7 +7,12 @@ const isIsoDate = (dt: string) => {
 export const formatDate = (date: string) => {
   if (isIsoDate(date)) {
     const d = new Date(date);
-    return `${d.getUTCFullYear()}-${d.getUTCMonth() + 1}-${d.getUTCDate()}`;
+    let m: string | number = d.getUTCMonth() + 1;
+    let dy: string | number = d.getUTCDate();
+
+    m = m < 10 ? `0${m}` : m;
+    dy = dy < 10 ? `0${dy}` : dy;
+    return `${d.getUTCFullYear()}-${m}-${dy}`;
   }
 
   return date;
