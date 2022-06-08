@@ -83,9 +83,16 @@ export class SFCredentialsService {
     for (let i = 0; i < sheets.length; i++) {
       const temp = reader.utils.sheet_to_json(file.Sheets[file.SheetNames[i]]);
       temp.forEach((res: any) => {
+        if (res.instituteName == 'PAWS_Invincia') {
+          res['instituteId'] = 'paws__'+String(uuid());
+        } else {
+          res['instituteId'] = uuid();
+        }
         data.push(res);
       });
     }
+    console.log('data', data);
+    
     // Bulk insert using query builder
     await this.sfCredentialsRepository
       .createQueryBuilder()

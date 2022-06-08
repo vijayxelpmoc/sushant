@@ -34,7 +34,7 @@ export class AdminService {
   async getAdmin(id: string, instituteId: string, programId: string) {
     const responseData: SFAdminContact[] =
       await this.sfService.generics.contacts.get(
-        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Mailing_Address, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Designation, Account_Name, Profile_Picture',
+        'Id, Name, prod_uuid, dev_uuid, Phone, Palette_Email, Facebook, Whatsapp, Instagram, Website, Website_Title, Github, LinkedIn_URL, Account_Name, Profile_Picture, MailingCity, MailingCountry, MailingState, MailingStreet, MailingPostalCode',
         // "Id,Name",
         {
           Id: id,
@@ -72,30 +72,6 @@ export class AdminService {
       Profile_Picture,
     } = responseData[0];
 
-    const getInstitute = await this.sfService.models.affiliations.get(
-      'Organization',
-      {
-        Contact: id,
-        Organization: programId,
-        // Role: 'Admin',
-      },
-      {},
-      instituteId,
-    );
-
-    const Institute_Id = getInstitute[0].Organization; // Real Institute Id
-
-    const institute: AdminInstituteName[] | null =
-      await this.sfService.models.accounts.get(
-        'Id, Account_Name, program_logo',
-        {
-          Id: Institute_Id,
-          // Program: programId,
-        },
-        {},
-        instituteId,
-      );
-
     const adminData: AdminBEResponse = {
       Id: Id,
       name: Name,
@@ -103,10 +79,10 @@ export class AdminService {
       phone: Phone,
       email: Palette_Email,
       profilePicture: Profile_Picture,
-      instituteId: institute[0].Id,
-      instituteLogo: institute[0].program_logo,
-      institute_name: institute[0].Account_Name,
-      designation: Designation,
+      instituteId: null,
+      instituteLogo: null,
+      institute_name: null,
+      designation: '',
       mailingCity: MailingCity,
       mailingCountry: MailingCountry,
       mailingState: MailingState,
@@ -120,6 +96,44 @@ export class AdminService {
       github_link: Github,
       linkedin_link: LinkedIn_URL,
     };
+
+    if (instituteId.startsWith('paws__')) {
+      const instituteDetails = (
+        await this.sfService.paws.programDetails(programId, instituteId)
+      )[0];
+
+      adminData.instituteId = programId;
+      adminData.instituteLogo = instituteDetails.Logo;
+      adminData.institute_name = instituteDetails.Name;
+    } else {
+      const getInstitute = await this.sfService.models.affiliations.get(
+        'Organization',
+        {
+          Contact: id,
+          Organization: programId,
+          // Role: 'Admin',
+        },
+        {},
+        instituteId,
+      );
+
+      const Institute_Id = getInstitute[0].Organization; // Real Institute Id
+
+      const institute: AdminInstituteName[] | null =
+        await this.sfService.models.accounts.get(
+          'Id, Account_Name, program_logo',
+          {
+            Id: Institute_Id,
+            // Program: programId,
+          },
+          {},
+          instituteId,
+        );
+
+      adminData.instituteId = institute[0].Id;
+      adminData.instituteLogo = institute[0].program_logo;
+      adminData.institute_name = institute[0].Account_Name;
+    }
 
     return {
       statusCode: 200,
@@ -211,7 +225,7 @@ export class AdminService {
     const updateUser: AdminUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-    if (updateUser.id && updateUser.success) {
+   if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,

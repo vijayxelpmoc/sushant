@@ -9,7 +9,6 @@ import { TodoModule } from './modules/todo/todo.module';
 import { ActivitiesModule } from './modules/activities/activities.module';
 import { EventsModule } from './modules/events/events.module';
 
-
 import {
   SfService,
   CachingService,
@@ -28,7 +27,7 @@ import {
       }),
       envFilePath: ['.env'],
     }),
-    SfModule.forRoot(),
+    SfModule.forRoot({ executorUrl: 'http://localhost:3001/' }),
     WrapperModule,
     TodoModule,
     ActivitiesModule,

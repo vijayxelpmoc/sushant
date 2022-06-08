@@ -1,6 +1,5 @@
 import {
   BadRequestException,
-  ConsoleLogger,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -580,7 +579,7 @@ export class TodoService {
         instituteId,
       )
     )[0];
-    // // console.log(todo);
+    console.log('Todo - ', todo);
 
     if (!todo) {
       throw new BadRequestException(
@@ -595,11 +594,8 @@ export class TodoService {
       programId,
       instituteId,
     );
-    const testResources = await this.getResourcesById(
-      [todo.Id],
-      programId,
-      instituteId,
-    );
+
+    console.log('RES - ', todoResources);
     // console.log(todo.Assignee);
 
     const assignees =
@@ -615,7 +611,7 @@ export class TodoService {
           )
         : null;
 
-    // console.log(todoResources);
+    console.log('Assignee - ', assignees);
 
     return {
       statusCode: 200,
@@ -647,11 +643,13 @@ export class TodoService {
     programId: string,
   ) {
     const tasks = await this.sfService.models.todos.get(
-      'Id, Archived, Name, Group_Id, Assignee, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue,Program',
+      'Id, Archived, Name, Group_Id, Assignee.Id, Assignee.Name, Complete_By, Description, Listed_by, Task_Status, Created_at, Type, Event_At, Event_Venue,Program',
       { Id: taskId, Program: programId },
       {},
       instituteId,
     );
+
+    console.log('Tasks - ', tasks);
 
     let response;
     if (tasks.length > 0) {
@@ -666,7 +664,7 @@ export class TodoService {
             message: task.Name,
             notifyTo: 'listedBy',
             groupId: task.Group_Id,
-            assigneeId: task.Assignee,
+            assigneeId: task.Assignee.Id,
             listedById: task.Listed_by,
             todoId: task.Id,
           },
@@ -1257,27 +1255,47 @@ export class TodoService {
 
         // doubt
         // Contact.Name, Contact.Profile_Picture, Contact.Primary_Educational_Institution
-        const admins = await this.sfService.models.affiliations.get(
-          'Id, Affiliation_Name,Organization',
-          {
-            Organization:
-              institute.length !== 0
-                ? institute[0].Primary_Educational_Institution
-                : null,
-            Role: 'Admin',
-            // Program: programId,
-          },
-          {},
-          instituteId,
-        );
-        admins.map((admin) => {
-          studentRecepients.push({
-            Id: admin.Id,
-            name: admin.Affiliation_Name,
-            institute: admin.Organization,
+        let admins;
+        if (instituteId.startsWith('paws__')) {
+          admins = await this.sfService.generics.contacts.get(
+            'Id, Name, AffilatedProgram',
+            {
+              AffilatedProgram: programId,
+              Role: 'Administrator',
+            },
+            {},
+            instituteId,
+          );
+          console.log('Admins - ', admins);
+          admins.map((admin) => {
+            studentRecepients.push({
+              Id: admin.Id,
+              name: admin.Name,
+              institute: admin.AffilatedProgram,
+            });
           });
-        });
-        // // console.log('admins', admins);
+        } else {
+          admins = await this.sfService.models.affiliations.get(
+            'Id, Affiliation_Name,Organization',
+            {
+              Organization:
+                institute.length !== 0
+                  ? institute[0].Primary_Educational_Institution
+                  : null,
+              Role: 'Admin',
+              // Program: programId,
+            },
+            {},
+            instituteId,
+          );
+          admins.map((admin) => {
+            studentRecepients.push({
+              Id: admin.Id,
+              name: admin.Affiliation_Name,
+              institute: admin.Organization,
+            });
+          });
+        }
 
         return {
           statusCode: 200,
@@ -1703,7 +1721,7 @@ export class TodoService {
     const resourceCon: TodoResourceConnection[] = [];
 
     const todoList: SFTask[] = await this.sfService.models.todos.get(
-      'Id, Archived, To_do, Group_Id, Assignee, Complete_By, Description, Listed_by, Task_Status, Created_at, Created_By, Type, Event_At, Event_Venue',
+      'Id, Archived, To_do, Group_Id, Assignee, Complete_By, Description, Listed_by, Task_Status, Created_at, Type, Event_At, Event_Venue',
       {
         Id: todoIds,
         Program: programId,
@@ -1725,6 +1743,7 @@ export class TodoService {
       throw new BadRequestException("Tasks doesn't belong to the same group");
     }
 
+    console.log('L', listedById);
     if (todoList[0].Listed_by != listedById) {
       throw new BadRequestException('You are not the creator of this Todo');
     }
@@ -1896,7 +1915,7 @@ export class TodoService {
    */
   async getTasks(filters, programId: string, instituteId: string) {
     const allToDo: any[] = await this.sfService.models.todos.get(
-      'Id, Archived, Assignee.Id, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, To_do, Created_By, Type, Event_At, Event_Venue, Listed_by, Group_Id, Assignee_accepted_status, Todo_Scope, Status, Opportunit_Id, Reminder_at',
+      'Id, Archived, Assignee.Id, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, To_do, Type, Event_At, Event_Venue, Listed_by, Group_Id, Assignee_accepted_status, Todo_Scope, Status, Opportunit_Id, Reminder_at',
       filters,
       {},
       instituteId,

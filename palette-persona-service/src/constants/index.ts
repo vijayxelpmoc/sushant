@@ -1,7 +1,7 @@
 export const Errors = {
   MAX_INTERESTS_LIMIT: 'Number of interests exceeds the max limit',
   MAX_SKILLS_LIMIT: 'Number of skills exceeds the max limit',
-  OBSERVER_SAVE_ERROR: '',
+  OBSERVER_SAVE_ERROR: 'Error Updating the profile',
   OBSERVER_STUDENT_NOT_FOUND: '',
 };
 
