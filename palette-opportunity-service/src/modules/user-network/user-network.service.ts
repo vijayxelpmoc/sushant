@@ -1889,8 +1889,9 @@ export class UserNetworkService {
     const adminDetails = await this.adminService.getAdminInstituteDetails(
       userId,
       instituteId,
+      programId
     );
-    // console.log('adminDetails', adminDetails.data);
+    console.log('adminDetails', adminDetails.data);
 
     const checkRepetitonIds = [];
     checkRepetitonIds.push(userId);
@@ -2070,9 +2071,8 @@ export class UserNetworkService {
         instituteId,
       );
 
-      // console.log('eleventh', adminParentsDetails);
-
-      for (let i = 0; i < adminParentsList.length; i++) {
+      for (let i = 0; i < adminParentsDetails.length; i++) {
+       // console.log(adminParentsDetails[i]);
         if (checkRepetitonIds.indexOf(adminParentsDetails[i].Id) == -1) {
           if (process.env.NODE_ENV === 'prod') {
             const obj = {

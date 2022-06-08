@@ -51,11 +51,13 @@ export class NotificationController {
   async getNotifications(
     @Request() req,
     @Query() instituteId: string,
+    @Query() programId: string,
   ): Promise<BasicDataResponse> {
-    console.log(req.user,instituteId);
-    
+    console.log(req.user, instituteId);
+
     return await this.notificationService.getNotifications(
       req.user.id,
+      programId,
       instituteId,
     );
   }
@@ -86,13 +88,13 @@ export class NotificationController {
     type: BasicDataResponseDto,
   })
   async getNotificationDetail(
-    @Request() req,
     @Param('id') id: string,
     @Query() instituteId: string,
+    @Query() programId: string,
   ): Promise<BasicDataResponse> {
     return await this.notificationService.getNotificationDetail(
       id,
-      req.user.id,
+      programId,
       instituteId,
     );
   }
@@ -120,8 +122,13 @@ export class NotificationController {
   makeNotificationsRead(
     @Request() req,
     @Query() instituteId: string,
+    @Query() programId: string,
   ): Promise<BasicResponse> {
-    return this.notificationService.readNotifications(req.user.id, instituteId);
+    return this.notificationService.readNotifications(
+      req.user.id,
+      programId,
+      instituteId,
+    );
   }
 
   /**
@@ -148,6 +155,7 @@ export class NotificationController {
     @Request() req,
     @Param('id') id: string,
     @Query() instituteId: string,
+    @Query() programId: string,
   ): Promise<BasicResponse> {
     return this.notificationService.readNotification(
       req.user.id,
@@ -167,9 +175,14 @@ export class NotificationController {
   )
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Delete('/deleteAll')
-  deleteAllNotifications(@Request() req, @Query() instituteId: string) {
+  deleteAllNotifications(
+    @Request() req,
+    @Query() instituteId: string,
+    @Query() programId: string,
+  ) {
     return this.notificationService.deleteAllNotifications(
       req.user.id,
+      programId,
       instituteId,
     );
   }

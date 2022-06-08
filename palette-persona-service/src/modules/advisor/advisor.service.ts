@@ -17,7 +17,11 @@ import axios from 'axios';
 @Injectable()
 export class AdvisorService {
   private notifier: Notifier;
-  private URL = 'http://localhost:3000/firebase/testNotif';
+  
+  private URL =
+    process.env.NODE_ENV === 'development'
+      ? 'http://localhost:3000/firebase/send-notification'
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/send-notification`;
   constructor(private sfService: SfService) {
     this.notifier = new Notifier();
   }
@@ -158,7 +162,7 @@ export class AdvisorService {
       whatsapp,
       instagram,
       website,
-      website_Title,
+      websiteTitle,
       github,
       linkedin,
     } = updateSfAdvisorDto;
@@ -171,7 +175,7 @@ export class AdvisorService {
     updateObj.Github = github;
     updateObj.LinkedIn_URL = linkedin;
     updateObj.Website = website;
-    updateObj.Website_Title = website_Title;
+    updateObj.Website_Title = websiteTitle;
 
     // const updateObj: any = {};
     // updateObj.Primary_Educational_Institution = programId;
@@ -471,10 +475,10 @@ export class AdvisorService {
             const res = await axios.post(this.URL, {
               instituteId,
               programId,
-              userId: admin.Contact.Id,
+              sfId: admin.Contact.Id,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
+              body: notificationMsg,
+              payload: {
                 data: 'Opportunity data',
                 type: 'Create opportunity',
               },
@@ -528,10 +532,10 @@ export class AdvisorService {
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
+            body: notificationMsg,
+            payload: {
               data: 'Opportunity data',
               type: 'Create opportunity',
             },
