@@ -18,11 +18,12 @@ import {
 } from './types/admin-interface';
 import { env } from 'process';
 import axios from 'axios';
+import { formatDate } from '@src/util';
 
 @Injectable()
 export class AdminService {
   private notifier: Notifier;
-  
+
   private URL =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000/firebase/send-notification'
@@ -225,7 +226,7 @@ export class AdminService {
     const updateUser: AdminUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-   if (updateUser.id && updateUser.success) {
+    if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,
