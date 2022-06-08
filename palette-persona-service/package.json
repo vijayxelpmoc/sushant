@@ -15,7 +15,7 @@
     "sls": "npm run build && serverless offline"
   },
   "dependencies": {
-    "@gowebknot/palette-salesforce-service": "^1.0.13-pg",
+    "@gowebknot/palette-salesforce-service": "^1.0.20-pg",
     "@gowebknot/palette-wrapper": "^1.0.9",
     "@nestjs/common": "^8.1.1",
     "@nestjs/config": "^1.1.6",
@@ -31,6 +31,7 @@
     "class-validator": "^0.13.2",
     "joi": "^17.5.0",
     "module-alias": "^2.2.2",
+    "passport": "^0.6.0",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^7.4.0"

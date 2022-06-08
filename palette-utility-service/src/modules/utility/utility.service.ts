@@ -56,10 +56,7 @@ export class UtilityService {
       instituteId,
     );
 
-    if (
-      response.success ||
-      (instituteId.startsWith('paws__') && response[0].Id)
-    ) {
+    if (response.success) {
       // Send a notification to the admin
       // All the recipients of contactUs are stored in env:UTILITY_NOTIFICATION_RECIPIENTS
 
@@ -104,7 +101,7 @@ export class UtilityService {
     // const screenshotsValue = screenshots.join(',\n');
 
     // saving on salesforce service
-    await this.sfService.models.reportIssues.create(
+    const res = await this.sfService.models.reportIssues.create(
       {
         User_Name: name,
         Email: email,
@@ -116,6 +113,7 @@ export class UtilityService {
       },
       instituteId,
     );
+    console.log(res);
     const screenShotList = [];
     for (let i = 0; i < 3; i++) {
       if (screenshots[i]) {
@@ -255,10 +253,7 @@ export class UtilityService {
 
     console.log(response);
 
-    if (
-      response.success ||
-      (instituteId.startsWith('paws__') && response[0].Id)
-    ) {
+    if (response.success) {
       // Send a notification to the admin
       // All the recipients of feedback are stored in env:UTILITY_NOTIFICATION_RECIPIENTS
 

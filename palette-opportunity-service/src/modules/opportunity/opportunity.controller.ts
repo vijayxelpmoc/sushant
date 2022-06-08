@@ -19,7 +19,10 @@ import {
   WishListDto,
 } from './dtos/opportunities.dto';
 
-import { OpportunitiesInfoDto, OpportunityTodoDto } from './dtos/opportunities.dto';
+import {
+  OpportunitiesInfoDto,
+  OpportunityTodoDto,
+} from './dtos/opportunities.dto';
 import { OpportunityService } from './opportunity.service';
 import { BasicResponse } from './types/login-interface';
 import {
@@ -31,21 +34,19 @@ import {
 import { CommentsDto } from './dtos/create-comments.dto';
 import { InstituteDataResponse } from './types/create-opportunity-interface';
 import { draftInfoDto } from './dto/opportunities.dto';
-import { QueryRequired } from '@src/decorators'; 
+import { QueryRequired } from '@src/decorators';
 
 @Controller({
   path: 'opportunity',
 })
 export class OpportunityController {
-  constructor(
-    private readonly opportunityService: OpportunityService
-  ) {}
+  constructor(private readonly opportunityService: OpportunityService) {}
 
   /** gets user global and discrete opportunities
    *  @param {userId} string user id
    *  @returns {Object} status code and message and opportunity information
    */
-   @hasRoles(
+  @hasRoles(
     Role.Student,
     Role.Parent,
     Role.Advisor,
@@ -59,7 +60,11 @@ export class OpportunityController {
     @Query('instituteId') instituteId: string,
     @QueryRequired('programId') programId: string,
   ): Promise<any> {
-    return await this.opportunityService.getSelfOpportunities(req.user.id, instituteId, programId);
+    return await this.opportunityService.getSelfOpportunities(
+      req.user.id,
+      instituteId,
+      programId,
+    );
   }
 
   /** adds opportunity to todo
@@ -81,7 +86,12 @@ export class OpportunityController {
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ): Promise<BasicResponse> {
-    return await this.opportunityService.addtoTodo(req.user.id, opportunityId, instituteId, programId);
+    return await this.opportunityService.addtoTodo(
+      req.user.id,
+      opportunityId,
+      instituteId,
+      programId,
+    );
   }
 
   /** creates opportunity
@@ -104,7 +114,7 @@ export class OpportunityController {
     @Body() opportunitiesInfoDto: OpportunitiesInfoDto,
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
-  ): Promise<BasicResponse> {    
+  ): Promise<BasicResponse> {
     return await this.opportunityService.CreateOpportunity(
       req.user.id,
       req.user.recordTypeName,
@@ -327,10 +337,14 @@ export class OpportunityController {
   async getopportunity(
     @Request() req,
     @Param('id') id,
-    @Query('instituteId') instituteId: string, 
+    @Query('instituteId') instituteId: string,
     @QueryRequired('programId') programId: string,
   ): Promise<any> {
-    return await this.opportunityService.getOpportunityDetail(id, instituteId, programId);
+    return await this.opportunityService.getOpportunityDetail(
+      id,
+      instituteId,
+      programId,
+    );
   }
 
   /** gets modification detail
@@ -375,8 +389,8 @@ export class OpportunityController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Post('removal/cancel/:opportunityId')
   async removalCancel(
-    @Request() req, 
-    @Param('opportunityId') opportunityId: string, 
+    @Request() req,
+    @Param('opportunityId') opportunityId: string,
     @Body('instituteId') instituteId: string,
     @Body('programId') programId: string,
   ) {
@@ -430,8 +444,8 @@ export class OpportunityController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('comments/:id')
   async getcomments(
-    @Request() req, 
-    @Param('id') id: string, 
+    @Request() req,
+    @Param('id') id: string,
     @Query('instituteId') instituteId: string,
     @QueryRequired('programId') programId: string,
   ): Promise<any> {
@@ -636,7 +650,7 @@ export class OpportunityController {
     @Request() req,
     @Param('opportunityId') opportunityId: string,
     @Query('instituteId') instituteId: string,
-    @QueryRequired('programId') programId: string,  
+    @QueryRequired('programId') programId: string,
   ): Promise<any> {
     return await this.opportunityService.getOpportunityUsers(
       req.user.id,
@@ -652,28 +666,39 @@ export class OpportunityController {
    *@param req accessToken
    * return list of recommended events
    */
-  @hasRoles(
-    Role.Student,
-    Role.Administrator,
-    Role.Parent,
-    Role.Advisor,
-  )
+  @hasRoles(Role.Student, Role.Administrator, Role.Parent, Role.Advisor)
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('/event/recommend')
   async getRecommendedEvents(
-    @Request() req, 
+    @Request() req,
     @Query('instituteId') instituteId: string,
     @QueryRequired('programId') programId: string,
   ): Promise<any> {
     let role = req.user.recordTypeName;
     if (role == Role.Administrator) {
-      return await this.opportunityService.getAdminRecommendedEvents(req.user.id, instituteId, programId);
+      return await this.opportunityService.getAdminRecommendedEvents(
+        req.user.id,
+        instituteId,
+        programId,
+      );
     } else if (role == Role.Advisor) {
-      return await this.opportunityService.getAdvisorRecommendedEvents(req.user.id, instituteId, programId);
+      return await this.opportunityService.getAdvisorRecommendedEvents(
+        req.user.id,
+        instituteId,
+        programId,
+      );
     } else if (role == Role.Student) {
-      return await this.opportunityService.getStudentRecommendedEvents(req.user.id, instituteId, programId);
+      return await this.opportunityService.getStudentRecommendedEvents(
+        req.user.id,
+        instituteId,
+        programId,
+      );
     } else if (role == Role.Parent) {
-      return await this.opportunityService.getParentRecommendedEvents(req.user.id, instituteId, programId);
+      return await this.opportunityService.getParentRecommendedEvents(
+        req.user.id,
+        instituteId,
+        programId,
+      );
     } else {
       throw new NotFoundException();
     }
@@ -711,21 +736,21 @@ export class OpportunityController {
    * Return the Activity List of Student Institute using studentId
    * @param req
    */
-   @hasRoles(Role.Student)
-   @UseGuards(JwtAuthGuard, RolesGuard)
-   @Get('activities/institute')
-   async getInstituteActivitiesByStudentId(
-     @Request() req, 
-     @Query('instituteId') instituteId: string,
-     @QueryRequired('programId') programId: string,
-    ) {
-     const studentId = req.user.id;
-     return await this.opportunityService.getStudentInstituteActivities(
-       studentId,
-       instituteId,
-       programId,
-     );
-   }
+  @hasRoles(Role.Student)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Get('activities/institute')
+  async getInstituteActivitiesByStudentId(
+    @Request() req,
+    @Query('instituteId') instituteId: string,
+    @QueryRequired('programId') programId: string,
+  ) {
+    const studentId = req.user.id;
+    return await this.opportunityService.getStudentInstituteActivities(
+      studentId,
+      instituteId,
+      programId,
+    );
+  }
 
   /**
    * Return the List of All Activities except for student persona
@@ -742,7 +767,7 @@ export class OpportunityController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('explore/activities')
   async getExploreViewActivities(
-    @Request() req, 
+    @Request() req,
     @Query('instituteId') instituteId: string,
     @QueryRequired('programId') programId: string,
   ): Promise<any> {
@@ -757,7 +782,7 @@ export class OpportunityController {
   /**
    * TESTING
    */
-   @hasRoles(
+  @hasRoles(
     Role.Student,
     Role.Parent,
     Role.Advisor,
@@ -768,7 +793,7 @@ export class OpportunityController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Get('testing')
   async testing(
-    @Request() req, 
+    @Request() req,
     @QueryRequired('instituteId') instituteId: string,
     @QueryRequired('programId') programId: string,
   ): Promise<any> {
@@ -783,8 +808,7 @@ export class OpportunityController {
 
 // YML DATA
 // custom:
-//   serverless-offline: 
+//   serverless-offline:
 //     httpsProtocol: "dev-certs"
 //     httpPort: 4000
 //     lambdaPort: 4002
-

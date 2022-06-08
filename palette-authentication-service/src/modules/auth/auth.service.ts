@@ -416,23 +416,31 @@ export class AuthService {
   }
 
   async getMultiplePrograms(instituteId: string): Promise<any> {
-    let EDUCATIONAL_INSTITUTION = AccountRecordType.EDUCATIONAL_INSTITUTION;
-    const programs = await this.sfService.models.accounts.get(
-      'Id, Account_Name, program_logo',
-      { Record_Type_Name: EDUCATIONAL_INSTITUTION },
-      {},
-      instituteId,
-    );
-
-    // console.log('programs', programs);
     const institutePrograms = [];
-    programs.map((program) => {
-      const programObj = {};
-      programObj['Id'] = program.Id;
-      programObj['Name'] = program.Account_Name;
-      programObj['Logo'] = program.program_logo;
-      institutePrograms.push(programObj);
-    });
+
+    if (instituteId.startsWith('paws__')) {
+      const programs = await this.sfService.paws.organizationPrograms(
+        instituteId,
+      );
+      institutePrograms.push(...programs);
+    } else {
+      let EDUCATIONAL_INSTITUTION = AccountRecordType.EDUCATIONAL_INSTITUTION;
+      const programs = await this.sfService.models.accounts.get(
+        'Id, Account_Name, program_logo',
+        { Record_Type_Name: EDUCATIONAL_INSTITUTION },
+        {},
+        instituteId,
+      );
+
+      // console.log('programs', programs);
+      programs.map((program) => {
+        const programObj = {};
+        programObj['Id'] = program.Id;
+        programObj['Name'] = program.Account_Name;
+        programObj['Logo'] = program.program_logo;
+        institutePrograms.push(programObj);
+      });
+    }
 
     return {
       statusCode: 200,
@@ -456,21 +464,5 @@ export class AuthService {
       message: 'Programs roles fetched successfully',
       data: Roles,
     };
-  }
-
-  async getProgramOpportunities(
-    instituteId: string,
-    programId: string,
-    role: string,
-  ) {
-    // console.log('instituteId', instituteId);
-    // console.log('programId', programId);
-    // console.log('role', role);
-    // const acc = await this.sfService.models.accounts.get('Id, Account_Name', { Program__c: programId }, {}, instituteId);
-    // return {
-    //   statusCode: 200,
-    //   message: 'Programs opportunities fetched successfully',
-    //   data: acc,
-    // };
   }
 }
