@@ -22,10 +22,11 @@ import axios from 'axios';
 @Injectable()
 export class AdminService {
   private notifier: Notifier;
+  
   private URL =
     process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/firebase/testNotif'
-      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/testNotif`;
+      ? 'http://localhost:3000/firebase/send-notification'
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/send-notification`;
   constructor(private readonly sfService: SfService) {
     // this.notifier = new Notifier();
   }
@@ -603,10 +604,10 @@ export class AdminService {
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
+            body: notificationMsg,
+            payload: {
               data: await this.GetOpportunityNotificationData(
                 id,
                 userId,
@@ -683,10 +684,10 @@ export class AdminService {
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
+            body: notificationMsg,
+            payload: {
               data: await this.GetOpportunityNotificationData(
                 id,
                 userId,
@@ -751,10 +752,10 @@ export class AdminService {
               const res = await axios.post(this.URL, {
                 instituteId,
                 programId,
-                userId: rec.Assignee,
+                sfId: rec.Assignee,
                 title: notificationTitle,
-                message: notificationMsg,
-                data: {
+                body: notificationMsg,
+                payload: {
                   data: 'CREATEPAYLOAD',
                   type: 'opportunity removed',
                 },
@@ -832,10 +833,10 @@ export class AdminService {
             const res = await axios.post(this.URL, {
               instituteId,
               programId,
-              userId: event.Assignee,
+              sfId: event.Assignee,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
+              body: notificationMsg,
+              payload: {
                 data: await this.GetOpportunityNotificationData(
                   id,
                   userId,
@@ -944,10 +945,10 @@ export class AdminService {
         const res = await axios.post(this.URL, {
           instituteId,
           programId,
-          userId: opp[0].Listed_by,
+          sfId: opp[0].Listed_by,
           title: notificationTitle,
-          message: notificationMsg,
-          data: {
+          body: notificationMsg,
+          payload: {
             data: await this.GetOpportunityNotificationData(
               id,
               userId,
@@ -1016,10 +1017,10 @@ export class AdminService {
             const response = await axios.post(this.URL, {
               instituteId,
               programId,
-              userId: rec.Assignee,
+              sfId: rec.Assignee,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
+              body: notificationMsg,
+              payload: {
                 data: 'CREATEPAYLOAD',
                 type: 'opportunity modification request',
               },
@@ -1096,10 +1097,10 @@ export class AdminService {
             const res = await axios.post(this.URL, {
               instituteId,
               programId,
-              userId: todo.Assignee,
+              sfId: todo.Assignee,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
+              body: notificationMsg,
+              payload: {
                 data: 'CREATEPAYLOAD',
                 type: 'opportunity modification request',
               },
@@ -1195,10 +1196,10 @@ export class AdminService {
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
+            body: notificationMsg,
+            payload: {
               data: await this.GetOpportunityNotificationData(
                 id,
                 userId,
@@ -1264,10 +1265,10 @@ export class AdminService {
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
+            body: notificationMsg,
+            payload: {
               data: await this.GetOpportunityNotificationData(
                 id,
                 userId,
@@ -1366,10 +1367,10 @@ export class AdminService {
         const res = await axios.post(this.URL, {
           instituteId,
           programId,
-          userId: opp[0].Listed_by,
+          sfId: opp[0].Listed_by,
           title: notificationTitle,
-          message: notificationMsg,
-          data: {
+          body: notificationMsg,
+          payload: {
             data: await this.GetOpportunityNotificationData(
               id,
               userId,
