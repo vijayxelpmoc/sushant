@@ -122,13 +122,15 @@ export class ParentService {
     };
 
     if (instituteId.startsWith('paws__')) {
+      console.log('Here');
       const institute = (
         await this.sfService.paws.programDetails(programId, instituteId)
       )[0];
+      console.log('INS - ', institute);
       Object.assign(parentData, {
-        instituteId: institute.Id,
-        instituteLogo: institute.program_logo,
-        institute_name: institute.Account_Name,
+        instituteId: programId,
+        instituteLogo: institute.Logo,
+        institute_name: institute.Name,
       });
     } else {
       const getInstitute = await this.sfService.models.affiliations.get(
@@ -256,7 +258,7 @@ export class ParentService {
 
     console.log('UU - ', updateUser);
 
-   if (updateUser.id && updateUser.success) {
+    if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,
