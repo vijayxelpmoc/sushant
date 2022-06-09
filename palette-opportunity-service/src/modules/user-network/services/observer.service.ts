@@ -34,22 +34,25 @@ export class ObserverService {
   async getObserverDetails(
     userId: string,
     instituteId: string,
+    programId: string,
     InstiuteDetails?: boolean,
   ): Promise<ObserverDetails | ObserverDetailsInstitute> {
     const students: SFStudentsObserver[] | SFMentorStudentsInstitute[] =
       await this.sfService.models.relationships.get(
-        'Name, Contact,Contact.Id, Contact.Grade, Contact.Name, Contact.Primary_Educational_Institution, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Palette_Email, Contact.Is_Deactive',
+        'Contact.Id, Contact.Grade, Contact.Name, Contact.Primary_Educational_Institution, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Palette_Email, Contact.Is_Deactive',
         {
           Related_Contact: userId,
           Type: ObserverSubRoles,
+          // Type: 'Observer',
         },
         {},
         instituteId,
       );
-
+    
     if (students.length === 0) {
       throw new NotFoundException('no students found');
     }
+
     // filtering students and ids to query for mentors
     const ids = [];
     const InstituteIds = [];
@@ -75,16 +78,20 @@ export class ObserverService {
     // getting mentors
     const mentors: SFMentorStudents[] =
       await this.sfService.models.relationships.get(
-        'Contact, Contact.Id, Contact.Name, Related_Contact.Id, Related_Contact.Name, Related_Contact.Designation, Type, Related_Contact.Profile_Picture, Related_Contact.IsRegisteredOnPalette, Related_Contact.Palette_Email,Related_Contact.Is_Deactive',
+        instituteId.startsWith('paws__') ?
+        'Contact.Id, Contact.Name, Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.IsRegisteredOnPalette, Related_Contact.Palette_Email, Related_Contact.Is_Deactive'
+        : 'Contact.Id, Contact.Name, Related_Contact.Id, Related_Contact.Name, Related_Contact.Designation, Related_Contact.Profile_Picture, Related_Contact.IsRegisteredOnPalette, Related_Contact.Palette_Email, Related_Contact.Is_Deactive',
         {
           Contact: [...ids],
-          Type: MentorSubRoles, // Mentor ==> Advisor}
+          Type: MentorSubRoles,
+          // Contact: ids[0],
+          // Type: 'Advisor',
         },
         {},
         instituteId,
       );
 
-      // console.log("mentors",mentors);
+      console.log("mentors",mentors);
       
     // filtering mentors
     const filteredMentors = [];
@@ -94,7 +101,7 @@ export class ObserverService {
           Id: m.Related_Contact.Id,
           name: m.Related_Contact.Name,
           profilePicture: m.Related_Contact.Profile_Picture,
-          designation: m.Related_Contact.Designation || null,
+          designation: instituteId.startsWith('paws__') ? null : m.Related_Contact.Designation,   // add Designation in PAWS
           isRegistered: m.Related_Contact.IsRegisteredOnPalette,
         };
         filteredMentors.push(filteredMentorObj);
@@ -111,34 +118,54 @@ export class ObserverService {
       return false;
     });
 
+    let institute = [];
     // getting the institute name of mentors with mentors ID
-    const institute = await this.sfService.models.affiliations.get(
-      'Contact, Organization.Name',
-      { Contact: [...uniqueMentorIds], Role: 'Advisor' },
-      {},
-      instituteId,
-    );
+    if (instituteId.startsWith('paws__')) {
+      institute = await this.sfService.paws.programDetails(programId, instituteId);
+    } else {
+      institute = await this.sfService.models.affiliations.get(
+        'Contact, Organization.Name',
+        { Contact: [...uniqueMentorIds], Role: 'Advisor' },
+        {},
+        instituteId,
+      );
+    }
 
     // filtering mentor with institute names by matching the id
     const mentorWithInstitute: MentorDetails[] = [];
 
     for (const mentor of uniqueMentors) {
       let found = false;
-      for (const i of institute) {
-        if (i.Contact === mentor.Id) {
-          const obj = {
-            Id: mentor.Id,
-            name: mentor.name,
-            profilePicture: mentor.profilePicture,
-            designation: mentor.designation,
-            institute: i.Organization.Name || null,
-            isRegistered: mentor.isRegistered,
-          };
-          mentorWithInstitute.push(obj);
-          found = true;
-          break;
+      let obj = null;
+      if (instituteId.startsWith('paws__')) {
+        obj = {
+          Id: mentor.Id,
+          name: mentor.name,
+          profilePicture: mentor.profilePicture,
+          designation: mentor.designation,
+          institute: institute[0].Name,
+          isRegistered: mentor.isRegistered,
+        };
+        mentorWithInstitute.push(obj);
+        found = true;
+      } else {
+        for (const i of institute) {
+          if (i.Contact === mentor.Id) {
+            obj = {
+              Id: mentor.Id,
+              name: mentor.name,
+              profilePicture: mentor.profilePicture,
+              designation: mentor.designation,
+              institute: instituteId.startsWith('paws__') ? i.Name : i.Organization.Name,
+              isRegistered: mentor.isRegistered,
+            };
+            mentorWithInstitute.push(obj);
+            found = true;
+            break;
+          }
         }
       }
+      
       if (!found) {
         const obj = {
           Id: mentor.Id,

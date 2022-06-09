@@ -38,7 +38,7 @@ export class UserNetworkService {
     instituteId: string,
   ) {
     const contacts = [];
-    // console.log(userId, role);
+    console.log(userId, role);
 
     // const have_relationship_or_affiliation = checkRelationshipAffiliation(userId);
 
@@ -52,16 +52,28 @@ export class UserNetworkService {
     // );
     // console.log('first', checkRelationship);
 
-    const checkAffiliation = await this.sfService.models.affiliations.get(
-      '*',
-      {
-        Contact: userId,
-        Organization: programId,
-      },
-      {},
-      instituteId,
-    );
-    // console.log('second', checkAffiliation);
+    let checkAffiliation = [];
+    if (instituteId.startsWith('paws__')) {
+      checkAffiliation = await this.sfService.generics.contacts.get(
+        'Id, Primary_Educational_Institution', 
+        { Id: userId, Primary_Educational_Institution: programId }, 
+        {}, 
+        instituteId
+      );  
+    } else {
+      checkAffiliation = await this.sfService.models.affiliations.get(
+        '*',
+        {
+          Contact: userId,
+          Organization: programId,
+        },
+        {},
+        instituteId,
+      );
+    }
+
+    console.log('checkAffiliation', checkAffiliation);
+    
 
     if (checkAffiliation.length == 0) {
       throw new NotFoundException(`NoAffiliationFound!`);
@@ -950,8 +962,10 @@ export class UserNetworkService {
       const userId = userIds[i];
       let parentsObj = [];
       if (allRoles == true) {
+        console.log('in if');
+        
         parentsObj = await this.sfService.models.relationships.get(
-          'Related_Contact, Type',
+          'Related_Contact.Id, Type',
           {
             Contact: userId,
             Program: programId,
@@ -961,7 +975,7 @@ export class UserNetworkService {
         );
       } else {
         parentsObj = await this.sfService.models.relationships.get(
-          'Related_Contact, Type',
+          'Related_Contact.Id, Type',
           {
             Contact: userId,
             Type: roles,
@@ -974,7 +988,7 @@ export class UserNetworkService {
 
       if (parentsObj.length > 0) {
         const parentIds = parentsObj.map((parent) => {
-          return parent.Related_Contact;
+          return parent.Related_Contact.Id;
         });
 
         const temp = await this.sfService.generics.contacts.get(
@@ -988,6 +1002,8 @@ export class UserNetworkService {
           instituteId,
         );
 
+        console.log('temp', temp);
+
         if (temp.length !== 0) {
           temp.map(async (parents) => {
             if (checkRepetitionIds.indexOf(parents.Id) == -1) {
@@ -1000,7 +1016,7 @@ export class UserNetworkService {
                   parents.Record_Type_Name,
                 ),
                 firebase_uuid:
-                  process.env.NODE_ENV === 'prod'
+                  process.env.NODE_ENV === 'production'
                     ? parents.prod_uuid
                     : parents.dev_uuid,
                 createOpportunity: false,
@@ -1015,34 +1031,55 @@ export class UserNetworkService {
         }
       }
 
-      // doubt
-      // const studentProfile = await this.sfService.getStudent(userId);
-      const instiDetails = await this.sfService.models.affiliations.get(
-        'Name, Id, Contact, Role',
-        {
-          //   Account: studentProfile.education[0].instituteId,
-          Role: ['Admin'],
-          Organization: programId,
-        },
-        {},
-        instituteId,
-      );
-
-      if (instiDetails.length > 0) {
-        const mentorIds = instiDetails.map((mentor) => {
-          return mentor.Contact;
-        });
-
-        const mentorDetails = await this.sfService.generics.contacts.get(
-          'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette',
+      let instiDetails = [];
+      if (instituteId.startsWith('paws__')) {
+        instiDetails = await this.sfService.generics.contacts.get(
+          'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
+          { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, 
+          {}, 
+          instituteId
+        );
+      } else {
+        // doubt
+        // const studentProfile = await this.sfService.getStudent(userId);
+        instiDetails = await this.sfService.models.affiliations.get(
+          'Name, Id, Contact, Role',
           {
-            Id: [...mentorIds],
-            Role: [...roles],
-            Primary_Educational_Institution: programId,
+            //   Account: studentProfile.education[0].instituteId,
+            Role: ['Admin'],
+            Organization: programId,
           },
           {},
           instituteId,
         );
+      }
+
+      console.log('instiDetails', instiDetails);
+      
+      if (instiDetails.length > 0) {
+        let mentorDetails = [];
+        if (instituteId.startsWith('paws__')) {
+          mentorDetails = instiDetails;
+        } else {
+          const mentorIds = instiDetails.map((mentor) => {
+            return mentor.Contact;
+          });
+  
+          mentorDetails = await this.sfService.generics.contacts.get(
+            'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette',
+            {
+              Id: [...mentorIds],
+              Role: [...roles],
+              Primary_Educational_Institution: programId,
+            },
+            {},
+            instituteId,
+          );
+        } 
+
+        console.log('mentorDetails', mentorDetails);
+        
+        
         if (mentorDetails.length > 0) {
           mentorDetails.map((admins) => {
             if (checkRepetitionIds.indexOf(admins.Id) == -1) {
@@ -1053,7 +1090,7 @@ export class UserNetworkService {
                 profilePicture: admins.Profile_Picture,
                 relationship: 'Admin',
                 firebase_uuid:
-                  process.env.NODE_ENV === 'prod'
+                  process.env.NODE_ENV === 'production'
                     ? admins.prod_uuid
                     : admins.dev_uuid,
                 createOpportunity: false,
@@ -1088,6 +1125,7 @@ export class UserNetworkService {
     const advisor = await this.advisorService.getAdvisorDetailsStudents(
       userId,
       instituteId,
+      programId,
     );
 
     if (advisor.data.students.length > 0) {
@@ -1110,7 +1148,7 @@ export class UserNetworkService {
       if (advisorStudentDetails.length > 0) {
         advisorStudentDetails.map((student) => {
           if (checkRepeatition.indexOf(student.Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: student.Id,
                 name: student.Name,
@@ -1147,8 +1185,9 @@ export class UserNetworkService {
 
       if (advisorStudentIds.length > 0) {
         const guardians = await this.sfService.models.relationships.get(
-          'Related_Contact.id, Related_Contact.Name, Related_Contact.Profile_Picture',
+          'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture',
           {
+            // Contact: advisorStudentIds[0], 
             Contact: advisorStudentIds,
             Type: GuardianSubRoles,
             Program: programId,
@@ -1156,6 +1195,9 @@ export class UserNetworkService {
           {},
           instituteId,
         );
+
+        console.log('guardians', guardians);
+        
 
         if (guardians.length > 0) {
           const advisorGuardianIds = guardians.map((guardian) => {
@@ -1166,7 +1208,7 @@ export class UserNetworkService {
             await this.sfService.generics.contacts.get(
               'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
-                Id: [...advisorGuardianIds],
+                Id: advisorGuardianIds,
                 Role: [...roles],
                 Primary_Educational_Institution: programId,
               },
@@ -1174,12 +1216,12 @@ export class UserNetworkService {
               instituteId,
             );
 
-          // console.log('seventh', advisorParentDetails);
+          console.log('seventh', advisorParentDetails);
 
           if (advisorParentDetails.length > 0) {
             advisorParentDetails.map((guardian) => {
               if (checkRepeatition.indexOf(guardian.Id) == -1) {
-                if (process.env.NODE_ENV === 'prod') {
+                if (process.env.NODE_ENV === 'production') {
                   const obj = {
                     id: guardian.Id,
                     name: guardian.Name,
@@ -1216,17 +1258,19 @@ export class UserNetworkService {
         }
 
         const advisorAdvisors = await this.sfService.models.relationships.get(
-          'Related_Contact.id, Related_Contact.Name, Related_Contact.Profile_Picture',
+          'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture',
           {
+            // Contact: advisorStudentIds[0],
             Contact: advisorStudentIds,
             Type: MentorSubRoles,
+            // Type: 'Advisor',
             Program: programId,
           },
           {},
           instituteId,
         );
 
-        // console.log('eight', advisorAdvisors);
+        console.log('eight', advisorAdvisors);
 
         if (advisorAdvisors.length > 0) {
           const advisorAdvisorIds = advisorAdvisors.map((mentor) => {
@@ -1249,7 +1293,7 @@ export class UserNetworkService {
 
           advisorAdvisorDetails.map((advisor) => {
             if (checkRepeatition.indexOf(advisor.Id) == -1) {
-              if (process.env.NODE_ENV === 'prod') {
+              if (process.env.NODE_ENV === 'production') {
                 const obj = {
                   id: advisor.Id,
                   name: advisor.Name,
@@ -1285,16 +1329,18 @@ export class UserNetworkService {
         }
 
         const advisorObservers = await this.sfService.models.relationships.get(
-          'Related_Contact.id, Related_Contact.Name, Related_Contact.Profile_Picture, Contact.Name',
+          'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture, Contact.Name',
           {
+            // Contact: advisorStudentIds[0],
             Contact: advisorStudentIds,
             Type: ObserverSubRoles,
+            // Type: 'Observer',
             Program: programId,
           },
           {},
           instituteId,
         );
-        // console.log('tenth', advisorObservers);
+        console.log('tenth', advisorObservers);
 
         if (advisorObservers.length > 0) {
           const advisorObserverIds = advisorObservers.map((observers) => {
@@ -1318,7 +1364,7 @@ export class UserNetworkService {
 
           advisorObserverDetails.map((observer) => {
             if (checkRepeatition.indexOf(observer.Id) == -1) {
-              if (process.env.NODE_ENV === 'prod') {
+              if (process.env.NODE_ENV === 'production') {
                 const obj = {
                   id: observer.Id,
                   name: observer.Name,
@@ -1355,52 +1401,70 @@ export class UserNetworkService {
       }
     }
 
-    const advisorInstituteDetails =
-      await this.sfService.models.affiliations.get(
+    
+    // const advisorInstituteDetails =
+    //   await this.sfService.models.affiliations.get(
+    //     '*',
+    //     {
+    //       Affiliation_Type: 'Educational Institution',
+    //       Contact: advisor.data.mentor.Id,
+    //       Organization: programId,
+    //     },
+    //     {},
+    //     instituteId,
+    //   );
+    // // console.log('twel', advisorInstituteDetails);
+
+    let advisorInsti = [];
+    if (instituteId.startsWith('paws__')) {
+      advisorInsti = await this.sfService.generics.contacts.get(
+        'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
+        { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, 
+        {}, 
+        instituteId,
+      );
+    } else {
+      advisorInsti = await this.sfService.models.affiliations.get(
         '*',
         {
-          Affiliation_Type: 'Educational Institution',
-          Contact: advisor.data.mentor.Id,
           Organization: programId,
+          Role: ['Admin'],
         },
         {},
         instituteId,
       );
-    // console.log('twel', advisorInstituteDetails);
+    }
 
-    const advisorInsti = await this.sfService.models.affiliations.get(
-      '*',
-      {
-        Organization: programId,
-        Role: ['Admin'],
-      },
-      {},
-      instituteId,
-    );
+    
     // console.log('thirt', advisorInsti);
 
     const adminIds = [];
 
     if (advisorInsti.length > 0) {
-      advisorInsti.map((admins) => {
-        adminIds.push(admins.Contact);
-      });
-      const Admins = await this.sfService.generics.contacts.get(
-        '*',
-        {
-          Id: [...adminIds],
-          Role: [...roles],
-          Primary_Educational_Institution: programId,
-        },
-        {},
-        instituteId,
-      );
+      let Admins = [];
+      if (instituteId.startsWith('paws__')) {
+        Admins = advisorInsti;
+      } else {
+        advisorInsti.map((admins) => {
+          adminIds.push(admins.Contact);
+        });
+        Admins = await this.sfService.generics.contacts.get(
+          '*',
+          {
+            Id: [...adminIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
+          },
+          {},
+          instituteId,
+        );
+      }
 
       // console.log('fourt', Admins);
 
       Admins.map((admin) => {
         if (checkRepeatition.indexOf(admin.Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
+          if (process.env.NODE_ENV === 'production') {
             const obj = {
               id: admin.Id,
               name: admin.Name,
@@ -1447,22 +1511,22 @@ export class UserNetworkService {
   ) {
     const checkRepetitionIds = [];
     checkRepetitionIds.push(userId);
-    const parent = await this.parentService.getParent(userId, instituteId);
-    // console.log(parent);
+    const parent = await this.parentService.getParent(userId, instituteId, programId);
+    console.log('parent', parent.data);
 
-    const parentStudentIds = parent.pupils.map((pupil) => {
+    const parentStudentIds = parent.data.pupils.map((pupil) => {
       return pupil.Id;
     });
 
-    // console.log('parentStudentIds', parentStudentIds);
+    console.log('parentStudentIds', parentStudentIds);
 
     const parentContactList = [];
 
     if (parentStudentIds.length > 0) {
       const parentStudentDetails = await this.sfService.generics.contacts.get(
-        '*',
+        'Id, Name, IsRegisteredOnPalette, Profile_Picture, prod_uuid, Primary_Educational_Institution, dev_uuid',
         {
-          Id: [...parentStudentIds],
+          Id: parentStudentIds,
           Role: [...roles],
           Primary_Educational_Institution: programId,
         },
@@ -1470,11 +1534,11 @@ export class UserNetworkService {
         instituteId,
       );
 
-      // console.log('1', parentStudentDetails);
+      console.log('1', parentStudentDetails);
 
       parentStudentDetails.map((student) => {
         if (checkRepetitionIds.indexOf(student.Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
+          if (process.env.NODE_ENV === 'production') {
             const obj = {
               id: student.Id,
               name: student.Name,
@@ -1508,6 +1572,9 @@ export class UserNetworkService {
         }
       });
 
+      console.log('parentContactList', parentContactList);
+      
+
       const studentInstituteIds = new Array(
         ...new Set(
           parentStudentDetails.map((student) => {
@@ -1516,26 +1583,34 @@ export class UserNetworkService {
         ),
       );
 
+      console.log('studentInstituteIds', studentInstituteIds);
+      
+
+      console.log('parentStudentIds', parentStudentIds);
+      
       const RoleType = new Map();
       const parentGuardians = await this.sfService.models.relationships.get(
-        'Type,Related_Contact',
+        'Type, Related_Contact.Id',
         {
-          Contact: [...parentStudentIds],
+          Contact: parentStudentIds,
           Program: programId,
-          // Type: GuardianSubRoles,
+          Type: GuardianSubRoles,
         },
         {},
         instituteId,
       );
 
-      // console.log('2', parentGuardians);
+      console.log('2', parentGuardians);
 
       parentGuardians.map((event) => {
-        RoleType.set(event.Related_Contact, event.Type);
+        RoleType.set(event.Related_Contact.Id, event.Type);
       });
       const temp_parentGuardiansIds = parentGuardians.map((guardian) => {
-        return guardian.Related_Contact;
+        return guardian.Related_Contact.Id;
       });
+
+      console.log('temp_parentGuardiansIds', temp_parentGuardiansIds);
+      
 
       const hashIds = new Map();
       const parentGuardiansIds = [];
@@ -1544,11 +1619,13 @@ export class UserNetworkService {
         hashIds.set(Id, '1');
       });
       let parentGuardianDetails = [];
-      if (parentGuardiansIds.length > 1) {
+      console.log('parentGuardiansIds', parentGuardiansIds);
+      
+      if (parentGuardiansIds.length >= 1) {
         parentGuardianDetails = await this.sfService.generics.contacts.get(
           'Id, Name, IsRegisteredOnPalette, Profile_Picture, prod_uuid, dev_uuid ',
           {
-            Id: [...parentGuardiansIds],
+            Id: parentGuardiansIds,
             Role: [...roles],
             Primary_Educational_Institution: programId,
           },
@@ -1556,12 +1633,12 @@ export class UserNetworkService {
           instituteId,
         );
 
-        // console.log('3', parentGuardianDetails);
+        console.log('3', parentGuardianDetails);
 
         if (parentGuardianDetails.length > 0) {
           parentGuardianDetails.map(async (guardians) => {
             if (checkRepetitionIds.indexOf(guardians.Id) == -1) {
-              if (process.env.NODE_ENV === 'prod') {
+              if (process.env.NODE_ENV === 'production') {
                 const obj = {
                   id: guardians.Id,
                   name: guardians.Name,
@@ -1571,6 +1648,7 @@ export class UserNetworkService {
                     RoleType.get(guardians.Id),
                   ),
                   firebase_uuid: guardians.prod_uuid,
+
                   createOpportunity: true,
                   shareOpportuity: true,
                   createTodo: true,
@@ -1601,42 +1679,55 @@ export class UserNetworkService {
         }
       }
 
-      const parentStudentInstiDetails = [
-        ...(await this.sfService.models.affiliations.get(
-          'Name, Id, Contact, Role',
-          {
-            Organization: [...studentInstituteIds],
-            Role: ['Admin'],
-          },
-          {},
-          instituteId,
-        )),
-      ];
-
-      // console.log('4', parentStudentInstiDetails);
-
-      const parentStudentMentorIds = parentStudentInstiDetails.map((mentor) => {
-        return mentor.Contact;
-      });
-
-      const parentStudentMentorDetails =
-        await this.sfService.generics.contacts.get(
-          'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name',
-          {
-            Id: [...parentStudentMentorIds],
-            Role: [...roles],
-            Primary_Educational_Institution: programId,
-          },
-          {},
-          instituteId,
+      let parentStudentInstiDetails = [];
+      if (instituteId.startsWith('paws__')) {
+        parentStudentInstiDetails = await this.sfService.generics.contacts.get(
+          'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
+          { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, 
+          {}, 
+          instituteId
         );
+      } else {
+        parentStudentInstiDetails = [
+          ...(await this.sfService.models.affiliations.get(
+            'Name, Id, Contact, Role',
+            {
+              Organization: [...studentInstituteIds],
+              Role: ['Admin'],
+            },
+            {},
+            instituteId,
+          )),
+        ];
+      }
+      
+      let parentStudentMentorDetails = [];
+      if (instituteId.startsWith('paws__')) {
+        parentStudentMentorDetails = parentStudentInstiDetails;
+      } else {
+        const parentStudentMentorIds = parentStudentInstiDetails.map((mentor) => {
+          return mentor.Contact;
+        });
+  
+        parentStudentMentorDetails =
+          await this.sfService.generics.contacts.get(
+            'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name',
+            {
+              Id: parentStudentMentorIds,
+              Role: [...roles],
+              Primary_Educational_Institution: programId,
+            },
+            {},
+            instituteId,
+          );
+      }
 
-      // console.log('5', parentStudentMentorDetails);
+      console.log('5', parentStudentMentorDetails);
 
       if (parentStudentMentorDetails.length > 0) {
         parentStudentMentorDetails.map(async (admins) => {
           if (checkRepetitionIds.indexOf(admins.Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: admins.Id,
                 name: admins.Name,
@@ -1685,41 +1776,54 @@ export class UserNetworkService {
     instituteId: string,
     programId: string,
     roles?: string[],
-  ) {
+  ) {    
+    const checkRepetitionIds = [];
+    checkRepetitionIds.push(userId);
+
     const observerContactList = [];
     // doubt
     const observer = await this.observerService.getObserverDetails(
       userId,
       instituteId,
-    );
-    console.log('observer', observer.data.mentors, observer.data.students);
-
-    const institute = await this.sfService.models.affiliations.get(
-      '*',
-      {
-        Contact: userId,
-        Affiliation_Type: 'Educational Institution',
-        Organization: programId,
-      },
-      {},
-      instituteId,
+      programId,
     );
 
-    const observerInstituteId = institute[0].Organization;
+    // const institute = await this.sfService.models.affiliations.get(
+    //   '*',
+    //   {
+    //     Contact: userId,
+    //     Affiliation_Type: 'Educational Institution',
+    //     Organization: programId,
+    //   },
+    //   {},
+    //   instituteId,
+    // );
 
-    const observerInsti = await this.sfService.models.affiliations.get(
-      '*',
-      {
-        Organization: programId,
-        Role: ['Admin', 'Advisor', 'Observer'],
-      },
-      {},
-      instituteId,
-    );
+    // const observerInstituteId = institute[0].Organization;
+
+    let observerInsti = [];
+    if (instituteId.startsWith('paws__')) {
+      observerInsti = await this.sfService.generics.contacts.get(
+        'Id', 
+        { Primary_Educational_Institution: programId, Role: ['Administrator', 'Advisor', 'Observer']}, 
+        {}, 
+        instituteId
+      );
+    } else {
+      observerInsti = await this.sfService.models.affiliations.get(
+        '*',
+        {
+          Organization: programId,
+          Role: ['Admin', 'Advisor', 'Observer'],
+        },
+        {},
+        instituteId,
+      );
+    }
 
     // console.log("observerInsti",observerInsti);
     const observerInstiIds = observerInsti.map((inst) => {
-      return inst.Contact;
+      return instituteId.startsWith('paws__') ? inst.Id : inst.Contact;
     });
 
     // console.log("observerInstIds",observerInstiIds);
@@ -1735,14 +1839,14 @@ export class UserNetworkService {
     );
 
     for (let i = 0; i < temp.length; i++) {
-      if (observerInsti[i].Contact !== userId) {
-        if (process.env.NODE_ENV === 'prod') {
+      if (checkRepetitionIds.indexOf(temp[i].Id) == -1) {
+        if (process.env.NODE_ENV === 'production') {
           const obj = {
             id: temp[i].Id,
             name: temp[i].Name,
             isRegistered: temp[i].IsRegisteredOnPalette,
             profilePicture: temp[i].Profile_Picture,
-            relationship: temp[i].Role,
+            relationship: instituteId.startsWith('paws__') ? temp[i].Record_Type_Name == 'Administrator' ? 'Admin' : temp[i].Record_Type_Name : temp[i].Role,
             createOpportunity: false,
             firebase_uuid: temp[i].prod_uuid,
             shareOpportuity: true,
@@ -1751,23 +1855,26 @@ export class UserNetworkService {
           };
 
           observerContactList.push(obj);
+          checkRepetitionIds.push(temp[i].Id);
         } else {
           const obj = {
-            id: temp[0].Id,
-            name: temp[0].Name,
-            isRegistered: temp[0].IsRegisteredOnPalette,
-            profilePicture: temp[0].Profile_Picture,
-            relationship: observerInsti[i].Role,
-            firebase_uuid: temp[0].dev_uuid,
+            id: temp[i].Id,
+            name: temp[i].Name,
+            isRegistered: temp[i].IsRegisteredOnPalette,
+            profilePicture: temp[i].Profile_Picture,
+            relationship: instituteId.startsWith('paws__') ? temp[i].Record_Type_Name == 'Administrator' ? 'Admin' : temp[i].Record_Type_Name : temp[i].Role,
+            firebase_uuid: temp[i].dev_uuid,
             shareOpportuity: true,
             createTodo: true,
             chat: true,
           };
 
           observerContactList.push(obj);
+          checkRepetitionIds.push(temp[i].Id);
         }
       }
     }
+    
     const observerStudents = observer.data.students;
     const observerStudentIds = observerStudents.map((student) => {
       return student.Id;
@@ -1785,36 +1892,40 @@ export class UserNetworkService {
     );
 
     for (let i = 0; i < observerStudentDetails.length; i++) {
-      if (process.env.NODE_ENV === 'prod') {
-        const obj = {
-          id: observerStudentDetails[i].Id,
-          name: observerStudentDetails[i].Name,
-          isRegistered: observerStudentDetails[i].IsRegisteredOnPalette,
-          profilePicture: observerStudentDetails[i].Profile_Picture,
-          relationship: 'Student',
-          firebase_uuid: observerStudentDetails[i].prod_uuid,
-          createOpportunity: true,
-          shareOpportuity: true,
-          createTodo: true,
-          chat: true,
-        };
+      if (checkRepetitionIds.indexOf(observerStudentDetails[i].Id) == -1) {
+        if (process.env.NODE_ENV === 'production') {
+          const obj = {
+            id: observerStudentDetails[i].Id,
+            name: observerStudentDetails[i].Name,
+            isRegistered: observerStudentDetails[i].IsRegisteredOnPalette,
+            profilePicture: observerStudentDetails[i].Profile_Picture,
+            relationship: 'Student',
+            firebase_uuid: observerStudentDetails[i].prod_uuid,
+            createOpportunity: true,
+            shareOpportuity: true,
+            createTodo: true,
+            chat: true,
+          };
 
-        observerContactList.push(obj);
-      } else {
-        const obj = {
-          id: observerStudentDetails[i].Id,
-          name: observerStudentDetails[i].Name,
-          isRegistered: observerStudentDetails[i].IsRegisteredOnPalette,
-          profilePicture: observerStudentDetails[i].Profile_Picture,
-          relationship: 'Student',
-          firebase_uuid: observerStudentDetails[i].dev_uuid,
-          createOpportunity: true,
-          shareOpportuity: true,
-          createTodo: true,
-          chat: true,
-        };
+          observerContactList.push(obj);
+          checkRepetitionIds.push(observerStudentDetails[i].Id);
+        } else {
+          const obj = {
+            id: observerStudentDetails[i].Id,
+            name: observerStudentDetails[i].Name,
+            isRegistered: observerStudentDetails[i].IsRegisteredOnPalette,
+            profilePicture: observerStudentDetails[i].Profile_Picture,
+            relationship: 'Student',
+            firebase_uuid: observerStudentDetails[i].dev_uuid,
+            createOpportunity: true,
+            shareOpportuity: true,
+            createTodo: true,
+            chat: true,
+          };
 
-        observerContactList.push(obj);
+          observerContactList.push(obj);
+          checkRepetitionIds.push(observerStudentDetails[i].Id);
+        }
       }
     }
 
@@ -1823,6 +1934,8 @@ export class UserNetworkService {
       {
         Contact: [...observerStudentIds],
         Type: GuardianSubRoles,
+        // Contact: observerStudentIds[0],
+        // Type: 'Guardian',
         Program: programId,
       },
       {},
@@ -1845,37 +1958,40 @@ export class UserNetworkService {
     );
 
     for (let i = 0; i < observerGuardianDetails.length; i++) {
-      if (process.env.NODE_ENV === 'prod') {
-        const obj = {
-          id: observerGuardianDetails[i].Id,
-          name: observerGuardianDetails[i].Name,
-          isRegistered: observerGuardianDetails[i].IsRegisteredOnPalette,
-          profilePicture: observerGuardianDetails[i].Profile_Picture,
-          relationship: 'Guardian',
-          firebase_uuid: observerGuardianDetails[i].prod_uuid,
-          createOpportunity: true,
-          shareOpportuity: true,
-          createTodo: true,
-          chat: true,
-        };
-        observerContactList.push(obj);
-      } else {
-        const obj = {
-          id: observerGuardianDetails[i].Id,
-          name: observerGuardianDetails[i].Name,
-          isRegistered: observerGuardianDetails[i].IsRegisteredOnPalette,
-          profilePicture: observerGuardianDetails[i].Profile_Picture,
-          relationship: 'Guardian',
-          firebase_uuid: observerGuardianDetails[i].dev_uuid,
-          createOpportunity: true,
-          shareOpportuity: true,
-          createTodo: true,
-          chat: true,
-        };
-        observerContactList.push(obj);
+      if (checkRepetitionIds.indexOf(observerGuardianDetails[i].Id) == -1) {
+        if (process.env.NODE_ENV === 'production') {
+          const obj = {
+            id: observerGuardianDetails[i].Id,
+            name: observerGuardianDetails[i].Name,
+            isRegistered: observerGuardianDetails[i].IsRegisteredOnPalette,
+            profilePicture: observerGuardianDetails[i].Profile_Picture,
+            relationship: 'Guardian',
+            firebase_uuid: observerGuardianDetails[i].prod_uuid,
+            createOpportunity: true,
+            shareOpportuity: true,
+            createTodo: true,
+            chat: true,
+          };
+          observerContactList.push(obj);
+          checkRepetitionIds.push(observerGuardianDetails[i].Id);
+        } else {
+          const obj = {
+            id: observerGuardianDetails[i].Id,
+            name: observerGuardianDetails[i].Name,
+            isRegistered: observerGuardianDetails[i].IsRegisteredOnPalette,
+            profilePicture: observerGuardianDetails[i].Profile_Picture,
+            relationship: 'Guardian',
+            firebase_uuid: observerGuardianDetails[i].dev_uuid,
+            createOpportunity: true,
+            shareOpportuity: true,
+            createTodo: true,
+            chat: true,
+          };
+          observerContactList.push(obj);
+          checkRepetitionIds.push(observerGuardianDetails[i].Id);
+        }
       }
     }
-
     return observerContactList;
   }
 
@@ -1886,280 +2002,307 @@ export class UserNetworkService {
     programId: string,
     roles?: string[],
   ) {
-    const adminDetails = await this.adminService.getAdminInstituteDetails(
-      userId,
-      instituteId,
-      programId
-    );
-    console.log('adminDetails', adminDetails.data);
-
-    const checkRepetitonIds = [];
-    checkRepetitonIds.push(userId);
-    const allOtherAdminsId = adminDetails.data.admins.map((event) => {
-      return event.Id;
-    });
     const adminContactsList = [];
-    // console.log('allOtherAdminsId', allOtherAdminsId);
-
-    if (allOtherAdminsId.length > 0) {
-      const allOtherAdminsContact = await this.sfService.generics.contacts.get(
-        '*',
-        {
-          Id: [...allOtherAdminsId],
-          Role: [...roles],
-          Primary_Educational_Institution: programId,
-        },
-        {},
+    if (instituteId.startsWith('paws__')) {
+      const allAffiliatedPersonas = await this.sfService.generics.contacts.get(
+        'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
+        { Primary_Educational_Institution: programId, }, 
+        {}, 
         instituteId,
-      );
-
-      // console.log('eight', allOtherAdminsContact[0]);
-
-      for (let i = 0; i < allOtherAdminsContact.length; i++) {
-        if (checkRepetitonIds.indexOf(allOtherAdminsContact[i].Id) == -1) {
-          const obj = {
-            id: allOtherAdminsContact[i].Id,
-            name: allOtherAdminsContact[i].Name,
-            isRegistered: allOtherAdminsContact[i].IsRegisteredOnPalette,
-            profilePicture: allOtherAdminsContact[i].Profile_Picture,
-            relationship: 'Admin',
-            firebase_uuid:
-              process.env.NODE_ENV === 'prod'
-                ? allOtherAdminsContact[i].prod_uuid
-                : allOtherAdminsContact[i].dev_uuid,
-            createOpportunity: true,
-            shareOpportuity: true,
-            createTodo: true,
-            chat: true,
-          };
-          checkRepetitonIds.push(allOtherAdminsContact[i].Id);
-          adminContactsList.push(obj);
-        }
-      }
-    }
-
-    const adminStudentsList = adminDetails.data.students;
-    if (adminStudentsList.length > 0) {
-      const adminStudentIds = adminStudentsList.map((student) => {
-        return student.Id;
-      });
-      const adminStudentDetails = await this.sfService.generics.contacts.get(
-        '*',
-        {
-          Id: [...adminStudentIds],
-          Role: [...roles],
-          Primary_Educational_Institution: programId,
-        },
-        {},
-        instituteId,
-      );
-      // console.log('ninth', adminStudentDetails[0]);
-
-      for (let i = 0; i < adminStudentsList.length; i++) {
-        if (checkRepetitonIds.indexOf(adminStudentDetails[i].Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
+      );{
+        allAffiliatedPersonas.map(users => {
+          if (userId !== users.Id) {
             const obj = {
-              id: adminStudentDetails[i].Id,
-              name: adminStudentDetails[i].Name,
-              isRegistered: adminStudentDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminStudentDetails[i].Profile_Picture,
-              relationship: 'Student',
-              firebase_uuid: adminStudentDetails[i].prod_uuid,
+              id: users.Id,
+              name: users.Name,
+              isRegistered: users.IsRegisteredOnPalette,
+              profilePicture: users.Profile_Picture,
+              relationship: users.Record_Type_Name == 'Administrator' ? 'Admin' : users.Record_Type_Name,
+              firebase_uuid: users.prod_uuid,
               createOpportunity: true,
               shareOpportuity: true,
               createTodo: true,
               chat: true,
-            };
-            checkRepetitonIds.push(adminStudentDetails[i].Id);
+            }
             adminContactsList.push(obj);
-          } else {
+          }
+        });
+      }
+    } else {
+      const adminDetails = await this.adminService.getAdminInstituteDetails(
+        userId,
+        instituteId,
+        programId
+      );
+      console.log('adminDetails', adminDetails.data);
+
+      const checkRepetitonIds = [];
+      checkRepetitonIds.push(userId);
+      const allOtherAdminsId = adminDetails.data.admins.map((event) => {
+        return event.Id;
+      });
+      // console.log('allOtherAdminsId', allOtherAdminsId);
+
+      if (allOtherAdminsId.length > 0) {
+        const allOtherAdminsContact = await this.sfService.generics.contacts.get(
+          '*',
+          {
+            Id: [...allOtherAdminsId],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
+          },
+          {},
+          instituteId,
+        );
+
+        // console.log('eight', allOtherAdminsContact[0]);
+
+        for (let i = 0; i < allOtherAdminsContact.length; i++) {
+          if (checkRepetitonIds.indexOf(allOtherAdminsContact[i].Id) == -1) {
             const obj = {
-              id: adminStudentDetails[i].Id,
-              name: adminStudentDetails[i].Name,
-              isRegistered: adminStudentDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminStudentDetails[i].Profile_Picture,
-              relationship: 'Student',
-              firebase_uuid: adminStudentDetails[i].dev_uuid,
+              id: allOtherAdminsContact[i].Id,
+              name: allOtherAdminsContact[i].Name,
+              isRegistered: allOtherAdminsContact[i].IsRegisteredOnPalette,
+              profilePicture: allOtherAdminsContact[i].Profile_Picture,
+              relationship: 'Admin',
+              firebase_uuid:
+                process.env.NODE_ENV === 'prod'
+                  ? allOtherAdminsContact[i].prod_uuid
+                  : allOtherAdminsContact[i].dev_uuid,
               createOpportunity: true,
               shareOpportuity: true,
               createTodo: true,
               chat: true,
             };
-            checkRepetitonIds.push(adminStudentDetails[i].Id);
+            checkRepetitonIds.push(allOtherAdminsContact[i].Id);
             adminContactsList.push(obj);
           }
         }
       }
-    }
 
-    const adminMentorsList = adminDetails.data.mentors;
+      const adminStudentsList = adminDetails.data.students;
+      if (adminStudentsList.length > 0) {
+        const adminStudentIds = adminStudentsList.map((student) => {
+          return student.Id;
+        });
+        const adminStudentDetails = await this.sfService.generics.contacts.get(
+          '*',
+          {
+            Id: [...adminStudentIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
+          },
+          {},
+          instituteId,
+        );
+        // console.log('ninth', adminStudentDetails[0]);
 
-    if (adminMentorsList.length > 0) {
-      const adminMentorIds = adminMentorsList.map((mentor) => {
-        return mentor.Id;
-      });
-
-      const adminMentorDetails = await this.sfService.generics.contacts.get(
-        'Id, Name, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid, Record_Type_Name',
-        {
-          Id: [...adminMentorIds],
-          Role: [...roles],
-          Primary_Educational_Institution: programId,
-        },
-        {},
-        instituteId,
-      );
-
-      // console.log('tenth', adminMentorDetails);
-
-      for (
-        let i = 0;
-        i < adminMentorsList.length && adminMentorDetails[i];
-        i++
-      ) {
-        // console.log(i);
-
-        if (checkRepetitonIds.indexOf(adminMentorDetails[i].Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
-            const obj = {
-              id: adminMentorDetails[i].Id,
-              name: adminMentorDetails[i].Name,
-              isRegistered: adminMentorDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminMentorDetails[i].Profile_Picture,
-              relationship: adminMentorDetails[i].Record_Type_Name,
-              firebase_uuid: adminMentorDetails[i].prod_uuid,
-              createOpportunity: true,
-              shareOpportuity: true,
-              createTodo: true,
-              chat: true,
-            };
-            checkRepetitonIds.push(adminMentorDetails[i].Id);
-            adminContactsList.push(obj);
-          } else {
-            const obj = {
-              id: adminMentorDetails[i].Id,
-              name: adminMentorDetails[i].Name,
-              isRegistered: adminMentorDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminMentorDetails[i].Profile_Picture,
-              relationship: adminMentorDetails[i].Record_Type_Name,
-              firebase_uuid: adminMentorDetails[i].dev_uuid,
-              createOpportunity: true,
-              shareOpportuity: true,
-              createTodo: true,
-              chat: true,
-            };
-            checkRepetitonIds.push(adminMentorDetails[i].Id);
-            adminContactsList.push(obj);
+        for (let i = 0; i < adminStudentsList.length; i++) {
+          if (checkRepetitonIds.indexOf(adminStudentDetails[i].Id) == -1) {
+            if (process.env.NODE_ENV === 'prod') {
+              const obj = {
+                id: adminStudentDetails[i].Id,
+                name: adminStudentDetails[i].Name,
+                isRegistered: adminStudentDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminStudentDetails[i].Profile_Picture,
+                relationship: 'Student',
+                firebase_uuid: adminStudentDetails[i].prod_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminStudentDetails[i].Id);
+              adminContactsList.push(obj);
+            } else {
+              const obj = {
+                id: adminStudentDetails[i].Id,
+                name: adminStudentDetails[i].Name,
+                isRegistered: adminStudentDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminStudentDetails[i].Profile_Picture,
+                relationship: 'Student',
+                firebase_uuid: adminStudentDetails[i].dev_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminStudentDetails[i].Id);
+              adminContactsList.push(obj);
+            }
           }
         }
       }
-    }
 
-    const adminParentsList = adminDetails.data.parents;
-    if (adminParentsList.length > 0) {
-      const adminParentIds = adminParentsList.map((parent) => {
-        return parent.Id;
-      });
-      const adminParentsDetails = await this.sfService.generics.contacts.get(
-        '*',
-        {
-          Id: [...adminParentIds],
-          Role: [...roles],
-          Primary_Educational_Institution: programId,
-        },
-        {},
-        instituteId,
-      );
+      const adminMentorsList = adminDetails.data.mentors;
 
-      for (let i = 0; i < adminParentsDetails.length; i++) {
-       // console.log(adminParentsDetails[i]);
-        if (checkRepetitonIds.indexOf(adminParentsDetails[i].Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
-            const obj = {
-              id: adminParentsDetails[i].Id,
-              name: adminParentsDetails[i].Name,
-              isRegistered: adminParentsDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminParentsDetails[i].Profile_Picture,
-              relationship: 'Guardian',
-              firebase_uuid: adminParentsDetails[i].prod_uuid,
-              createOpportunity: true,
-              shareOpportuity: true,
-              createTodo: true,
-              chat: true,
-            };
-            checkRepetitonIds.push(adminParentsDetails[i].Id);
-            adminContactsList.push(obj);
-          } else {
-            const obj = {
-              id: adminParentsDetails[i].Id,
-              name: adminParentsDetails[i].Name,
-              isRegistered: adminParentsDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminParentsDetails[i].Profile_Picture,
-              relationship: 'Guardian',
-              firebase_uuid: adminParentsDetails[i].dev_uuid,
-              createOpportunity: true,
-              shareOpportuity: true,
-              createTodo: true,
-              chat: true,
-            };
-            checkRepetitonIds.push(adminParentsDetails[i].Id);
-            adminContactsList.push(obj);
+      if (adminMentorsList.length > 0) {
+        const adminMentorIds = adminMentorsList.map((mentor) => {
+          return mentor.Id;
+        });
+
+        const adminMentorDetails = await this.sfService.generics.contacts.get(
+          'Id, Name, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid, Record_Type_Name',
+          {
+            Id: [...adminMentorIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
+          },
+          {},
+          instituteId,
+        );
+
+        // console.log('tenth', adminMentorDetails);
+
+        for (
+          let i = 0;
+          i < adminMentorsList.length && adminMentorDetails[i];
+          i++
+        ) {
+          // console.log(i);
+
+          if (checkRepetitonIds.indexOf(adminMentorDetails[i].Id) == -1) {
+            if (process.env.NODE_ENV === 'prod') {
+              const obj = {
+                id: adminMentorDetails[i].Id,
+                name: adminMentorDetails[i].Name,
+                isRegistered: adminMentorDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminMentorDetails[i].Profile_Picture,
+                relationship: adminMentorDetails[i].Record_Type_Name,
+                firebase_uuid: adminMentorDetails[i].prod_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminMentorDetails[i].Id);
+              adminContactsList.push(obj);
+            } else {
+              const obj = {
+                id: adminMentorDetails[i].Id,
+                name: adminMentorDetails[i].Name,
+                isRegistered: adminMentorDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminMentorDetails[i].Profile_Picture,
+                relationship: adminMentorDetails[i].Record_Type_Name,
+                firebase_uuid: adminMentorDetails[i].dev_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminMentorDetails[i].Id);
+              adminContactsList.push(obj);
+            }
           }
         }
       }
-    }
 
-    const adminObserverssList = adminDetails.data.observers;
-    if (adminObserverssList.length > 0) {
-      const adminObserverIds = adminObserverssList.map((observer) => {
-        return observer.Id;
-      });
+      const adminParentsList = adminDetails.data.parents;
+      if (adminParentsList.length > 0) {
+        const adminParentIds = adminParentsList.map((parent) => {
+          return parent.Id;
+        });
+        const adminParentsDetails = await this.sfService.generics.contacts.get(
+          '*',
+          {
+            Id: [...adminParentIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
+          },
+          {},
+          instituteId,
+        );
 
-      const adminObserverDetails = await this.sfService.generics.contacts.get(
-        '*',
-        {
-          Id: [...adminObserverIds],
-          Role: [...roles],
-          Primary_Educational_Institution: programId,
-        },
-        {},
-        instituteId,
-      );
+        for (let i = 0; i < adminParentsDetails.length; i++) {
+        // console.log(adminParentsDetails[i]);
+          if (checkRepetitonIds.indexOf(adminParentsDetails[i].Id) == -1) {
+            if (process.env.NODE_ENV === 'prod') {
+              const obj = {
+                id: adminParentsDetails[i].Id,
+                name: adminParentsDetails[i].Name,
+                isRegistered: adminParentsDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminParentsDetails[i].Profile_Picture,
+                relationship: 'Guardian',
+                firebase_uuid: adminParentsDetails[i].prod_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminParentsDetails[i].Id);
+              adminContactsList.push(obj);
+            } else {
+              const obj = {
+                id: adminParentsDetails[i].Id,
+                name: adminParentsDetails[i].Name,
+                isRegistered: adminParentsDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminParentsDetails[i].Profile_Picture,
+                relationship: 'Guardian',
+                firebase_uuid: adminParentsDetails[i].dev_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminParentsDetails[i].Id);
+              adminContactsList.push(obj);
+            }
+          }
+        }
+      }
 
-      // console.log('twelveth', adminObserverDetails);
+      const adminObserverssList = adminDetails.data.observers;
+      if (adminObserverssList.length > 0) {
+        const adminObserverIds = adminObserverssList.map((observer) => {
+          return observer.Id;
+        });
 
-      for (let i = 0; i < adminObserverssList.length; i++) {
-        if (checkRepetitonIds.indexOf(adminObserverDetails[i].Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
-            const obj = {
-              id: adminObserverDetails[i].Id,
-              name: adminObserverDetails[i].Name,
-              isRegistered: adminObserverDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminObserverDetails[i].Profile_Picture,
-              relationship: 'Observer',
-              firebase_uuid: adminObserverDetails[i].prod_uuid,
-              createOpportunity: true,
-              shareOpportuity: true,
-              createTodo: true,
-              chat: true,
-            };
-            checkRepetitonIds.push(adminObserverDetails[i].Id);
-            adminContactsList.push(obj);
-          } else {
-            const obj = {
-              id: adminObserverDetails[i].Id,
-              name: adminObserverDetails[i].Name,
-              isRegistered: adminObserverDetails[i].IsRegisteredOnPalette,
-              profilePicture: adminObserverDetails[i].Profile_Picture,
-              relationship: 'Observer',
-              firebase_uuid: adminObserverDetails[i].dev_uuid,
-              createOpportunity: true,
-              shareOpportuity: true,
-              createTodo: true,
-              chat: true,
-            };
-            checkRepetitonIds.push(adminObserverDetails[i].Id);
-            adminContactsList.push(obj);
+        const adminObserverDetails = await this.sfService.generics.contacts.get(
+          '*',
+          {
+            Id: [...adminObserverIds],
+            Role: [...roles],
+            Primary_Educational_Institution: programId,
+          },
+          {},
+          instituteId,
+        );
+
+        // console.log('twelveth', adminObserverDetails);
+
+        for (let i = 0; i < adminObserverssList.length; i++) {
+          if (checkRepetitonIds.indexOf(adminObserverDetails[i].Id) == -1) {
+            if (process.env.NODE_ENV === 'prod') {
+              const obj = {
+                id: adminObserverDetails[i].Id,
+                name: adminObserverDetails[i].Name,
+                isRegistered: adminObserverDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminObserverDetails[i].Profile_Picture,
+                relationship: 'Observer',
+                firebase_uuid: adminObserverDetails[i].prod_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminObserverDetails[i].Id);
+              adminContactsList.push(obj);
+            } else {
+              const obj = {
+                id: adminObserverDetails[i].Id,
+                name: adminObserverDetails[i].Name,
+                isRegistered: adminObserverDetails[i].IsRegisteredOnPalette,
+                profilePicture: adminObserverDetails[i].Profile_Picture,
+                relationship: 'Observer',
+                firebase_uuid: adminObserverDetails[i].dev_uuid,
+                createOpportunity: true,
+                shareOpportuity: true,
+                createTodo: true,
+                chat: true,
+              };
+              checkRepetitonIds.push(adminObserverDetails[i].Id);
+              adminContactsList.push(obj);
+            }
           }
         }
       }
