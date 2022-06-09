@@ -11,11 +11,7 @@ import { ParentModule } from './modules/parent/parent.module';
 import { StudentModule } from './modules/student/student.module';
 import { AdvisorModule } from './modules/advisor/advisor.module';
 
-import {
-  SfService,
-  CachingService,
-  SfModule,
-} from '@gowebknot/palette-salesforce-service';
+import { SfModule } from '@gowebknot/palette-salesforce-service';
 
 @Module({
   imports: [
@@ -38,6 +34,6 @@ import {
     AdvisorModule,
   ],
   controllers: [AppController],
-  providers: [AppService, SfService, CachingService],
+  providers: [AppService],
 })
 export class AppModule {}

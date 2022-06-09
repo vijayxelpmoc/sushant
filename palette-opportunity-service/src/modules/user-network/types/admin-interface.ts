@@ -138,10 +138,7 @@ export interface SFStudents {
   Grade: string;
   Is_Deactive: boolean;
   Profile_Picture: string;
-  Primary_Educational_Institution: {
-    Id: string;
-    Account_Name: string;
-  };
+  Primary_Educational_Institution: string;
   IsRegisteredOnPalette: boolean;
 }
 

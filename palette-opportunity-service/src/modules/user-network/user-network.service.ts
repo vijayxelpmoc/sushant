@@ -1975,6 +1975,21 @@ export class UserNetworkService {
     programId: string,
     roles?: string[],
   ) {
+<<<<<<< HEAD
+=======
+    const adminDetails = await this.adminService.getAdminInstituteDetails(
+      userId,
+      instituteId,
+      programId
+    );
+    console.log('adminDetails', adminDetails.data);
+
+    const checkRepetitonIds = [];
+    checkRepetitonIds.push(userId);
+    const allOtherAdminsId = adminDetails.data.admins.map((event) => {
+      return event.Id;
+    });
+>>>>>>> c2bb2b74b64b9d0ed3c083a37f1098a700012101
     const adminContactsList = [];
     if (instituteId.startsWith('paws__')) {
       const allAffiliatedPersonas = await this.sfService.generics.contacts.get(
@@ -2053,6 +2068,7 @@ export class UserNetworkService {
           }
         }
       }
+<<<<<<< HEAD
   
       const adminStudentsList = adminDetails.data.students;
       if (adminStudentsList.length > 0) {
@@ -2104,6 +2120,59 @@ export class UserNetworkService {
               checkRepetitonIds.push(adminStudentDetails[i].Id);
               adminContactsList.push(obj);
             }
+=======
+    }
+
+    const adminParentsList = adminDetails.data.parents;
+    if (adminParentsList.length > 0) {
+      const adminParentIds = adminParentsList.map((parent) => {
+        return parent.Id;
+      });
+      const adminParentsDetails = await this.sfService.generics.contacts.get(
+        '*',
+        {
+          Id: [...adminParentIds],
+          Role: [...roles],
+          Primary_Educational_Institution: programId,
+        },
+        {},
+        instituteId,
+      );
+
+      for (let i = 0; i < adminParentsDetails.length; i++) {
+       // console.log(adminParentsDetails[i]);
+        if (checkRepetitonIds.indexOf(adminParentsDetails[i].Id) == -1) {
+          if (process.env.NODE_ENV === 'prod') {
+            const obj = {
+              id: adminParentsDetails[i].Id,
+              name: adminParentsDetails[i].Name,
+              isRegistered: adminParentsDetails[i].IsRegisteredOnPalette,
+              profilePicture: adminParentsDetails[i].Profile_Picture,
+              relationship: 'Guardian',
+              firebase_uuid: adminParentsDetails[i].prod_uuid,
+              createOpportunity: true,
+              shareOpportuity: true,
+              createTodo: true,
+              chat: true,
+            };
+            checkRepetitonIds.push(adminParentsDetails[i].Id);
+            adminContactsList.push(obj);
+          } else {
+            const obj = {
+              id: adminParentsDetails[i].Id,
+              name: adminParentsDetails[i].Name,
+              isRegistered: adminParentsDetails[i].IsRegisteredOnPalette,
+              profilePicture: adminParentsDetails[i].Profile_Picture,
+              relationship: 'Guardian',
+              firebase_uuid: adminParentsDetails[i].dev_uuid,
+              createOpportunity: true,
+              shareOpportuity: true,
+              createTodo: true,
+              chat: true,
+            };
+            checkRepetitonIds.push(adminParentsDetails[i].Id);
+            adminContactsList.push(obj);
+>>>>>>> c2bb2b74b64b9d0ed3c083a37f1098a700012101
           }
         }
       }

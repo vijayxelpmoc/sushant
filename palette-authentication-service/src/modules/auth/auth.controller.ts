@@ -1,4 +1,14 @@
-import { Body, Controller, Post, Patch, Req, UseGuards, Query, Get, Param } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Post,
+  Patch,
+  Req,
+  UseGuards,
+  Query,
+  Get,
+  Param,
+} from '@nestjs/common';
 import {
   ApiBody,
   ApiOkResponse,
@@ -39,7 +49,12 @@ export class AuthController {
     @Body('programId') programId: string,
     @Body('role') role: string,
   ) {
-    return this.authService.validateUser(authValidateDto, instituteId, programId, role);
+    return this.authService.validateUser(
+      authValidateDto,
+      instituteId,
+      programId,
+      role,
+    );
   }
 
   @Post('login')
@@ -69,7 +84,13 @@ export class AuthController {
     @Body('programId') programId: string,
     @Body('role') role: string,
   ) {
-    return this.authService.resetPassword(authResetPasswordDto, req.user.id, instituteId, programId, role);
+    return this.authService.resetPassword(
+      authResetPasswordDto,
+      req.user.id,
+      instituteId,
+      programId,
+      role,
+    );
   }
 
   @Post('password/forgot')
@@ -79,7 +100,12 @@ export class AuthController {
     @Body('programId') programId: string,
     @Body('role') role: string,
   ) {
-    return this.authService.forgotPassword(authForgotPasswordDto, instituteId, programId, role);
+    return this.authService.forgotPassword(
+      authForgotPasswordDto,
+      instituteId,
+      programId,
+      role,
+    );
   }
 
   @Post('password/forgot/validate')
@@ -90,10 +116,10 @@ export class AuthController {
     @Body('role') role: string,
   ) {
     return this.authService.forgotPasswordValidateOtp(
-      authForgotPasswordValidateOtpDto, 
+      authForgotPasswordValidateOtpDto,
       instituteId,
-      programId, 
-      role
+      programId,
+      role,
     );
   }
 
@@ -104,7 +130,12 @@ export class AuthController {
     @Body('programId') programId: string,
     @Body('role') role: string,
   ) {
-    return this.authService.forgotPasswordSetNew(authForgotPasswordSetNewDto, instituteId, programId, role);
+    return this.authService.forgotPasswordSetNew(
+      authForgotPasswordSetNewDto,
+      instituteId,
+      programId,
+      role,
+    );
   }
 
   @Post('send')
@@ -124,14 +155,5 @@ export class AuthController {
     @QueryRequired('instituteId') instituteId: string,
   ): Promise<any> {
     return await this.authService.getProgramRoles(instituteId);
-  }
-
-  @Get('testing')
-  async getProgramOpp(
-    @QueryRequired('instituteId') instituteId: string,
-    @QueryRequired('programId') programId: string,
-    @QueryRequired('role') role: string,
-  ): Promise<any> {
-    return await this.authService.getProgramOpportunities(instituteId, programId, role);
   }
 }

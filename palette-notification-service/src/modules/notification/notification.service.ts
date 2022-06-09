@@ -51,6 +51,7 @@ export class NotificationService {
    */
   async getNotifications(
     id: string,
+    programId: string,
     instituteId: string,
   ): Promise<BasicDataResponse> {
     // getting notification details.
@@ -58,10 +59,11 @@ export class NotificationService {
       'Id, Todo, Notification_By.Profile_Picture, Notification_By.Name, Created_at, Type, Title, Is_Read, Opportunity, Opportunity.Modification, Opportunity.Category, Modification, Event_type',
       {
         Contact: id,
+        Program: programId,
       },
       {
         //    Created_at: -1
-     },
+      },
       instituteId,
     );
 
@@ -70,7 +72,9 @@ export class NotificationService {
 
     const allTodos = await this.sfService.models.todos.get(
       'Id, Type',
-      {},
+      {
+        Program: programId,
+      },
       {},
       instituteId,
     );
@@ -172,7 +176,7 @@ export class NotificationService {
 
   async getNotificationDetail(
     notificationId: string,
-    userId: string,
+    programId: string,
     instituteId: string,
   ): Promise<BasicDataResponse> {
     // notification details.
@@ -180,6 +184,7 @@ export class NotificationService {
       '*',
       {
         Id: notificationId,
+        Program: programId,
       },
       {},
       instituteId,
@@ -343,6 +348,7 @@ export class NotificationService {
    */
   async readNotifications(
     userId: string,
+    programId: string,
     instituteId: string,
   ): Promise<BasicResponse> {
     // getting not read user notifications
@@ -351,6 +357,7 @@ export class NotificationService {
       {
         Is_Read: false,
         Contact: userId,
+        Program: programId,
       },
       {},
       instituteId,
@@ -440,7 +447,7 @@ export class NotificationService {
    * Sends notification and email based on complete_By datetime of Todo
    */
   @Cron(CronExpression.EVERY_MINUTE)
-  async ReminderNotification(instituteId: string) {
+  async ReminderNotification(programId: string, instituteId: string) {
     // get datetime now.
     const starttime = new Date();
 
@@ -458,6 +465,7 @@ export class NotificationService {
         },
         Task_status: 'Open',
         Reminder_done: false,
+        Program: programId,
       },
       {},
       instituteId,
@@ -485,6 +493,7 @@ export class NotificationService {
               listedById: todo['Listed_by'],
               todoId: todo['Id'],
             },
+            programId,
             instituteId,
           );
         } catch (err) {
@@ -503,6 +512,7 @@ export class NotificationService {
             Event_type: todo.Type,
             Type: 'Reminder',
             Todo: todo.Id,
+            Program: programId,
           },
           instituteId,
         );
@@ -513,6 +523,7 @@ export class NotificationService {
           'Email',
           {
             Id: id,
+            Primary_Educational_institution: programId,
           },
           {},
           instituteId,
@@ -591,6 +602,7 @@ export class NotificationService {
    */
   async sendTodoNotification(
     todoNotificationData: TodoNotificationData,
+    programId: string,
     instituteId: string,
   ) {
     let userToBeNotified;
@@ -602,10 +614,16 @@ export class NotificationService {
           {
             Id: todoNotificationData.todoId,
             Assignee: todoNotificationData.assigneeId,
+            Program: programId,
           },
           instituteId,
+          programId,
         );
-        const tasksAndResources = await this.getTodoAndResource(tasks);
+        const tasksAndResources = await this.getTodoAndResource(
+          tasks,
+          programId,
+          instituteId,
+        );
         data = tasksAndResources.data[0];
         break;
       }
@@ -617,19 +635,27 @@ export class NotificationService {
             {
               Group_Id: todoNotificationData.groupId,
               Listed_by: todoNotificationData.listedById,
+              Program: programId,
             },
             instituteId,
+            programId,
           );
         } else {
           tasks = await this.getTasks(
             {
               Id: todoNotificationData.todoId,
               Assignee: todoNotificationData.assigneeId,
+              Program: programId,
             },
             instituteId,
+            programId,
           );
         }
-        const tasksAndResources = await this.getTodoAndResource(tasks);
+        const tasksAndResources = await this.getTodoAndResource(
+          tasks,
+          programId,
+          instituteId,
+        );
         data = tasksAndResources.data[0];
         break;
       }
@@ -655,7 +681,7 @@ export class NotificationService {
    * @param filters sf filter
    * array of tasks assigned to the student.
    */
-  async getTasks(filters, instituteId: string) {
+  async getTasks(filters, instituteId: string, programId: string) {
     const allToDo: SFTask[] = await this.sfService.models.todos.get(
       'Id, Archived, Assignee, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_status, Name, CreatedById, Type, Event_At, Event_Venue, Listed_by, Group_Id',
       filters,
@@ -681,6 +707,7 @@ export class NotificationService {
         'Id, Name',
         {
           Id: createdUserIds,
+          Program: programId,
         },
         {},
         instituteId,
@@ -692,6 +719,7 @@ export class NotificationService {
         'Id, Name',
         {
           Id: listedByContactIds,
+          Primary_Educational_Institution: programId,
         },
         {},
         instituteId,
@@ -750,7 +778,11 @@ export class NotificationService {
     return response;
   }
 
-  async getTodoAndResource(tasks: getTodoResponse) {
+  async getTodoAndResource(
+    tasks: getTodoResponse,
+    programId: string,
+    instituteId: string,
+  ) {
     const mp: any = {
       default: [],
     };
@@ -778,7 +810,11 @@ export class NotificationService {
     }
 
     // getting all the resources on the basis the task ids
-    const resources = await this.getResourcesById(taskIds);
+    const resources = await this.getResourcesById(
+      taskIds,
+      programId,
+      instituteId,
+    );
 
     const responseTodos = [];
 
@@ -867,11 +903,17 @@ export class NotificationService {
    * @param tasksId ids of the tasks for whom we want the resources.
    * array of resources assigned to the tasks.
    */
-  async getResourcesById(tasksId: string[]) {
+  async getResourcesById(
+    tasksId: string[],
+    programId: string,
+    instituteId: string,
+  ) {
     const resources: SFResource[] =
       await this.sfService.models.resourceConnections.get(
         'Name, Todo, Resource, Resource.Id, Resource.Name, Resource.URL, Resource.Resource_Type',
-        { Todo: tasksId },
+        { Todo: tasksId, Program: programId },
+        {},
+        instituteId,
       );
     // after getting the resources by id adding them into the hashmap to access the resources by task id faster rather than doing two for loops
     const allResource = {};
@@ -902,11 +944,22 @@ export class NotificationService {
    * Archives the Task by setting archived field to true
    * @param archiveTaskDto the taskId and archival status
    */
-  async archiveTask(archiveTaskDto: ArchiveTaskDto, userId: string) {
+  async archiveTask(
+    archiveTaskDto: ArchiveTaskDto,
+    userId: string,
+    programId: string,
+    instituteId: string,
+  ) {
     const { taskId, archived } = archiveTaskDto;
-    const tasks = await this.sfService.models.todos.get('Id, Assignee', {
-      Id: taskId,
-    });
+    const tasks = await this.sfService.models.todos.get(
+      'Id, Assignee',
+      {
+        Id: taskId,
+        Program: programId,
+      },
+      {},
+      instituteId,
+    );
 
     if (tasks.length == 0) {
       throw new NotFoundException('Todo Not Found');
@@ -929,10 +982,20 @@ export class NotificationService {
     }
   }
 
-  async deleteAllNotifications(Id: string, instituteId: string) {
-    const notifications = await this.sfService.models.notifications.get('Id', {
-      Contact: Id,
-    });
+  async deleteAllNotifications(
+    Id: string,
+    programId: string,
+    instituteId: string,
+  ) {
+    const notifications = await this.sfService.models.notifications.get(
+      'Id',
+      {
+        Contact: Id,
+        Program: programId,
+      },
+      {},
+      instituteId,
+    );
 
     const notificationIds: string[] = notifications.map((notif) => {
       return notif.Id;
@@ -940,6 +1003,7 @@ export class NotificationService {
 
     const res = await this.sfService.models.notifications.delete(
       notificationIds,
+      instituteId,
     );
 
     return res;

@@ -72,15 +72,12 @@ export class draftInfoDto {
   @IsOptional()
   expirationDateTime: Date;
 
-  @IsNotEmpty()
   @IsString()
   phone: string;
 
-  @IsNotEmpty()
   @IsString()
   website: string;
 
-  @IsNotEmpty()
   @IsString()
   venue: string;
 

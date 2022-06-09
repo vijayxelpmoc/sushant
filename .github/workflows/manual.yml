@@ -22,7 +22,12 @@ jobs:
         with:
           node-version: 16
           registry-url: https://npm.pkg.github.com/
-          scope: '@gowebknot'
+          scope: "@gowebknot"
+
+      - name: Config NPM
+        run: |
+          npm config set legacy-peer-deps true
+
       - name: deploy
         run: |
           echo "//npm.pkg.github.com/:_authToken=${{secrets.PAT}}" > .npmrc

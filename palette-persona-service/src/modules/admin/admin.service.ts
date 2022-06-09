@@ -22,10 +22,14 @@ import axios from 'axios';
 @Injectable()
 export class AdminService {
   private notifier: Notifier;
+  private PayloadURL =
+    process.env.NODE_ENV === 'development'
+      ? `http://localhost:5000/notifications/payload/opportunity`
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/notifications/payload/opportunity`;
   private URL =
     process.env.NODE_ENV === 'development'
-      ? 'http://localhost:3000/firebase/testNotif'
-      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/testNotif`;
+      ? 'http://localhost:3000/firebase/send-notification'
+      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/send-notification`;
   constructor(private readonly sfService: SfService) {
     // this.notifier = new Notifier();
   }
@@ -224,12 +228,7 @@ export class AdminService {
     const updateUser: AdminUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-    if (instituteId.startsWith('paws__') && updateUser[0].Id) {
-      return {
-        statusCode: 200,
-        message: Responses.PROFILE_UPDATED,
-      };
-    } else if (updateUser.id && updateUser.success) {
+    if (updateUser.id && updateUser.success) {
       return {
         statusCode: 200,
         message: Responses.PROFILE_UPDATED,
@@ -594,6 +593,8 @@ export class AdminService {
         {},
         instituteId,
       );
+      console.log(opp);
+
       if (opp.length == 0) {
         throw new NotFoundException(`Opportunity Not Found`);
       }
@@ -614,28 +615,29 @@ export class AdminService {
           id,
           instituteId,
         );
-
-        notificationTitle = `Opportunity ${opp[0].Name}`;
-        notificationMsg = `Opportunity ${opp[0].Name} approved`;
+        notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+        notificationMsg = `Opportunity ${opp[0].Account_Name} approved`;
         try {
+          const getPayloadData = await axios.get(
+            this.PayloadURL +
+              `?oppId=${id}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`,
+            {},
+          );
+          console.log(getPayloadData.data);
+
           // firebase notification for creator.
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
-              data: await this.GetOpportunityNotificationData(
-                id,
-                userId,
-                instituteId,
-                programId,
-              ),
+            body: notificationMsg,
+            payload: {
+              data: getPayloadData.data,
               type: 'opportunity approval request',
             },
           });
-          // console.log('res', res);
+          console.log('res', res.data);
 
           // return res;
           //   await this.firebaseService.sendNotification(
@@ -696,22 +698,22 @@ export class AdminService {
         }
 
         // notification for creator.
-        notificationTitle = `Opportunity ${opp[0].Name}`;
-        notificationMsg = `Opportunity ${opp[0].Name} removal approved.`;
+        notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+        notificationMsg = `Opportunity ${opp[0].Account_Name} removal approved.`;
         try {
+          const getPayloadData = await axios.get(
+            this.PayloadURL +
+              `?oppId=${id}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`,
+            {},
+          );
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
-              data: await this.GetOpportunityNotificationData(
-                id,
-                userId,
-                instituteId,
-                programId,
-              ),
+            body: notificationMsg,
+            payload: {
+              data: getPayloadData.data,
               type: 'opportunity removal request',
             },
           });
@@ -761,8 +763,8 @@ export class AdminService {
           instituteId,
         );
         const reccIds = [];
-        notificationTitle = `${opp[0].Name} opportunity removed.`;
-        notificationMsg = `${opp[0].Name} opportunity has been removed by creator.`;
+        notificationTitle = `${opp[0].Account_Name} opportunity removed.`;
+        notificationMsg = `${opp[0].Account_Name} opportunity has been removed by creator.`;
         if (recc.length > 0) {
           recc.map(async (rec) => {
             reccIds.push(rec.Id);
@@ -770,10 +772,10 @@ export class AdminService {
               const res = await axios.post(this.URL, {
                 instituteId,
                 programId,
-                userId: rec.Assignee,
+                sfId: rec.Assignee,
                 title: notificationTitle,
-                message: notificationMsg,
-                data: {
+                body: notificationMsg,
+                payload: {
                   data: 'CREATEPAYLOAD',
                   type: 'opportunity removed',
                 },
@@ -848,19 +850,19 @@ export class AdminService {
           notificationTitle = `Todo removed`;
           notificationMsg = `Todo has been removed`;
           try {
+            const getPayloadData = await axios.get(
+              this.PayloadURL +
+                `?oppId=${id}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`,
+              {},
+            );
             const res = await axios.post(this.URL, {
               instituteId,
               programId,
-              userId: event.Assignee,
+              sfId: event.Assignee,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
-                data: await this.GetOpportunityNotificationData(
-                  id,
-                  userId,
-                  instituteId,
-                  programId,
-                ),
+              body: notificationMsg,
+              payload: {
+                data: getPayloadData.data,
                 type: 'opportunity removal',
               },
             });
@@ -957,22 +959,22 @@ export class AdminService {
         instituteId,
       );
 
-      notificationTitle = `Opportunity ${opp[0].Name}`;
-      notificationMsg = `Opportunity ${opp[0].Name} modification request approved.`;
+      notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+      notificationMsg = `Opportunity ${opp[0].Account_Name} modification request approved.`;
       try {
+        const getPayloadData = await axios.get(
+          this.PayloadURL +
+            `?oppId=${id}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`,
+          {},
+        );
         const res = await axios.post(this.URL, {
           instituteId,
           programId,
-          userId: opp[0].Listed_by,
+          sfId: opp[0].Listed_by,
           title: notificationTitle,
-          message: notificationMsg,
-          data: {
-            data: await this.GetOpportunityNotificationData(
-              id,
-              userId,
-              instituteId,
-              programId,
-            ),
+          body: notificationMsg,
+          payload: {
+            data: getPayloadData.data,
             type: 'opportunity modification request',
           },
         });
@@ -1018,8 +1020,8 @@ export class AdminService {
         {},
         instituteId,
       );
-      notificationTitle = `Opportunity ${opp[0].Name}`;
-      notificationMsg = `Opportunity ${opp[0].Name} has been updated.`;
+      notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+      notificationMsg = `Opportunity ${opp[0].Account_Name} has been updated.`;
       if (recc.length !== 0) {
         recc.map(async (rec) => {
           // updating all considerations.
@@ -1035,10 +1037,10 @@ export class AdminService {
             const response = await axios.post(this.URL, {
               instituteId,
               programId,
-              userId: rec.Assignee,
+              sfId: rec.Assignee,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
+              body: notificationMsg,
+              payload: {
                 data: 'CREATEPAYLOAD',
                 type: 'opportunity modification request',
               },
@@ -1100,8 +1102,8 @@ export class AdminService {
         Type: mods[0]['Cate'],
       };
       // notification.
-      notificationTitle = `Opportunity ${opp[0].Name}`;
-      notificationMsg = `Opportunity ${opp[0].Name} has been updated.`;
+      notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+      notificationMsg = `Opportunity ${opp[0].Account_Name} has been updated.`;
       if (todos.length !== 0) {
         todos.map(async (todo) => {
           // updating all todos.
@@ -1115,10 +1117,10 @@ export class AdminService {
             const res = await axios.post(this.URL, {
               instituteId,
               programId,
-              userId: todo.Assignee,
+              sfId: todo.Assignee,
               title: notificationTitle,
-              message: notificationMsg,
-              data: {
+              body: notificationMsg,
+              payload: {
                 data: 'CREATEPAYLOAD',
                 type: 'opportunity modification request',
               },
@@ -1208,22 +1210,22 @@ export class AdminService {
           instituteId,
         );
 
-        notificationTitle = `Opportunity ${opp[0].Name}`;
-        notificationMsg = `Opportunity ${opp[0].Name} rejected`;
+        notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+        notificationMsg = `Opportunity ${opp[0].Account_Name} rejected`;
         try {
+          const getPayloadData = await axios.get(
+            this.PayloadURL +
+              `?oppId=${id}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`,
+            {},
+          );
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
-              data: await this.GetOpportunityNotificationData(
-                id,
-                userId,
-                instituteId,
-                programId,
-              ),
+            body: notificationMsg,
+            payload: {
+              data: getPayloadData.data,
               type: 'opportunity approval request',
             },
           });
@@ -1277,22 +1279,22 @@ export class AdminService {
           instituteId,
         );
         // notification.
-        notificationTitle = `Opportunity ${opp[0].Name}`;
-        notificationMsg = `Opportunity ${opp[0].Name} removal request is rejected`;
+        notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+        notificationMsg = `Opportunity ${opp[0].Account_Name} removal request is rejected`;
         try {
+          const getPayloadData = await axios.get(
+            this.PayloadURL +
+              `?oppId=${id}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`,
+            {},
+          );
           const res = await axios.post(this.URL, {
             instituteId,
             programId,
-            userId: opp[0].Listed_by,
+            sfId: opp[0].Listed_by,
             title: notificationTitle,
-            message: notificationMsg,
-            data: {
-              data: await this.GetOpportunityNotificationData(
-                id,
-                userId,
-                instituteId,
-                programId,
-              ),
+            body: notificationMsg,
+            payload: {
+              data: getPayloadData.data,
 
               type: 'opportunity removal request',
             },
@@ -1379,22 +1381,22 @@ export class AdminService {
         instituteId,
       );
       // notification.
-      notificationTitle = `Opportunity ${opp[0].Name}`;
-      notificationMsg = `Opportunity ${opp[0].Name} modification request is rejected`;
+      notificationTitle = `Opportunity ${opp[0].Account_Name}`;
+      notificationMsg = `Opportunity ${opp[0].Account_Name} modification request is rejected`;
       try {
+        const getPayloadData = await axios.get(
+          this.PayloadURL +
+            `?oppId=${id}&userId=${userId}&instituteId=${instituteId}&programId=${programId}`,
+          {},
+        );
         const res = await axios.post(this.URL, {
           instituteId,
           programId,
-          userId: opp[0].Listed_by,
+          sfId: opp[0].Listed_by,
           title: notificationTitle,
-          message: notificationMsg,
-          data: {
-            data: await this.GetOpportunityNotificationData(
-              id,
-              userId,
-              instituteId,
-              programId,
-            ),
+          body: notificationMsg,
+          payload: {
+            data: getPayloadData.data,
             type: 'opportunity modification request',
           },
         });

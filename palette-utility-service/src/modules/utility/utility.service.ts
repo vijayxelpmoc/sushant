@@ -11,7 +11,13 @@ import {
 } from '@gowebknot/palette-wrapper';
 
 import { Errors, Responses } from '@src/constants';
-import { ContactInfoDto, FeedbackInfoDto, GetGuidesResponse, GetGuidesSFResponse, ReportIssueDto } from './dto';
+import {
+  ContactInfoDto,
+  FeedbackInfoDto,
+  GetGuidesResponse,
+  GetGuidesSFResponse,
+  ReportIssueDto,
+} from './dto';
 import { SFGuide } from './types';
 import { SfService } from '@gowebknot/palette-salesforce-service';
 import { HttpService } from '@nestjs/axios';
@@ -23,7 +29,7 @@ export class UtilityService {
   _notifier: Notifier;
   constructor(
     private sfService: SfService,
-    private mailerService:MailerService,
+    private mailerService: MailerService,
     private httpService: HttpService,
   ) {
     this._notifier = new Notifier();
@@ -33,7 +39,11 @@ export class UtilityService {
   NewPortalUserUrl = `https://palette-bigthought.ideas.aha.io/api/v1/idea_portals/7065254068546852736/portal_users/?access_token=${this.accessToken}`;
   NewIdeaUrl = `https://palette-bigthought.ideas.aha.io/api/v1/products/6981847117522761702/ideas/?access_token=${this.accessToken}`;
 
-  async contactUs(contactInfoDto: ContactInfoDto,programId:string, instituteId: string) {
+  async contactUs(
+    contactInfoDto: ContactInfoDto,
+    programId: string,
+    instituteId: string,
+  ) {
     const { email, message, name } = contactInfoDto;
 
     const response = await this.sfService.models.contactUs.create(
@@ -41,7 +51,7 @@ export class UtilityService {
         User_Name: name,
         Message: message,
         Email: email,
-        Program:programId
+        Program: programId,
       },
       instituteId,
     );
@@ -76,7 +86,11 @@ export class UtilityService {
     throw new InternalServerErrorException(Errors.CONTACT_US_FAILED);
   }
 
-  async addReportIssue(reportIssueDto: ReportIssueDto,programId:string, instituteId: string) {
+  async addReportIssue(
+    reportIssueDto: ReportIssueDto,
+    programId: string,
+    instituteId: string,
+  ) {
     const { email, message, name, type, category, needed_by, screenshots } =
       reportIssueDto;
     // type is a string of categories separrated with commas
@@ -90,7 +104,7 @@ export class UtilityService {
     // const screenshotsValue = screenshots.join(',\n');
 
     // saving on salesforce service
-    await this.sfService.models.reportIssues.create(
+    const res = await this.sfService.models.reportIssues.create(
       {
         User_Name: name,
         Email: email,
@@ -98,10 +112,11 @@ export class UtilityService {
         Screenshot1: screenshots[0],
         Screenshot2: screenshots[1],
         Screenshot3: screenshots[2],
-        Program:programId
+        Program: programId,
       },
       instituteId,
     );
+    console.log(res);
     const screenShotList = [];
     for (let i = 0; i < 3; i++) {
       if (screenshots[i]) {
@@ -221,7 +236,11 @@ export class UtilityService {
     return resp;
   }
 
-  async addFeedback(feedbackInfoDto: FeedbackInfoDto,programId:string, instituteId: string) {
+  async addFeedback(
+    feedbackInfoDto: FeedbackInfoDto,
+    programId: string,
+    instituteId: string,
+  ) {
     const { email, feedback, name, rating } = feedbackInfoDto;
 
     const response = await this.sfService.models.feedback.create(
@@ -230,10 +249,12 @@ export class UtilityService {
         Email: email,
         feedback: feedback,
         Rating: rating,
-        Program:programId
+        Program: programId,
       },
       instituteId,
     );
+
+    console.log(response);
 
     if (response.success) {
       // Send a notification to the admin
@@ -263,19 +284,17 @@ export class UtilityService {
     throw new InternalServerErrorException(Errors.FEEDBACK_SUBMIT_FAILED);
   }
 
-  async getGuides(role: string,programId:string, instituteId: string) {
-    const responseData: Array<
-      GetGuidesSFResponse
-    > = await this.sfService.models.guides.get(
-      '*',
-      {
-        Program:programId
-      },
-      {},
-      instituteId
-    );
+  async getGuides(role: string, programId: string, instituteId: string) {
+    const responseData: Array<GetGuidesSFResponse> =
+      await this.sfService.models.guides.get(
+        '*',
+        {
+          Program: programId,
+        },
+        {},
+        instituteId,
+      );
     console.log(responseData[0]);
-    
 
     if (responseData.length === 0) {
       return {
@@ -286,17 +305,16 @@ export class UtilityService {
     }
     // role has multiple role concatenated with ; so we split and check if the guide is for the user with requested role and send those only
     const filteredGuides = [];
-    responseData.map(guide => {
+    responseData.map((guide) => {
       const guideRoles = guide.Role.split(';');
       console.log(guideRoles.includes(role));
-      
+
       if (guideRoles.includes(role)) filteredGuides.push(guide);
     });
 
-    console.log("filteredGuides",filteredGuides);
-    
+    console.log('filteredGuides', filteredGuides);
 
-    const guidesResponse: Array<GetGuidesResponse> = responseData.map(c => {
+    const guidesResponse: Array<GetGuidesResponse> = responseData.map((c) => {
       return {
         name: c.Guide_Name,
         description: c.Guide_Description,
@@ -305,7 +323,6 @@ export class UtilityService {
     });
 
     console.log(guidesResponse[0]);
-    
 
     const guidesResponseValue = {
       statusCode: 200,
@@ -315,7 +332,6 @@ export class UtilityService {
 
     return guidesResponseValue;
   }
-  
 
   public sendReportEmail(
     email: string[],

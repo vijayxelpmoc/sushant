@@ -254,13 +254,8 @@ export class ObserverService {
     const updateUser: ObserverUpdateResponse =
       await this.sfService.generics.contacts.update(id, updateObj, instituteId);
 
-    if (instituteId.startsWith('paws__') && updateUser[0].Id) {
-      return {
-        statusCode: 200,
-        message: Responses.PROFILE_UPDATED,
-      };
-    } else if (updateUser.id && updateUser.success) {
-      return { status: 200, message: Responses.OBSERVER_SAVED };
+    if (updateUser.id && updateUser.success) {
+      return { status: 200, message: Responses.PROFILE_UPDATED };
     } else {
       throw new BadRequestException(Errors.OBSERVER_SAVE_ERROR);
     }
