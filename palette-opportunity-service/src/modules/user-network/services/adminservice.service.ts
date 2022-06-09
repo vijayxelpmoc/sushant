@@ -28,14 +28,15 @@ export class AdminService {
   async getAdminInstituteDetails(
     userId: string,
     instituteId: string,
+    programId: string,
   ): Promise<InstituteDetailsResponse> {
     const studentIds = [];
     const filteredAdmins = [];
 
     // getting the institute of the admin
-    const institute: SFInstitute[] =
+    const institute = 
       await this.sfService.models.affiliations.get(
-        'Id, Name,  Organization, Organization.Name, Organization.Id',
+        'Id, Name, Organization.Name, Organization.Id',
         {
           Contact: userId,
           Role: 'Admin',
@@ -43,25 +44,21 @@ export class AdminService {
         {},
         instituteId,
       );
-
-    console.log('third', institute[0].Organization);
-
+    
     if (institute.length === 0) {
       throw new BadRequestException('Admin has no institute assigned');
     }
 
     // getting all the admin inside the institute
-    const Admins: SFAdmins[] = await this.sfService.models.affiliations.get(
+    const Admins = await this.sfService.models.affiliations.get(
       'Contact, Role, Contact.Id, Contact.Name, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Is_Deactive',
       {
-        Organization: institute[0].Organization.Id,
+        Organization: programId,
         Role: 'Admin',
       },
       {},
       instituteId,
     );
-
-    console.log('fourth', Admins);
 
     if (Admins.length > 0) {
       Admins.map((admin) => {

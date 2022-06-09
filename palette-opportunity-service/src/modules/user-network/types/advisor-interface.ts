@@ -104,8 +104,8 @@ export interface advisorStudentRelation {
   attributes: Attributes;
   Id: string;
   Name: string;
-  Contact: hedContactr;
-  Related_Contact: hedRelated_Contactr;
+  Contact: hedRelated_Contactr;
+  // Related_Contact: hedRelated_Contactr;
   Type: string;
 }
 

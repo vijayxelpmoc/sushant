@@ -66,6 +66,7 @@ export const Responses = {
   EVENT_MADE_HIDDEN: 'Event is successfully made hidden.',
   RECEPIENT: 'Recipients',
   RECEPIENTS_FETCH_SUCCESS: 'Recipients fetched successfully',
+  PROFILE_FETCHED: 'Profile fetched successfully',
 };
 
 export const RecordTypeName = {

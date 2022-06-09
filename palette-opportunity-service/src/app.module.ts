@@ -21,7 +21,7 @@ import { UserNetworkModule } from './modules/user-network/user-network.module';
       }),
       envFilePath: '.env',
     }),
-    SfModule.forRoot(),
+    SfModule.forRoot({executorUrl: 'http://localhost:3001/'}),
     WrapperModule,
     OpportunityModule,
     UserNetworkModule,
