@@ -414,7 +414,7 @@ export class TodoService {
         instituteId,
       );
 
-      console.log("response",response);
+      console.log('response', response);
 
       if (!isAdmin) {
         const admins = await this.sfService.models.affiliations.get(
@@ -436,7 +436,7 @@ export class TodoService {
             {},
           );
           console.log(getPayloadData);
-          
+
           // create push notification
           try {
             const res = await axios.post(this.URL, {
@@ -1934,7 +1934,7 @@ export class TodoService {
    */
   async getTasks(filters, programId: string, instituteId: string) {
     const allToDo: any[] = await this.sfService.models.todos.get(
-      'Id, Archived, Assignee.Id, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, To_do, Type, Event_At, Event_Venue, Listed_by, Group_Id, Assignee_accepted_status, Todo_Scope, Status, Opportunit_Id, Reminder_at',
+      'Id, Archived, Assignee.Id, Assignee.Name, Assignee.Profile_Picture, Complete_By, Created_at, Description, Task_Status, To_do, Type, Event_At, Event_Venue, Listed_by, Group_Id, Assignee_accepted_status, Todo_Scope, Status, Opportunit_Id, Reminder_at,Created_By',
       filters,
       {},
       instituteId,
@@ -1961,8 +1961,6 @@ export class TodoService {
         'Id, Name',
         {
           Id: [...createdUserIds],
-          // Role:
-          // Program:programId
         },
         {},
         instituteId,
@@ -2006,35 +2004,37 @@ export class TodoService {
 
     const toDoIds = [];
     const filteredToDos: any[] = [];
-    allToDo.map((todo) => {
-      const filteredToDoObject: any = {
-        Id: todo.Id,
-        Assignee: todo.Assignee && todo.Assignee.Id,
-        AssigneeName: todo.Assignee && todo.Assignee.Name,
-        profilePicture: todo.Assignee && todo.Assignee.Profile_Picture,
-        groupId: todo.Group_Id,
-        reminderAt: todo.Reminder_at,
-        Archived: todo.Archived,
-        name: todo.To_do,
-        acceptedStatus: todo.Assignee_accepted_status,
-        todoScope: todo.Todo_Scope,
-        description: todo.Description,
-        TaskStatus: todo.Task_Status,
-        status: todo.Status,
-        type: todo.Type,
-        eventAt: todo.Event_At,
-        venue: todo.Event_Venue,
-        completeBy: todo.Complete_By,
-        createdAt: todo.Created_at,
-        Listed_by: createdUser[`${todo.Listed_by}`]
-          ? createdUser[`${todo.Listed_by}`]
-          : createdUser[`${todo.Created_By}`],
-        opportunity: todo.Opportunit_Id,
-        Program: programId,
-      };
-      filteredToDos.push(filteredToDoObject);
-      toDoIds.push(todo.Id);
-    });
+    allToDo != undefined &&
+      allToDo.length !== 0 &&
+      allToDo.map((todo) => {
+        const filteredToDoObject: any = {
+          Id: todo.Id,
+          Assignee: todo.Assignee && todo.Assignee.Id,
+          AssigneeName: todo.Assignee && todo.Assignee.Name,
+          profilePicture: todo.Assignee && todo.Assignee.Profile_Picture,
+          groupId: todo.Group_Id,
+          reminderAt: todo.Reminder_at,
+          Archived: todo.Archived,
+          name: todo.To_do,
+          acceptedStatus: todo.Assignee_accepted_status,
+          todoScope: todo.Todo_Scope,
+          description: todo.Description,
+          TaskStatus: todo.Task_Status,
+          status: todo.Status,
+          type: todo.Type,
+          eventAt: todo.Event_At,
+          venue: todo.Event_Venue,
+          completeBy: todo.Complete_By,
+          createdAt: todo.Created_at,
+          Listed_by: createdUser[`${todo.Listed_by}`]
+            ? createdUser[`${todo.Listed_by}`]
+            : createdUser[`${todo.Created_By}`],
+          opportunity: todo.Opportunit_Id,
+          Program: programId,
+        };
+        filteredToDos.push(filteredToDoObject);
+        toDoIds.push(todo.Id);
+      });
 
     const response = { filteredTasks: filteredToDos, taskIds: toDoIds };
     // console.log(response);
@@ -2475,7 +2475,7 @@ export class TodoService {
       instituteId,
     );
 
-    // console.log(resources);
+    console.log('resources', resources);
 
     const responseTodos = [];
 
