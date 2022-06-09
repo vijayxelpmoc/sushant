@@ -46,6 +46,9 @@ export class UtilityService {
       instituteId,
     );
 
+    console.log('response', response);
+    
+
     if (response.success) {
       // Send a notification to the admin
       // All the recipients of contactUs are stored in env:UTILITY_NOTIFICATION_RECIPIENTS
