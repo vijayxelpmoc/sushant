@@ -42,8 +42,8 @@ export class ObserverService {
         'Contact.Id, Contact.Grade, Contact.Name, Contact.Primary_Educational_Institution, Contact.Profile_Picture, Contact.IsRegisteredOnPalette, Contact.Palette_Email, Contact.Is_Deactive',
         {
           Related_Contact: userId,
-          // Type: ObserverSubRoles,
-          Type: 'Observer',
+          Type: ObserverSubRoles,
+          // Type: 'Observer',
         },
         {},
         instituteId,
@@ -82,10 +82,10 @@ export class ObserverService {
         'Contact.Id, Contact.Name, Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture, Related_Contact.IsRegisteredOnPalette, Related_Contact.Palette_Email, Related_Contact.Is_Deactive'
         : 'Contact.Id, Contact.Name, Related_Contact.Id, Related_Contact.Name, Related_Contact.Designation, Related_Contact.Profile_Picture, Related_Contact.IsRegisteredOnPalette, Related_Contact.Palette_Email, Related_Contact.Is_Deactive',
         {
-          // Contact: [...ids],
-          // Type: MentorSubRoles,
-          Contact: ids[0],
-          Type: 'Advisor',
+          Contact: [...ids],
+          Type: MentorSubRoles,
+          // Contact: ids[0],
+          // Type: 'Advisor',
         },
         {},
         instituteId,

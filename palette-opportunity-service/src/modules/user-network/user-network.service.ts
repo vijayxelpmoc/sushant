@@ -52,8 +52,12 @@ export class UserNetworkService {
 
     let checkAffiliation = [];
     if (instituteId.startsWith('paws__')) {
-      checkAffiliation = await this.sfService.generics.contacts.get('Id, Primary_Educational_Institution', { Id: userId, Primary_Educational_Institution: programId }, {}, instituteId);  
-      // [ { Id: 'oUdl3rmthat2k1xy', AffilatedProgram: '_pgcl2orcoqum15j' } ]
+      checkAffiliation = await this.sfService.generics.contacts.get(
+        'Id, Primary_Educational_Institution', 
+        { Id: userId, Primary_Educational_Institution: programId }, 
+        {}, 
+        instituteId
+      );  
     } else {
       checkAffiliation = await this.sfService.models.affiliations.get(
         '*',
@@ -745,7 +749,7 @@ export class UserNetworkService {
               if (personas[i].Contact.dev_uuid !== null)
                 // contradiction
                 isNull = false;
-            } else if (process.env.NODE_ENV == 'prod') {
+            } else if (process.env.NODE_ENV == 'production') {
               if (personas[i].Contact.prod_uuid !== null)
                 // contradiction
                 isNull = false;
@@ -953,6 +957,8 @@ export class UserNetworkService {
       const userId = userIds[i];
       let parentsObj = [];
       if (allRoles == true) {
+        console.log('in if');
+        
         parentsObj = await this.sfService.models.relationships.get(
           'Related_Contact.Id, Type',
           {
@@ -967,16 +973,13 @@ export class UserNetworkService {
           'Related_Contact.Id, Type',
           {
             Contact: userId,
-            // Type: roles,
+            Type: roles,
             Program: programId,
           },
           {},
           instituteId,
         );
       }
-
-      console.log('parentsObj', parentsObj);
-      
 
       if (parentsObj.length > 0) {
         const parentIds = parentsObj.map((parent) => {
@@ -987,7 +990,7 @@ export class UserNetworkService {
           '*',
           {
             Id: [...parentIds],
-            // Role: [...roles],
+            Role: [...roles],
             Primary_Educational_Institution: programId,
           },
           {},
@@ -995,7 +998,6 @@ export class UserNetworkService {
         );
 
         console.log('temp', temp);
-        
 
         if (temp.length !== 0) {
           temp.map(async (parents) => {
@@ -1009,7 +1011,7 @@ export class UserNetworkService {
                   parents.Record_Type_Name,
                 ),
                 firebase_uuid:
-                  process.env.NODE_ENV === 'prod'
+                  process.env.NODE_ENV === 'production'
                     ? parents.prod_uuid
                     : parents.dev_uuid,
                 createOpportunity: false,
@@ -1026,7 +1028,12 @@ export class UserNetworkService {
 
       let instiDetails = [];
       if (instituteId.startsWith('paws__')) {
-        instiDetails = await this.sfService.generics.contacts.get('Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, {}, instituteId);
+        instiDetails = await this.sfService.generics.contacts.get(
+          'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
+          { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, 
+          {}, 
+          instituteId
+        );
       } else {
         // doubt
         // const studentProfile = await this.sfService.getStudent(userId);
@@ -1041,8 +1048,9 @@ export class UserNetworkService {
           instituteId,
         );
       }
-      
 
+      console.log('instiDetails', instiDetails);
+      
       if (instiDetails.length > 0) {
         let mentorDetails = [];
         if (instituteId.startsWith('paws__')) {
@@ -1063,6 +1071,9 @@ export class UserNetworkService {
             instituteId,
           );
         } 
+
+        console.log('mentorDetails', mentorDetails);
+        
         
         if (mentorDetails.length > 0) {
           mentorDetails.map((admins) => {
@@ -1074,7 +1085,7 @@ export class UserNetworkService {
                 profilePicture: admins.Profile_Picture,
                 relationship: 'Admin',
                 firebase_uuid:
-                  process.env.NODE_ENV === 'prod'
+                  process.env.NODE_ENV === 'production'
                     ? admins.prod_uuid
                     : admins.dev_uuid,
                 createOpportunity: false,
@@ -1122,7 +1133,7 @@ export class UserNetworkService {
         '*',
         {
           Id: [...advisorStudentIds],
-          // Role: [...roles],
+          Role: [...roles],
           Primary_Educational_Institution: programId,
         },
         {},
@@ -1132,7 +1143,7 @@ export class UserNetworkService {
       if (advisorStudentDetails.length > 0) {
         advisorStudentDetails.map((student) => {
           if (checkRepeatition.indexOf(student.Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: student.Id,
                 name: student.Name,
@@ -1171,7 +1182,8 @@ export class UserNetworkService {
         const guardians = await this.sfService.models.relationships.get(
           'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture',
           {
-            Contact: advisorStudentIds[0], 
+            // Contact: advisorStudentIds[0], 
+            Contact: advisorStudentIds,
             Type: GuardianSubRoles,
             Program: programId,
           },
@@ -1192,7 +1204,7 @@ export class UserNetworkService {
               'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: advisorGuardianIds,
-                // Role: [...roles],
+                Role: [...roles],
                 Primary_Educational_Institution: programId,
               },
               {},
@@ -1204,7 +1216,7 @@ export class UserNetworkService {
           if (advisorParentDetails.length > 0) {
             advisorParentDetails.map((guardian) => {
               if (checkRepeatition.indexOf(guardian.Id) == -1) {
-                if (process.env.NODE_ENV === 'prod') {
+                if (process.env.NODE_ENV === 'production') {
                   const obj = {
                     id: guardian.Id,
                     name: guardian.Name,
@@ -1243,16 +1255,17 @@ export class UserNetworkService {
         const advisorAdvisors = await this.sfService.models.relationships.get(
           'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture',
           {
-            Contact: advisorStudentIds[0],
-            // Type: MentorSubRoles,
-            Type: 'Advisor',
+            // Contact: advisorStudentIds[0],
+            Contact: advisorStudentIds,
+            Type: MentorSubRoles,
+            // Type: 'Advisor',
             Program: programId,
           },
           {},
           instituteId,
         );
 
-        // console.log('eight', advisorAdvisors);
+        console.log('eight', advisorAdvisors);
 
         if (advisorAdvisors.length > 0) {
           const advisorAdvisorIds = advisorAdvisors.map((mentor) => {
@@ -1264,7 +1277,7 @@ export class UserNetworkService {
               'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorAdvisorIds],
-                // Role: [...roles],
+                Role: [...roles],
                 Primary_Educational_Institution: programId,
               },
               {},
@@ -1275,7 +1288,7 @@ export class UserNetworkService {
 
           advisorAdvisorDetails.map((advisor) => {
             if (checkRepeatition.indexOf(advisor.Id) == -1) {
-              if (process.env.NODE_ENV === 'prod') {
+              if (process.env.NODE_ENV === 'production') {
                 const obj = {
                   id: advisor.Id,
                   name: advisor.Name,
@@ -1313,9 +1326,10 @@ export class UserNetworkService {
         const advisorObservers = await this.sfService.models.relationships.get(
           'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture, Contact.Name',
           {
-            Contact: advisorStudentIds[0],
-            // Type: ObserverSubRoles,
-            Type: 'Observer',
+            // Contact: advisorStudentIds[0],
+            Contact: advisorStudentIds,
+            Type: ObserverSubRoles,
+            // Type: 'Observer',
             Program: programId,
           },
           {},
@@ -1334,7 +1348,7 @@ export class UserNetworkService {
               'Name, Id, Profile_Picture, IsRegisteredOnPalette, prod_uuid, dev_uuid',
               {
                 Id: [...advisorObserverIds],
-                // Role: [...roles],
+                Role: [...roles],
                 Primary_Educational_Institution: programId,
               },
               {},
@@ -1345,7 +1359,7 @@ export class UserNetworkService {
 
           advisorObserverDetails.map((observer) => {
             if (checkRepeatition.indexOf(observer.Id) == -1) {
-              if (process.env.NODE_ENV === 'prod') {
+              if (process.env.NODE_ENV === 'production') {
                 const obj = {
                   id: observer.Id,
                   name: observer.Name,
@@ -1402,7 +1416,7 @@ export class UserNetworkService {
         'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
         { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, 
         {}, 
-        instituteId
+        instituteId,
       );
     } else {
       advisorInsti = await this.sfService.models.affiliations.get(
@@ -1445,7 +1459,7 @@ export class UserNetworkService {
 
       Admins.map((admin) => {
         if (checkRepeatition.indexOf(admin.Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
+          if (process.env.NODE_ENV === 'production') {
             const obj = {
               id: admin.Id,
               name: admin.Name,
@@ -1493,23 +1507,22 @@ export class UserNetworkService {
     const checkRepetitionIds = [];
     checkRepetitionIds.push(userId);
     const parent = await this.parentService.getParent(userId, instituteId, programId);
-    // console.log('parent', parent.data);
+    console.log('parent', parent.data);
 
     const parentStudentIds = parent.data.pupils.map((pupil) => {
       return pupil.Id;
     });
 
-    // console.log('parentStudentIds', parentStudentIds);
+    console.log('parentStudentIds', parentStudentIds);
 
     const parentContactList = [];
 
     if (parentStudentIds.length > 0) {
       const parentStudentDetails = await this.sfService.generics.contacts.get(
-        'Id, Name, IsRegisteredOnPalette, Profile_Picture, prod_uuid, Primary_Educational_Institution, prod_uuid',
+        'Id, Name, IsRegisteredOnPalette, Profile_Picture, prod_uuid, Primary_Educational_Institution, dev_uuid',
         {
-          Id: [...parentStudentIds],
-          // Role: [...roles],
-          // Id: parentStudentIds[0],
+          Id: parentStudentIds,
+          Role: [...roles],
           Primary_Educational_Institution: programId,
         },
         {},
@@ -1520,7 +1533,7 @@ export class UserNetworkService {
 
       parentStudentDetails.map((student) => {
         if (checkRepetitionIds.indexOf(student.Id) == -1) {
-          if (process.env.NODE_ENV === 'prod') {
+          if (process.env.NODE_ENV === 'production') {
             const obj = {
               id: student.Id,
               name: student.Name,
@@ -1574,16 +1587,15 @@ export class UserNetworkService {
       const parentGuardians = await this.sfService.models.relationships.get(
         'Type, Related_Contact.Id',
         {
-          // Contact: [...parentStudentIds],
-          Contact: parentStudentIds[0],
+          Contact: parentStudentIds,
           Program: programId,
-          // Type: GuardianSubRoles,
+          Type: GuardianSubRoles,
         },
         {},
         instituteId,
       );
 
-      // console.log('2', parentGuardians);
+      console.log('2', parentGuardians);
 
       parentGuardians.map((event) => {
         RoleType.set(event.Related_Contact.Id, event.Type);
@@ -1592,7 +1604,7 @@ export class UserNetworkService {
         return guardian.Related_Contact.Id;
       });
 
-      // console.log('temp_parentGuardiansIds', temp_parentGuardiansIds);
+      console.log('temp_parentGuardiansIds', temp_parentGuardiansIds);
       
 
       const hashIds = new Map();
@@ -1608,20 +1620,20 @@ export class UserNetworkService {
         parentGuardianDetails = await this.sfService.generics.contacts.get(
           'Id, Name, IsRegisteredOnPalette, Profile_Picture, prod_uuid, dev_uuid ',
           {
-            Id: [...parentGuardiansIds],
-            // Role: [...roles],
+            Id: parentGuardiansIds,
+            Role: [...roles],
             Primary_Educational_Institution: programId,
           },
           {},
           instituteId,
         );
 
-        // console.log('3', parentGuardianDetails);
+        console.log('3', parentGuardianDetails);
 
         if (parentGuardianDetails.length > 0) {
           parentGuardianDetails.map(async (guardians) => {
             if (checkRepetitionIds.indexOf(guardians.Id) == -1) {
-              if (process.env.NODE_ENV === 'prod') {
+              if (process.env.NODE_ENV === 'production') {
                 const obj = {
                   id: guardians.Id,
                   name: guardians.Name,
@@ -1664,7 +1676,12 @@ export class UserNetworkService {
 
       let parentStudentInstiDetails = [];
       if (instituteId.startsWith('paws__')) {
-        parentStudentInstiDetails = await this.sfService.generics.contacts.get('Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, {}, instituteId);
+        parentStudentInstiDetails = await this.sfService.generics.contacts.get(
+          'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
+          { Record_Type_Name: 'Administrator', Primary_Educational_Institution: programId }, 
+          {}, 
+          instituteId
+        );
       } else {
         parentStudentInstiDetails = [
           ...(await this.sfService.models.affiliations.get(
@@ -1691,7 +1708,7 @@ export class UserNetworkService {
           await this.sfService.generics.contacts.get(
             'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name',
             {
-              Id: [...parentStudentMentorIds],
+              Id: parentStudentMentorIds,
               Role: [...roles],
               Primary_Educational_Institution: programId,
             },
@@ -1700,12 +1717,12 @@ export class UserNetworkService {
           );
       }
 
-      // console.log('5', parentStudentMentorDetails);
+      console.log('5', parentStudentMentorDetails);
 
       if (parentStudentMentorDetails.length > 0) {
         parentStudentMentorDetails.map(async (admins) => {
           if (checkRepetitionIds.indexOf(admins.Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: admins.Id,
                 name: admins.Name,
@@ -1781,7 +1798,12 @@ export class UserNetworkService {
 
     let observerInsti = [];
     if (instituteId.startsWith('paws__')) {
-      observerInsti = await this.sfService.generics.contacts.get('Id', { Primary_Educational_Institution: programId, Role: ['Administrator', 'Advisor', 'Observer']}, {}, instituteId);
+      observerInsti = await this.sfService.generics.contacts.get(
+        'Id', 
+        { Primary_Educational_Institution: programId, Role: ['Administrator', 'Advisor', 'Observer']}, 
+        {}, 
+        instituteId
+      );
     } else {
       observerInsti = await this.sfService.models.affiliations.get(
         '*',
@@ -1804,7 +1826,7 @@ export class UserNetworkService {
       '*',
       {
         Id: [...observerInstiIds],
-        // Role: [...roles],
+        Role: [...roles],
         Primary_Educational_Institution: programId,
       },
       {},
@@ -1813,7 +1835,7 @@ export class UserNetworkService {
 
     for (let i = 0; i < temp.length; i++) {
       if (checkRepetitionIds.indexOf(temp[i].Id) == -1) {
-        if (process.env.NODE_ENV === 'prod') {
+        if (process.env.NODE_ENV === 'production') {
           const obj = {
             id: temp[i].Id,
             name: temp[i].Name,
@@ -1857,7 +1879,7 @@ export class UserNetworkService {
       '*',
       {
         Id: [...observerStudentIds],
-        // Role: [...roles],
+        Role: [...roles],
         Primary_Educational_Institution: programId,
       },
       {},
@@ -1866,7 +1888,7 @@ export class UserNetworkService {
 
     for (let i = 0; i < observerStudentDetails.length; i++) {
       if (checkRepetitionIds.indexOf(observerStudentDetails[i].Id) == -1) {
-        if (process.env.NODE_ENV === 'prod') {
+        if (process.env.NODE_ENV === 'production') {
           const obj = {
             id: observerStudentDetails[i].Id,
             name: observerStudentDetails[i].Name,
@@ -1905,10 +1927,10 @@ export class UserNetworkService {
     const observerGuardians = await this.sfService.models.relationships.get(
       'Related_Contact.Id, Related_Contact.Name, Related_Contact.Profile_Picture',
       {
-        // Contact: [...observerStudentIds],
-        // Type: GuardianSubRoles,
-        Contact: observerStudentIds[0],
-        Type: 'Guardian',
+        Contact: [...observerStudentIds],
+        Type: GuardianSubRoles,
+        // Contact: observerStudentIds[0],
+        // Type: 'Guardian',
         Program: programId,
       },
       {},
@@ -1923,7 +1945,7 @@ export class UserNetworkService {
       '*',
       {
         Id: [...observerGuardianIds],
-        // Role: [...roles],
+        Role: [...roles],
         Primary_Educational_Institution: programId,
       },
       {},
@@ -1932,7 +1954,7 @@ export class UserNetworkService {
 
     for (let i = 0; i < observerGuardianDetails.length; i++) {
       if (checkRepetitionIds.indexOf(observerGuardianDetails[i].Id) == -1) {
-        if (process.env.NODE_ENV === 'prod') {
+        if (process.env.NODE_ENV === 'production') {
           const obj = {
             id: observerGuardianDetails[i].Id,
             name: observerGuardianDetails[i].Name,
@@ -1981,7 +2003,7 @@ export class UserNetworkService {
         'Id, Name, Profile_Picture, dev_uuid, prod_uuid, IsRegisteredOnPalette, Record_Type_Name', 
         { Primary_Educational_Institution: programId, }, 
         {}, 
-        instituteId
+        instituteId,
       );{
         allAffiliatedPersonas.map(users => {
           if (userId !== users.Id) {
@@ -2040,7 +2062,7 @@ export class UserNetworkService {
               profilePicture: allOtherAdminsContact[i].Profile_Picture,
               relationship: 'Admin',
               firebase_uuid:
-                process.env.NODE_ENV === 'prod'
+                process.env.NODE_ENV === 'production'
                   ? allOtherAdminsContact[i].prod_uuid
                   : allOtherAdminsContact[i].dev_uuid,
               createOpportunity: true,
@@ -2073,7 +2095,7 @@ export class UserNetworkService {
   
         for (let i = 0; i < adminStudentsList.length; i++) {
           if (checkRepetitonIds.indexOf(adminStudentDetails[i].Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: adminStudentDetails[i].Id,
                 name: adminStudentDetails[i].Name,
@@ -2136,7 +2158,7 @@ export class UserNetworkService {
           // console.log(i);
   
           if (checkRepetitonIds.indexOf(adminMentorDetails[i].Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: adminMentorDetails[i].Id,
                 name: adminMentorDetails[i].Name,
@@ -2191,7 +2213,7 @@ export class UserNetworkService {
   
         for (let i = 0; i < adminParentsList.length; i++) {
           if (checkRepetitonIds.indexOf(adminParentsDetails[i].Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: adminParentsDetails[i].Id,
                 name: adminParentsDetails[i].Name,
@@ -2247,7 +2269,7 @@ export class UserNetworkService {
   
         for (let i = 0; i < adminObserverssList.length; i++) {
           if (checkRepetitonIds.indexOf(adminObserverDetails[i].Id) == -1) {
-            if (process.env.NODE_ENV === 'prod') {
+            if (process.env.NODE_ENV === 'production') {
               const obj = {
                 id: adminObserverDetails[i].Id,
                 name: adminObserverDetails[i].Name,
