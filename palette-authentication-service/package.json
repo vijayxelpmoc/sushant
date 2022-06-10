@@ -1,7 +1,7 @@
 {
   "name": "palette-auth-service",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Palette Authentication Service",
   "license": "MIT",
   "scripts": {
