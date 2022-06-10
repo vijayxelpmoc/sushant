@@ -7,7 +7,6 @@ import { SFModelsModule } from './modules/sf-models/sf-models.module';
 import { SFFieldsModule } from './modules/sf-fields/sf-fields.module';
 import { DataProcessorModule } from './modules/data-processor/data-processor.module';
 import { ExecutorModule } from './modules/executor/executor.module';
-import { SfModule } from '@gowebknot/palette-salesforce-service';
 
 @Module({
   imports: [
@@ -36,7 +35,6 @@ import { SfModule } from '@gowebknot/palette-salesforce-service';
     SFModelsModule,
     SFFieldsModule,
     ExecutorModule,
-    // SfModule.forRoot(),
   ],
 })
 export class AppModule {}

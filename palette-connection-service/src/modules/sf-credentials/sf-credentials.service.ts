@@ -8,14 +8,12 @@ import { SFModelsService } from '../sf-models/sf-models.service';
 import { CreateSFCredentialDto } from './dto/create-sf-credential.dto';
 import { PawsSFCredentialDto } from './dto/paws.dto';
 import { SFCredentialEntity } from './sf-credential.entity';
-// import { SfService } from '@gowebknot/palette-salesforce-service';
 
 @Injectable()
 export class SFCredentialsService {
   constructor(
     @InjectRepository(SFCredentialEntity)
     private sfCredentialsRepository: Repository<SFCredentialEntity>,
-    // private sfService: SfService,
     private sfFieldsService: SFFieldsService,
     private sfModelsService: SFModelsService,
   ) {}
@@ -25,11 +23,8 @@ export class SFCredentialsService {
   }
 
   async getInstitutes(): Promise<any> {
-    const institutesData = await this.sfCredentialsRepository.find({ select: ["id", "instituteName", "instituteId"] });
+    const institutesData = await this.sfCredentialsRepository.find({ select: ["id", "instituteName", "instituteId", "baseCrmId"] });
 
-    institutesData.map(data => {
-
-    })
     return {
       statusCode: 200,
       message: Responses.GET_INSTITUTES_SUCCESS,

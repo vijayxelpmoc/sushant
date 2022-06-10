@@ -416,6 +416,29 @@ export class AuthService {
     });
   }
 
+  async getInstitutes(): Promise<any> {
+
+    const institutes = await this.sfService.util.getAllInstitutes();
+
+    const insList = [];
+    await Promise.all(institutes.map(async institute => {
+      if (institute.instituteId.startsWith('paws__')) {
+        const Obj = {};
+        Obj['id'] = institute.id;
+        Obj['instituteName'] = await this.sfService.paws.organizationName(institute.baseCrmId, institute.instituteId);
+        Obj['instituteId'] = institute.instituteId; 
+        insList.push(Obj);
+      }
+    }));
+
+
+    return {
+      statusCode: 200,
+      message: 'Institutes fetched successfully',
+      data: insList,
+    };
+  }
+
   async getMultiplePrograms(instituteId: string): Promise<any> {
     const institutePrograms = [];
 

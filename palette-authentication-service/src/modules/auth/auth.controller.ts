@@ -143,6 +143,11 @@ export class AuthController {
     this.authService.sendMail();
   }
 
+  @Get('institutes')
+  async getInstitutes(): Promise<any> {
+    return await this.authService.getInstitutes();
+  }
+
   @Get('programs')
   async getPrograms(
     @QueryRequired('instituteId') instituteId: string,
