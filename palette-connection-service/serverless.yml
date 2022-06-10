@@ -141,3 +141,7 @@ functions:
           method: POST
           path: con/service/executor/refresh
           cors: true
+      - http:
+          method: POST
+          path: con/manager/sfcredentials/PAWS
+          cors: true
