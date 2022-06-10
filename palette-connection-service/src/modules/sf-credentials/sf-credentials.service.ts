@@ -3,14 +3,21 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Responses } from '@src/constants';
 import { Repository } from 'typeorm';
 import { v4 as uuid } from 'uuid';
+import { SFFieldsService } from '../sf-fields/sf-fields.service';
+import { SFModelsService } from '../sf-models/sf-models.service';
 import { CreateSFCredentialDto } from './dto/create-sf-credential.dto';
+import { PawsSFCredentialDto } from './dto/paws.dto';
 import { SFCredentialEntity } from './sf-credential.entity';
+// import { SfService } from '@gowebknot/palette-salesforce-service';
 
 @Injectable()
 export class SFCredentialsService {
   constructor(
     @InjectRepository(SFCredentialEntity)
     private sfCredentialsRepository: Repository<SFCredentialEntity>,
+    // private sfService: SfService,
+    private sfFieldsService: SFFieldsService,
+    private sfModelsService: SFModelsService,
   ) {}
 
   async get(): Promise<SFCredentialEntity[]> {
@@ -19,10 +26,14 @@ export class SFCredentialsService {
 
   async getInstitutes(): Promise<any> {
     const institutesData = await this.sfCredentialsRepository.find({ select: ["id", "instituteName", "instituteId"] });
+
+    institutesData.map(data => {
+
+    })
     return {
       statusCode: 200,
       message: Responses.GET_INSTITUTES_SUCCESS,
-      data: institutesData
+      data: institutesData,
     };
   }
 
@@ -78,20 +89,24 @@ export class SFCredentialsService {
     // Reading SFCredentials file
     const file = reader.readFile('src/data/SFCredentials.xlsx');
     const sheets = file.SheetNames;
-
+    
     const data: any = [];
     for (let i = 0; i < sheets.length; i++) {
       const temp = reader.utils.sheet_to_json(file.Sheets[file.SheetNames[i]]);
-      temp.forEach((res: any) => {
-        if (res.instituteName == 'PAWS_Invincia') {
-          res['instituteId'] = 'paws__'+String(uuid());
-        } else {
-          res['instituteId'] = uuid();
-        }
+      
+      temp.forEach(async (res: any) => {
+        // if (res.instituteName == 'PAWS_Invincia') {
+        //   const insId = 'paws__'+String(uuid());
+        //   res['instituteId'] = insId;
+        //   await this.sfModelsService.loadPAWSmodels(insId);
+        //   await this.sfFieldsService.loadPAWSFields(insId);
+        // } else {
+        //   res['instituteId'] = uuid();
+        // }
+        res['instituteId'] = uuid();
         data.push(res);
       });
     }
-    console.log('data', data);
     
     // Bulk insert using query builder
     await this.sfCredentialsRepository
@@ -101,5 +116,18 @@ export class SFCredentialsService {
       .execute();
 
     return { status: 201, message: 'Success' };
+  }
+
+  async loadPAWSCreds(pawsSFCredentialDto : PawsSFCredentialDto) {
+    // Bulk insert using query builder
+    await this.sfCredentialsRepository
+      .createQueryBuilder()
+      .insert()
+      .values(pawsSFCredentialDto)
+      .execute();
+
+    const insId = pawsSFCredentialDto.instituteId;
+    await this.sfModelsService.loadPAWSmodels(insId);
+    await this.sfFieldsService.loadPAWSFields(insId);
   }
 }

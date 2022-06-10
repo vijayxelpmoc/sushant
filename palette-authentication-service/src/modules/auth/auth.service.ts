@@ -172,6 +172,7 @@ export class AuthService {
     // instead of bcrypt.
     const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
+    
     if (authLoginDto.password !== decryptedPassword) {
       throw new UnauthorizedException(Errors.INVALID_PASSWORD);
     }

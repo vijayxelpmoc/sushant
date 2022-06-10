@@ -32,4 +32,8 @@ export class CreateSFCredentialDto {
   @IsString()
   @IsOptional()
   grantType: string;
+
+  @IsString()
+  @IsOptional()
+  baseCrmId: string;
 }

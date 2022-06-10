@@ -9,6 +9,7 @@ import {
 } from '@nestjs/common';
 
 import { CreateSFCredentialDto } from './dto/create-sf-credential.dto';
+import { PawsSFCredentialDto } from './dto/paws.dto';
 import { SFCredentialEntity } from './sf-credential.entity';
 import { SFCredentialsService } from './sf-credentials.service';
 
@@ -54,5 +55,10 @@ export class SFCredentialsController {
   @Post('load')
   async load(): Promise<any> {
     return await this.sfCredentialsService.load();
+  }
+
+  @Post('PAWS')
+  async loadPAWSCreds(pawsSFCredentialDto : PawsSFCredentialDto): Promise<any> {
+    return await this.sfCredentialsService.loadPAWSCreds(pawsSFCredentialDto);
   }
 }
