@@ -56,11 +56,11 @@ export class TodoService {
   private PayloadURL =
     process.env.NODE_ENV === 'development'
       ? `http://localhost:5000/notifications/payload/todo`
-      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/notifications/payload/todo`;
+      : `https://${process.env.PALETTE_API_GATEWAY_ID}.execute-api.${process.env.PALETTE_AWS_REGION}.amazonaws.com/dev/notifications/payload/todo`;
   private URL =
     process.env.NODE_ENV === 'development'
       ? 'http://localhost:3000/firebase/send-notification'
-      : `https://pxbgeue0h5.execute-api.ap-southeast-2.amazonaws.com/dev/firebase/send-notification`;
+      : `https://${process.env.PALETTE_API_GATEWAY_ID}.execute-api.${process.env.PALETTE_AWS_REGION}.amazonaws.com/dev/firebase/send-notification`;
   constructor(private sfService: SfService) {
     // LOCAL
     this.notifier = new Notifier();

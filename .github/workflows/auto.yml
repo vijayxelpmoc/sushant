@@ -2,7 +2,7 @@ name: Paletet Serverless Deployment
 on:
   push:
     branches:
-      - dev
+      - dev-client
 
 jobs:
   changes:
@@ -83,9 +83,9 @@ jobs:
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
         with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID_CLIENT }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLIENT }}
+          aws-region: ${{ secrets.AWS_REGION_CLIENT }}
 
       - name: Config NPM
         run: |
@@ -100,8 +100,8 @@ jobs:
           npx serverless deploy --stage dev
         working-directory: ${{ matrix.folder }}
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REST_API_ROOT_ID: ${{ secrets.AWS_REST_API_ROOT_ID }}
-          AWS_REST_API_ID: ${{ secrets.AWS_REST_API_ID }}
-          AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID_CLIENT }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY_CLIENT }}
+          AWS_REST_API_ROOT_ID: ${{ secrets.AWS_REST_API_ROOT_ID_CLIENT }}
+          AWS_REST_API_ID: ${{ secrets.AWS_REST_API_ID_CLIENT }}
+          AWS_BUCKET_NAME: ${{ secrets.AWS_BUCKET_NAME_CLIENT }}

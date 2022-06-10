@@ -424,7 +424,7 @@ export class AuthService {
       );
       institutePrograms.push(...programs);
     } else {
-      let EDUCATIONAL_INSTITUTION = AccountRecordType.EDUCATIONAL_INSTITUTION;
+      const EDUCATIONAL_INSTITUTION = AccountRecordType.EDUCATIONAL_INSTITUTION;
       const programs = await this.sfService.models.accounts.get(
         'Id, Account_Name, program_logo',
         { Record_Type_Name: EDUCATIONAL_INSTITUTION },

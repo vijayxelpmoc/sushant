@@ -23,11 +23,15 @@ export class UsersService {
     private sfService: SfService,
     private configService: ConfigService,
     private authService: AuthService,
-    ) {
+  ) {
     // this._cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
   }
 
-  async preRegisterForPalette(preRegisterUserDto: PreRegisterUserDto, instituteId: string, programId: string) {
+  async preRegisterForPalette(
+    preRegisterUserDto: PreRegisterUserDto,
+    instituteId: string,
+    programId: string,
+  ) {
     const { email, password, ferpa, role } = preRegisterUserDto;
 
     const user: User = (
@@ -45,38 +49,45 @@ export class UsersService {
     if (!user) {
       throw new UnauthorizedException(Errors.EMAIL_ADDRESS_NOT_FOUND);
     }
-    
+
     // Check if user is already registered
-    if (user.IsRegisteredOnPalette === true) {
+    if (user.IsRegisteredOnPalette) {
       throw new UnauthorizedException(Errors.PRE_REGISTERED_ERROR);
     }
 
-    const isStudentOrGuardian = role === Roles.Student || role === Roles.Guardian;
+    const isStudentOrGuardian =
+      role === Roles.Student || role === Roles.Guardian;
 
     if (isStudentOrGuardian && !ferpa) {
       throw new ForbiddenException(Errors.FERPA_NOT_ACCEPTED);
     }
-    
+
     // Encrypt the new password and update the user
     const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const newPasswordHash = cryptr.encrypt(password);
     isStudentOrGuardian
-      ? await this.sfService.generics.contacts.update(user.Id, {
-          Palette_Key: newPasswordHash,
-          FERPA: true,  
-        },
-        instituteId,
+      ? await this.sfService.generics.contacts.update(
+          user.Id,
+          {
+            Palette_Key: newPasswordHash,
+            FERPA: true,
+          },
+          instituteId,
         )
-      : await this.sfService.generics.contacts.update(user.Id, {
-          Palette_Key: newPasswordHash,
-        },
-        instituteId,
+      : await this.sfService.generics.contacts.update(
+          user.Id,
+          {
+            Palette_Key: newPasswordHash,
+          },
+          instituteId,
         );
-    
-    await this.sfService.generics.contacts.update(user.Id, {
-      IsRegisteredOnPalette: true,
-    },
-    instituteId
+
+    await this.sfService.generics.contacts.update(
+      user.Id,
+      {
+        IsRegisteredOnPalette: true,
+      },
+      instituteId,
     );
 
     const [fName, lName] = user.Name.split(' ');
@@ -100,22 +111,25 @@ export class UsersService {
     programId,
     role,
   ) {
-    const user = await this.authService._getUser({
+    const user = await this.authService._getUser(
+      {
         Primary_Educational_Institution: programId,
         Record_Type_Name: role,
-      }, 
-      {}, 
-      instituteId
+      },
+      {},
+      instituteId,
     );
 
     if (!user) {
       throw new NotFoundException();
     }
 
-    await this.sfService.generics.contacts.update(userId, {
-      Profile_Picture: addProfilePictureDto.url,
-    }, 
-    instituteId
+    await this.sfService.generics.contacts.update(
+      userId,
+      {
+        Profile_Picture: addProfilePictureDto.url,
+      },
+      instituteId,
     );
     return {
       statusCode: 200,
@@ -127,9 +141,23 @@ export class UsersService {
    *  @param {UuidDto} body uuid,  salesforce id and email of the user
    * @returns {Object} status code and message or errors
    */
-   async updateUuid(uuidDto: UuidDto, instituteId: string, programId: string, role: string): Promise<any> {
-    const user = await this.sfService.generics.contacts.get('Id', { Id: uuidDto.SFId, Primary_Educational_Institution: programId, Record_Type_Name: role }, {}, instituteId);
-    
+  async updateUuid(
+    uuidDto: UuidDto,
+    instituteId: string,
+    programId: string,
+    role: string,
+  ): Promise<any> {
+    const user = await this.sfService.generics.contacts.get(
+      'Id',
+      {
+        Id: uuidDto.SFId,
+        Primary_Educational_Institution: programId,
+        Record_Type_Name: role,
+      },
+      {},
+      instituteId,
+    );
+
     if (user.length == 0) {
       throw new NotFoundException();
     }
@@ -145,6 +173,10 @@ export class UsersService {
       };
     }
 
-    return await this.sfService.generics.contacts.update(uuidDto.SFId, data, instituteId);
+    return await this.sfService.generics.contacts.update(
+      uuidDto.SFId,
+      data,
+      instituteId,
+    );
   }
 }
