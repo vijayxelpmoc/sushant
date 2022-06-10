@@ -421,16 +421,20 @@ export class AuthService {
     const institutes = await this.sfService.util.getAllInstitutes();
 
     const insList = [];
-    await Promise.all(institutes.map(async institute => {
+    await Promise.all(institutes.data.map(async institute => {
+      const Obj = {};
       if (institute.instituteId.startsWith('paws__')) {
-        const Obj = {};
         Obj['id'] = institute.id;
         Obj['instituteName'] = await this.sfService.paws.organizationName(institute.baseCrmId, institute.instituteId);
         Obj['instituteId'] = institute.instituteId; 
         insList.push(Obj);
+      } else {
+        Obj['id'] = institute.id;
+        Obj['instituteName'] = institute.instituteName;
+        Obj['instituteId'] = institute.instituteId; 
+        insList.push(Obj);
       }
     }));
-
 
     return {
       statusCode: 200,
