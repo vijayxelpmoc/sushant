@@ -25,9 +25,9 @@ export class SFFieldsService {
   }
 
   async deleteAll() {
-    for (let id=3954; id<=3988; id++) {
+    for (let id = 3954; id <= 3988; id++) {
       console.log('id', id);
-      await this.sfFieldsRepository.delete({id});
+      await this.sfFieldsRepository.delete({ id });
     }
     return 'Done';
   }
