@@ -27,10 +27,10 @@ provider:
     AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
 
 functions:
-  sendTodoReminders:
-    handler: ./src/modules/notifications/handler.sendTodoReminders
-    events:
-      - schedule: rate(1 minute)
+  # sendTodoReminders:
+  #   handler: ./dist/modules/notifications/handler.sendTodoReminders
+  #   events:
+  #     - schedule: rate(1 minute)
   util:
     handler: dist/lambda.handler
     events:
