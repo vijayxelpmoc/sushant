@@ -58,7 +58,7 @@ export class SFCredentialsController {
   }
 
   @Post('PAWS')
-  async loadPAWSCreds(pawsSFCredentialDto : PawsSFCredentialDto): Promise<any> {
+  async loadPAWSCreds(@Body() pawsSFCredentialDto : PawsSFCredentialDto): Promise<any> {
     return await this.sfCredentialsService.loadPAWSCreds(pawsSFCredentialDto);
   }
 }
