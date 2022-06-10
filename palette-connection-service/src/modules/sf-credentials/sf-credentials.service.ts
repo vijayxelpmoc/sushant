@@ -124,5 +124,7 @@ export class SFCredentialsService {
     const insId = pawsSFCredentialDto.instituteId;
     await this.sfModelsService.loadPAWSmodels(insId);
     await this.sfFieldsService.loadPAWSFields(insId);
+
+    return { status: 201, message: 'Success' };
   }
 }
