@@ -172,6 +172,7 @@ export class AuthService {
     // instead of bcrypt.
     const cryptr = new Cryptr(EnvKeys.PASSWORD_HASHING_KEY);
     const decryptedPassword = cryptr.decrypt(user.Palette_Key);
+    
     if (authLoginDto.password !== decryptedPassword) {
       throw new UnauthorizedException(Errors.INVALID_PASSWORD);
     }
@@ -413,6 +414,33 @@ export class AuthService {
       subject: '[!IMP] Palette Password Reset OTP',
       body: 'Hello this is a test email',
     });
+  }
+
+  async getInstitutes(): Promise<any> {
+
+    const institutes = await this.sfService.util.getAllInstitutes();
+
+    const insList = [];
+    await Promise.all(institutes.data.map(async institute => {
+      const Obj = {};
+      if (institute.instituteId.startsWith('paws__')) {
+        Obj['id'] = institute.id;
+        Obj['instituteName'] = await this.sfService.paws.organizationName(institute.baseCrmId, institute.instituteId);
+        Obj['instituteId'] = institute.instituteId; 
+        insList.push(Obj);
+      } else {
+        Obj['id'] = institute.id;
+        Obj['instituteName'] = institute.instituteName;
+        Obj['instituteId'] = institute.instituteId; 
+        insList.push(Obj);
+      }
+    }));
+
+    return {
+      statusCode: 200,
+      message: 'Institutes fetched successfully',
+      data: insList,
+    };
   }
 
   async getMultiplePrograms(instituteId: string): Promise<any> {

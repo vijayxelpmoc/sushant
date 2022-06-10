@@ -98,3 +98,7 @@ functions:
           method: PATCH
           path: users/uuid
           cors: true
+      - http:
+          method: GET
+          path: auth/institutes
+          cors: true

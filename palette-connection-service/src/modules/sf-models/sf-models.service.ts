@@ -64,4 +64,30 @@ export class SFModelsService {
 
     return { status: 201, message: 'Success' };
   }
+
+  async loadPAWSmodels(instituteId: string): Promise<any> {
+    // eslint-disable-next-line @typescript-eslint/no-var-requires
+    const reader = require('xlsx');
+
+    const file = reader.readFile('src/data/PAWSModels.xlsx');
+    const sheets = file.SheetNames;
+
+    const data: any = [];
+    for (let i = 0; i < sheets.length; i++) {
+      const temp = reader.utils.sheet_to_json(file.Sheets[file.SheetNames[i]]);
+      temp.forEach((res: any) => {
+        res['crmId'] = instituteId;
+        data.push(res);
+      });
+    }
+
+    // Bulk insert using query builder
+    await this.sfModelRepository
+      .createQueryBuilder()
+      .insert()
+      .values(data)
+      .execute();
+
+    return { status: 201, message: 'Success' };
+  }
 }

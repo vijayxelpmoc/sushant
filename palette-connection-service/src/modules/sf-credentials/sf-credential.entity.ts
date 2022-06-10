@@ -36,4 +36,7 @@ export class SFCredentialEntity extends BaseEntity {
 
   @Column()
   grantType: string;
+
+  @Column({ nullable: true })
+  baseCrmId: string;
 }
