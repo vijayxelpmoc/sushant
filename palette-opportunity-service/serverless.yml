@@ -22,11 +22,6 @@ provider:
     JWT_SECRET: ${env:JWT_SECRET}
     PORT: ${env:PORT}
     NODE_ENV: ${env:NODE_ENV}
-    SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
-    SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
-    SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
-    SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
-    SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
     PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
     PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
     PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
@@ -36,152 +31,147 @@ functions:
   opportunity:
     handler: dist/lambda.handler
     events:
-      - http:  
+      - http:
           method: GET
           path: opportunity/user
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/single/add/todo/{opportunityId}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 opportunityId: true
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/add
           cors: true
-      - http:  
+      - http:
           method: PATCH
           path: opportunity/edit/discrete
           cors: true
-      - http:  
+      - http:
           method: PATCH
           path: opportunity/visibility
           cors: true
-      - http:  
+      - http:
           method: PATCH
           path: opportunity/delete
           cors: true
-      - http:  
+      - http:
           method: PATCH
           path: opportunity/edit/global
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/draft
           cors: true
-      - http:  
+      - http:
           method: GET
           path: userNetwork/contactsList
           cors: true
-      - http:  
+      - http:
           method: GET
           path: userNetwork/share/recipients/{opportunityId}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 opportunityId: true
           cors: true
-      - http:  
+      - http:
           method: PATCH
           path: opportunity/edit/draft
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/draft/live
           cors: true
-      - http:  
+      - http:
           method: GET
           path: opportunity/detail/{id}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
-      - http:  
+      - http:
           method: GET
           path: opportunity/modification/{modificationId}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 modificationId: true
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/removal/cancel/{opportunityId}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 opportunityId: true
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/modification/cancel/{opportunityId}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 opportunityId: true
           cors: true
-      - http:  
+      - http:
           method: GET
           path: opportunity/comments/{id}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/comment/
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/bulk/save/
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/add/todo/
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/share/
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/dismiss/
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/bulk/opp/todo/
           cors: true
-      - http:  
+      - http:
           method: GET
           path: opportunity/opportunity-users/{opportunityId}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 opportunityId: true
           cors: true
-      - http:  
+      - http:
           method: GET
           path: opportunity/event/recommend/
           cors: true
-      - http:  
+      - http:
           method: POST
           path: opportunity/event/wishlist/
           cors: true
-      - http:  
+      - http:
           method: GET
           path: opportunity/activities/institute/
           cors: true
-      - http:  
+      - http:
           method: GET
           path: opportunity/explore/activities/
           cors: true
-
-
-
-
-  

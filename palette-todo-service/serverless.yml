@@ -22,11 +22,6 @@ provider:
     PORT: ${env:PORT}
     NODE_ENV: ${env:NODE_ENV}
     JWT_SECRET: ${env:JWT_SECRET}
-    SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
-    SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
-    SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
-    SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
-    SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
     BE_SUPPORT_EMAILS: ${env:BE_SUPPORT_EMAILS}
     UTILITY_NOTIFICATION_RECIPIENTS: ${env:UTILITY_NOTIFICATION_RECIPIENTS}
     PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
@@ -52,26 +47,26 @@ functions:
           cors: true
       - http:
           method: POST
-          path: todo/requested/accept/{id} 
-          request: 
+          path: todo/requested/accept/{id}
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
       - http:
           method: POST
           path: todo/requested/reject/{id}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
       - http:
           method: GET
           path: todo/detail/{id}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
       - http:
@@ -81,9 +76,9 @@ functions:
       - http:
           method: PATCH
           path: todo/update/status/{id}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
       - http:
@@ -121,9 +116,9 @@ functions:
       - http:
           method: GET
           path: todo/task/{studentid}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 studentid: true
           cors: true
       - http:

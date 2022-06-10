@@ -17,24 +17,19 @@ provider:
     name: ${env:PALETTE_AWS_STORAGE_BUCKET_NAME}
     serverSideEncryption: AES256
   environment:
-      PORT: ${env:PORT}
-      NODE_ENV: ${env:NODE_ENV}
-      JWT_SECRET: ${env:JWT_SECRET}
-      SALESFORCE_GRANT_TYPE: ${env:SALESFORCE_GRANT_TYPE}
-      SALESFORCE_CLIENT_ID: ${env:SALESFORCE_CLIENT_ID}
-      SALESFORCE_CLIENT_SECRET: ${env:SALESFORCE_CLIENT_SECRET}
-      SALESFORCE_USERNAME: ${env:SALESFORCE_USERNAME}
-      SALESFORCE_PASSWORD: ${env:SALESFORCE_PASSWORD}
-      UTILITY_NOTIFICATION_RECIPIENTS: ${env:UTILITY_NOTIFICATION_RECIPIENTS}
-      PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
-      PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
-      PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
-      AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
+    PORT: ${env:PORT}
+    NODE_ENV: ${env:NODE_ENV}
+    JWT_SECRET: ${env:JWT_SECRET}
+    UTILITY_NOTIFICATION_RECIPIENTS: ${env:UTILITY_NOTIFICATION_RECIPIENTS}
+    PALETTE_SERVICE_NAME: ${env:PALETTE_SERVICE_NAME}
+    PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL: ${env:PALETTE_AWS_SQS_NOTIFICATION_QUEUE_URL}
+    PALETTE_AWS_REGION: ${env:PALETTE_AWS_REGION}
+    AWS_NODEJS_CONNECTION_REUSE_ENABLED: ${env:AWS_NODEJS_CONNECTION_REUSE_ENABLED}
 
 functions:
   sendTodoReminders:
     handler: ./src/modules/notifications/handler.sendTodoReminders
-    events: 
+    events:
       - schedule: rate(1 minute)
   util:
     handler: dist/lambda.handler
@@ -66,9 +61,9 @@ functions:
       - http:
           method: GET
           path: notifications/{id}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
       - http:
@@ -78,9 +73,9 @@ functions:
       - http:
           method: PATCH
           path: notifications/read/{id}
-          request: 
+          request:
             parameters:
-              paths: 
+              paths:
                 id: true
           cors: true
       - http:
