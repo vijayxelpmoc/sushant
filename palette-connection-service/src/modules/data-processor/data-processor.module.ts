@@ -1,4 +1,4 @@
-import { Module, CacheModule } from '@nestjs/common';
+import { Module, CacheModule, forwardRef } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import * as redisStore from 'cache-manager-redis-store';
 
@@ -20,7 +20,8 @@ import { CachingService } from './caching.service';
         ttl: configService.get<number>('CACHE_TTL'),
       }),
     }),
-    SFCredentialsModule,
+    forwardRef(() => SFCredentialsModule),
+    // SFCredentialsModule,
     SFModelsModule,
     SFFieldsModule,
   ],

@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 
 import { SFCredentialsService } from '@src/modules/sf-credentials/sf-credentials.service';
 import { SFFieldsService } from '@src/modules/sf-fields/sf-fields.service';
@@ -12,6 +12,7 @@ export class DataProcessorService {
 
   constructor(
     private cachingService: CachingService,
+    @Inject(forwardRef(() => SFCredentialsService))
     private sfCredentialsService: SFCredentialsService,
     private sfFieldsService: SFFieldsService,
     private sfModelsService: SFModelsService,

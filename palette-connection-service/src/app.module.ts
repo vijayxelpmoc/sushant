@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
@@ -30,11 +30,14 @@ import { ExecutorModule } from './modules/executor/executor.module';
         logging: configService.get<string>('NODE_ENV') === 'development',
       }),
     }),
+    // forwardRef(() => DataProcessorModule),
     DataProcessorModule,
     SFCredentialsModule,
+    // forwardRef(() => SFCredentialsModule),
     SFModelsModule,
     SFFieldsModule,
     ExecutorModule,
+    // forwardRef(() => ExecutorModule),
   ],
 })
 export class AppModule {}
