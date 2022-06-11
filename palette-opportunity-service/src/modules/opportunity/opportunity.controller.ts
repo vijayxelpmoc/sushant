@@ -806,9 +806,3 @@ export class OpportunityController {
   }
 }
 
-// YML DATA
-// custom:
-//   serverless-offline:
-//     httpsProtocol: "dev-certs"
-//     httpPort: 4000
-//     lambdaPort: 4002
