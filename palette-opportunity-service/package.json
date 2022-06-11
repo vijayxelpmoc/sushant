@@ -1,7 +1,7 @@
 {
   "name": "palette-opportunity-service",
   "private": true,
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Palette Opportunity Service",
   "license": "MIT",
   "scripts": {
