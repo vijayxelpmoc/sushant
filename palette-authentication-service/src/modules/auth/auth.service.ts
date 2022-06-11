@@ -6,7 +6,6 @@ import {
 } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
-// import Cryptr from 'cryptr';
 import { v4 as uuid } from 'uuid';
 
 import {
@@ -15,7 +14,6 @@ import {
   NotificationType,
   EmailTemplates,
 } from '@gowebknot/palette-wrapper';
-// import { SfService, SFField } from '@gowebknot/palette-salesforce-service';
 
 import { AccountRecordType, Errors, Responses } from '@src/constants';
 import { User } from '@src/modules/users/types';
@@ -36,7 +34,6 @@ import { EnvKeys } from '@src/constants';
 
 @Injectable()
 export class AuthService {
-  // private _cryptr: Cryptr;
   private _notifier: Notifier;
   private readonly logger = new Logger(AuthService.name);
 
@@ -45,7 +42,6 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {
-    // this._cryptr = new Cryptr(configService.get<string>('PASSWORD_HASHING_KEY'));
     this._notifier = new Notifier();
   }
 
