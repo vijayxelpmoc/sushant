@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { forwardRef, Module } from '@nestjs/common';
 
 import { ExecutorService } from './executor.service';
 
@@ -10,7 +10,8 @@ import { ExecutorController } from './executor.controller';
 
 @Module({
   imports: [
-    SFCredentialsModule,
+    forwardRef(() => SFCredentialsModule),
+    // SFCredentialsModule,
     SFModelsModule,
     SFFieldsModule,
     DataProcessorModule,

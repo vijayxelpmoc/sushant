@@ -1,4 +1,4 @@
-import { Injectable, Logger, BadRequestException } from '@nestjs/common';
+import { Injectable, Logger, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 
 import { SFCredentialsService } from '@src/modules/sf-credentials/sf-credentials.service';
 import { SFFieldsService } from '@src/modules/sf-fields/sf-fields.service';
@@ -11,6 +11,7 @@ export class ExecutorService {
   private logger: Logger = new Logger(ExecutorService.name);
 
   constructor(
+    @Inject(forwardRef(() => SFCredentialsService))
     private sfCredentialsService: SFCredentialsService,
     private sfFieldsService: SFFieldsService,
     private sfModelsService: SFModelsService,

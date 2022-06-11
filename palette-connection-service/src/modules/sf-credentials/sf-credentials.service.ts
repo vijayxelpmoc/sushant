@@ -1,8 +1,9 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Responses } from '@src/constants';
 import { Repository } from 'typeorm';
 import { v4 as uuid } from 'uuid';
+import { ExecutorService } from '../executor/executor.service';
 import { SFFieldsService } from '../sf-fields/sf-fields.service';
 import { SFModelsService } from '../sf-models/sf-models.service';
 import { CreateSFCredentialDto } from './dto/create-sf-credential.dto';
@@ -16,6 +17,8 @@ export class SFCredentialsService {
     private sfCredentialsRepository: Repository<SFCredentialEntity>,
     private sfFieldsService: SFFieldsService,
     private sfModelsService: SFModelsService,
+    @Inject(forwardRef(() => ExecutorService))
+    private executorService: ExecutorService,
   ) {}
 
   async get(): Promise<SFCredentialEntity[]> {
@@ -124,6 +127,12 @@ export class SFCredentialsService {
     const insId = pawsSFCredentialDto.instituteId;
     await this.sfModelsService.loadPAWSmodels(insId);
     await this.sfFieldsService.loadPAWSFields(insId);
+
+    try {
+      await this.executorService.refresh();
+    } catch (err) {
+      throw new BadRequestException(`Error refresing redis!`);
+    }
 
     return { status: 201, message: 'Success' };
   }
